@@ -348,43 +348,63 @@ BPMN XML + Summary + Review Report
 
 ---
 
-## 7. Suggested Repository Structure
+## 7. Repository Structure
+
+This repository provides a clear separation between frontend, backend, agent services, shared contracts, documentation, sample assets, and test suites. The structure is designed to be scalable for future enterprise integrations while remaining lightweight for the hackathon MVP.
 
 ```text
-pie-process-intelligence-ecosystem/
-├── README.md
-├── docs/
-│   ├── architecture.md
-│   ├── roadmap.md
-│   ├── demo-script.md
-│   └── sample-processes/
-├── frontend/
-│   ├── src/
-│   └── README.md
-├── backend/
-│   ├── src/
-│   └── README.md
-├── agents/
-│   ├── knowledge-extraction-agent/
-│   ├── process-intelligence-agent/
-│   ├── bpmn-modelling-agent/
-│   └── process-review-agent/
-├── shared/
-│   ├── dto/
-│   ├── schemas/
-│   └── prompts/
-├── samples/
-│   ├── input/
-│   └── output/
-└── tests/
-    ├── unit/
-    ├── integration/
-    └── e2e/
+pie-process-intelligence-Ecosystem/
+├── README.md                   # Main entry point, project overview, and setup instructions.
+├── CONTRIBUTING.md             # Guidelines for contributing to the project.
+├── docs/                       # Project documentation, architecture, and design files.
+│   ├── architecture.md         # Detailed system architecture and agentic workflow.
+│   ├── roadmap.md              # MVP and future product roadmap.
+│   ├── demo-script.md          # Script for live demonstrations.
+│   └── sample-processes/       # Example business process documents.
+├── frontend/                   # Web-based user interface (Angular/React + bpmn-js).
+│   ├── src/                    # Source code for the frontend application.
+│   └── README.md               # Frontend-specific setup and development guide.
+├── backend/                    # API layer and orchestration (Java/Node.js).
+│   ├── src/                    # Source code for the backend services.
+│   └── README.md               # Backend-specific setup and development guide.
+├── agents/                     # AI agent services for process intelligence.
+│   ├── knowledge-extraction-agent/ # Extracts knowledge from unstructured text.
+│   ├── process-intelligence-agent/ # Builds process graph and detects gaps.
+│   ├── bpmn-modelling-agent/     # Generates BPMN 2.0 XML and diagrams.
+│   └── process-review-agent/     # Summarizes BPMN and provides review feedback.
+├── shared/                     # Shared data contracts (DTOs), schemas, and prompts.
+│   ├── dto/                    # Data Transfer Objects for API communication.
+│   ├── schemas/                # JSON schemas for validation.
+│   └── prompts/                # LLM prompts for the AI agents.
+├── samples/                    # Sample input files and expected output.
+│   ├── input/                  # Example input documents and text.
+│   └── output/                 # Generated BPMN, summaries, and reports.
+└── tests/                      # Automated tests.
+    ├── unit/                   # Unit tests for individual components.
+    ├── integration/            # Integration tests for service interactions.
+    └── e2e/                    # End-to-end tests for user workflows.
 ```
+
+### 7.1. Folder Ownership and Responsibilities
+
+| Folder                       | Primary Owner   | Secondary Owner | Key Responsibilities                                      |
+| ---------------------------- | --------------- | --------------- | --------------------------------------------------------- |
+| **`frontend/`**              | Hrutu S.        | Prajwal G.      | UI/UX, BPMN editor integration, and user interactions.    |
+| **`backend/`**               | Prajwal G.      | Hrutu S.        | API development, orchestration, and database integration. |
+| **`agents/`**                | Jay K.          | Prajwal G.      | AI agent implementation, prompt engineering, and output.  |
+| **`shared/`**                | Hrutu S.        | Jay K.          | Data contracts, schemas, and shared utilities.            |
+| **`docs/`**, **`samples/`** | Prajwal G.      | All             | Documentation, sample data, and final presentation.       |
+| **`tests/`**                 | Jay K.          | Hrutu S.        | Test planning, automation, and quality assurance.         |
 
 ---
 
-## 8. MVP Feature Backlog
+## 8. Contribution Guidelines
+
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed instructions on how to contribute to this project, including our code of conduct, commit message format, and pull request process.
+
+---
+
+## 9. MVP Feature Backlog
 
 ### Must Have
 
@@ -416,7 +436,7 @@ pie-process-intelligence-ecosystem/
 
 ---
 
-## 9. Future Product Roadmap
+## 10. Future Product Roadmap
 
 After the hackathon MVP, P.I.E. can grow into a full-scale enterprise process intelligence platform.
 
@@ -445,7 +465,7 @@ After the hackathon MVP, P.I.E. can grow into a full-scale enterprise process in
 
 ---
 
-## 10. Success Metrics
+## 11. Success Metrics
 
 The MVP and future product should be evaluated using measurable business and technical outcomes.
 
@@ -461,7 +481,7 @@ The MVP and future product should be evaluated using measurable business and tec
 
 ---
 
-## 11. Demo Scenario
+## 12. Demo Scenario
 
 ### Example Input
 
@@ -480,7 +500,7 @@ The employee submits a travel request. The manager reviews the request. If appro
 
 ---
 
-## 12. Design Principles
+## 13. Design Principles
 
 - **Business-first:** Non-BPMN experts should understand the generated process.
 - **Editable by default:** AI output should be correctable through canvas and chat.
@@ -490,7 +510,7 @@ The employee submits a travel request. The manager reviews the request. If appro
 
 ---
 
-## 13. Key Value Proposition
+## 14. Key Value Proposition
 
 P.I.E. reduces the effort required to create, review, understand, and improve BPMN process models.
 
@@ -498,13 +518,13 @@ It helps business and technical teams move from scattered process documentation 
 
 ---
 
-## 14. One-Line Pitch
+## 15. One-Line Pitch
 
 > **P.I.E. transforms unstructured business knowledge into validated, editable, and explainable BPMN 2.0 process models using a four-agent AI workflow.**
 
 ---
 
-## 15. Team
+## 16. Team
 
 **Team Name:** Prompt Cartel  
 **Department:** VWGDS India, Engineering [R and D] (I-DK-R)
@@ -517,6 +537,6 @@ It helps business and technical teams move from scattered process documentation 
 
 ---
 
-## 16. License / Usage
+## 17. License / Usage
 
 This repository is intended for hackathon MVP development and internal innovation demonstration. Licensing and production usage can be defined during enterprise scale-up.
