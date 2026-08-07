@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReviewReportDTO",
+  "type": "object",
+  "properties": {
+    "summary": { 
+      "type": "string",
+      "description": "A business-friendly explanation of the process."
+    },
+    "issues": { 
+      "type": "array", 
+      "items": { "type": "string" },
+      "description": "List of detected issues in the BPMN model."
+    },
+    "recommendations": { 
+      "type": "array", 
+      "items": { "type": "string" },
+      "description": "Actionable suggestions to improve the process flow or documentation."
+    }
+  },
+  "required": ["summary", "issues", "recommendations"],
+  "additionalProperties": false
+}

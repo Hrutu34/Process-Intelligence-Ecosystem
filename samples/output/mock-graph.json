@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    { "id": "start_1", "type": "startEvent", "label": "Request Created" },
+    { "id": "task_1", "type": "userTask", "label": "Submit request" },
+    { "id": "end_1", "type": "endEvent", "label": "Process Ended" }
+  ],
+  "edges": [
+    { "fromId": "start_1", "toId": "task_1" },
+    { "fromId": "task_1", "toId": "end_1" }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "activities": ["Submit request", "Review request", "Validate budget", "Book tickets", "Notify employee"],
+  "actors": ["Employee", "Manager", "Finance", "Travel Desk"],
+  "systems": ["Travel Booking Portal", "ERP System"],
+  "events": ["Request Created", "Process Ended"],
+  "decisions": ["Is Approved by Manager?", "Is Budget Available?"]
+}
