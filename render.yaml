@@ -1,0 +1,39 @@
+services:
+  # 1. Backend API (Spring Boot)
+  - type: web
+    name: pie-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: SPRING_PROFILE
+        value: prod
+      - key: GEMINI_API_KEY
+        sync: false # Render will prompt you for this securely in the UI
+      - key: DB_URL
+        fromDatabase:
+          name: pie-db
+          property: connectionString
+      - key: DB_USER
+        fromDatabase:
+          name: pie-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: pie-db
+          property: password
+
+  # 2. Frontend (React)
+  - type: web
+    name: pie-frontend
+    runtime: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    # We will set VITE_API_BASE_URL to the backend's render URL in the dashboard later
+
+databases:
+  - name: pie-db
+    plan: free
+    databaseName: pie_db
+    postgresMajorVersion: "15"
