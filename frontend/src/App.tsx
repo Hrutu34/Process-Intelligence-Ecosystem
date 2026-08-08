@@ -1,122 +1,267 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const agents = [
+    {
+      number: "01",
+      icon: "🧠",
+      title: "Knowledge Extraction",
+      description:
+        "Turns messy documents, policies, and tribal knowledge into structured process intelligence.",
+      accent: "aqua",
+    },
+    {
+      number: "02",
+      icon: "◉",
+      title: "Process Intelligence",
+      description:
+        "Finds gaps, dead ends, missing owners, contradictions, and hidden process risks.",
+      accent: "yellow",
+    },
+    {
+      number: "03",
+      icon: "⌘",
+      title: "BPMN Modelling",
+      description:
+        "Transforms validated process knowledge into clean, editable BPMN 2.0 models.",
+      accent: "aqua",
+    },
+    {
+      number: "04",
+      icon: "✦",
+      title: "Process Review",
+      description:
+        "Turns complex process diagrams back into language your business actually understands.",
+      accent: "yellow",
+    },
+  ];
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <div className="noise" />
 
-      <div className="ticks"></div>
+      {/* Navigation */}
+      <header className="header">
+        <div className="container nav">
+          <a href="/" className="logo">
+            <span className="logo-mark">π</span>
+            <span>P.I.E.</span>
+          </a>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <div className="nav-center">
+            <span>PROCESS INTELLIGENCE</span>
+            <span className="nav-line" />
+            <span>v0.1</span>
+          </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <a
+            href="https://github.com/Hrutu34"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="github"
+          >
+            GitHub ↗
+          </a>
+        </div>
+      </header>
+
+      <main>
+        {/* Hero */}
+        <section className="hero">
+          <div className="grid-background" />
+
+          <div className="container hero-inner">
+            <div className="status-pill">
+              <span className="status-dot" />
+              SYSTEM ONLINE
+              <span className="status-separator">/</span>
+              HACKATHON MVP
+            </div>
+
+            <div className="hero-label">
+              <span>01</span>
+              <span className="label-line" />
+              <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
+            </div>
+
+            <h1>
+              Make the
+              <span className="outline-text"> invisible </span>
+              <br />
+              <span className="aqua-text">process visible.</span>
+            </h1>
+
+            <p className="hero-copy">
+              P.I.E. transforms unstructured business knowledge into
+              <span> validated processes</span>, editable
+              <span> BPMN 2.0 models</span>, and explanations your team can
+              actually use.
+            </p>
+
+            {/* Upload */}
+            <div className="upload-zone">
+              <div className="upload-corner corner-tl" />
+              <div className="upload-corner corner-tr" />
+              <div className="upload-corner corner-bl" />
+              <div className="upload-corner corner-br" />
+
+              <div className="upload-main">
+                <div className="document-symbol">
+                  <span>+</span>
+                </div>
+
+                <div>
+                  <div className="upload-title">
+                    Feed P.I.E. some knowledge.
+                  </div>
+                  <div className="upload-subtitle">
+                    PDF / DOCX / TXT · Drop it here or select a file
+                  </div>
+                </div>
+              </div>
+
+              <button className="yellow-button" type="button">
+                SELECT FILE
+                <span>↗</span>
+              </button>
+            </div>
+
+            <div className="hero-meta">
+              <span>INPUT</span>
+              <div className="meta-arrow">→</div>
+              <span className="aqua-small">KNOWLEDGE</span>
+              <div className="meta-arrow">→</div>
+              <span>INTELLIGENCE</span>
+              <div className="meta-arrow">→</div>
+              <span className="yellow-small">BPMN 2.0</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Workflow */}
+        <section className="workflow">
+          <div className="container">
+            <div className="section-intro">
+              <div>
+                <div className="section-number">02 / THE ENGINE</div>
+                <h2>
+                  Four agents.
+                  <br />
+                  <span>One process brain.</span>
+                </h2>
+              </div>
+
+              <p>
+                P.I.E. doesn't just generate a diagram. It creates a chain of
+                reasoning from raw business knowledge to a process that can be
+                inspected, edited, and understood.
+              </p>
+            </div>
+
+            <div className="agent-grid">
+              {agents.map((agent, index) => (
+                <article
+                  className={`agent-card ${agent.accent}`}
+                  key={agent.number}
+                >
+                  <div className="agent-header">
+                    <span className="agent-index">{agent.number}</span>
+
+                    <span className="agent-icon">{agent.icon}</span>
+                  </div>
+
+                  <div className="agent-content">
+                    <h3>{agent.title}</h3>
+                    <p>{agent.description}</p>
+                  </div>
+
+                  <div className="agent-footer">
+                    <span>AGENT {agent.number}</span>
+                    <span>0{index + 1} ———→</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* Process line */}
+            <div className="process-line">
+              <div className="process-node aqua-node">KNOWLEDGE</div>
+              <div className="process-connector">
+                <span />
+              </div>
+              <div className="process-node">INTELLIGENCE</div>
+              <div className="process-connector">
+                <span />
+              </div>
+              <div className="process-node yellow-node">BPMN</div>
+              <div className="process-connector">
+                <span />
+              </div>
+              <div className="process-node">EXPLAIN</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature statement */}
+        <section className="statement">
+          <div className="container">
+            <div className="statement-card">
+              <div className="statement-top">
+                <span>03</span>
+                <span>WHY P.I.E.?</span>
+                <span>✦</span>
+              </div>
+
+              <h2>
+                Your business already has the knowledge.
+                <span> It's just trapped in documents.</span>
+              </h2>
+
+              <div className="statement-bottom">
+                <span>UNSTRUCTURED → STRUCTURED</span>
+                <span className="yellow-tag">AI + BPMN 2.0</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="final-cta">
+          <div className="container">
+            <div className="cta-inner">
+              <div className="cta-orbit orbit-one" />
+              <div className="cta-orbit orbit-two" />
+
+              <div className="cta-content">
+                <span className="section-number">04 / INITIALIZE</span>
+
+                <h2>
+                  Let's make your
+                  <br />
+                  <span>processes visible.</span>
+                </h2>
+
+                <button className="mega-button" type="button">
+                  <span>START WITH A DOCUMENT</span>
+                  <strong>↗</strong>
+                </button>
+              </div>
+
+              <div className="pie-mark">π</div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="footer">
+        <div className="container footer-inner">
+          <span>🥧 P.I.E.</span>
+          <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
+          <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
-export default App
+export default App;

@@ -19,17 +19,21 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
+# Fallback profile if not starting interactively
 PROFILE=${SPRING_PROFILE:-local}
 
 verify_env() {
   echo -e "${YELLOW}--- Verifying Prerequisites & Environment ---${NC}"
   local errors=0
 
-  if ! command -v docker &> /dev/null; then
-    echo -e "${RED}[X] Docker is not installed or not in PATH${NC}"
-    errors=$((errors+1))
-  else
-    echo -e "${GREEN}[✓] Docker found${NC}"
+  # Only enforce Docker if running the e2e profile
+  if [ "$PROFILE" = "e2e" ]; then
+    if ! command -v docker &> /dev/null; then
+      echo -e "${RED}[X] Docker is not installed or not in PATH (Required for e2e)${NC}"
+      errors=$((errors+1))
+    else
+      echo -e "${GREEN}[✓] Docker found${NC}"
+    fi
   fi
 
   if ! command -v java &> /dev/null; then
@@ -50,7 +54,7 @@ verify_env() {
     echo -e "${RED}[X] GEMINI_API_KEY is missing from environment / .env file${NC}"
     errors=$((errors+1))
   else
-    echo -e "${GREEN}[✓] Gemini API Key present${NC}"
+    echo -e "${GREEN}[✓] API Key check passed${NC}"
   fi
 
   if [ $errors -gt 0 ]; then
@@ -65,7 +69,7 @@ build_apps() {
   echo -e "${YELLOW}--- Compiling & Building Applications ---${NC}"
   
   echo -e "${YELLOW}1. Compiling Backend (Java Spring Boot)...${NC}"
-  (cd backend && ./mvnw clean compile)
+  (cd backend && mvn clean compile)
   
   echo -e "${YELLOW}2. Installing Frontend dependencies (React + Vite)...${NC}"
   (cd frontend && npm install)
@@ -73,25 +77,57 @@ build_apps() {
   echo -e "${GREEN}Build complete!${NC}\n"
 }
 
+choose_profile() {
+  echo -e "${YELLOW}Select the environment profile to run:${NC}"
+  echo "1) Local (H2 In-Memory DB - Instant start, no Docker)"
+  echo "2) E2E   (Local Docker PostgreSQL - Production parity)"
+  echo "3) Prod  (Cloud Database - Connects to Render)"
+  
+  read -p "Enter choice [1-3] (Default: 1): " choice
+
+  case $choice in
+    2)
+      PROFILE="e2e"
+      ;;
+    3)
+      PROFILE="prod"
+      ;;
+    *)
+      PROFILE="local"
+      ;;
+  esac
+  
+  export SPRING_PROFILE=$PROFILE
+  echo -e "${GREEN}Selected Profile: $PROFILE${NC}\n"
+}
+
 start_all() {
+  # 1. Ask for profile first
+  choose_profile
+
+  # 2. Verify based on selected profile
   verify_env || exit 1
 
-  echo -e "${YELLOW}--- Starting P.I.E. Ecosystem ---${NC}"
+  echo -e "${YELLOW}--- Starting P.I.E. Ecosystem (Profile: $PROFILE) ---${NC}"
 
-  # 1. Start Database
-  echo -e "${YELLOW}[1/3] Starting Database (PostgreSQL container)...${NC}"
-  docker-compose up -d
+  # 3. Smart Infrastructure Routing
+  if [ "$PROFILE" = "e2e" ]; then
+    echo -e "${YELLOW}[1/3] Starting Database (Docker PostgreSQL)...${NC}"
+    docker-compose up -d
+  else
+    echo -e "${YELLOW}[1/3] Skipping Docker (Using H2 or Cloud DB)...${NC}"
+  fi
 
-  # 2. Start Backend in background
-  echo -e "${YELLOW}[2/3] Starting Backend (Spring Boot - Profile: $PROFILE)...${NC}"
+  # 4. Start Backend in background
+  echo -e "${YELLOW}[2/3] Starting Backend (Spring Boot)...${NC}"
   (
     cd backend
-    SPRING_PROFILE=$PROFILE ./mvnw spring-boot:run > "../$LOG_DIR/backend.log" 2>&1 &
+    SPRING_PROFILE=$PROFILE mvn spring-boot:run > "../$LOG_DIR/backend.log" 2>&1 &
     echo $! > "../$PID_DIR/backend.pid"
   )
   echo -e "${GREEN}Backend running in background (PID: $(cat $PID_DIR/backend.pid)). Logs: $LOG_DIR/backend.log${NC}"
 
-  # 3. Start Frontend in background
+  # 5. Start Frontend in background
   echo -e "${YELLOW}[3/3] Starting Frontend (React + Vite)...${NC}"
   (
     cd frontend
@@ -103,6 +139,11 @@ start_all() {
   echo -e "\n${GREEN}=== All Services Started ===${NC}"
   echo -e "Frontend: ${YELLOW}http://localhost:5173${NC}"
   echo -e "Backend:  ${YELLOW}http://localhost:8080${NC}"
+  
+  if [ "$PROFILE" = "local" ]; then
+    echo -e "H2 DB:    ${YELLOW}http://localhost:8080/h2-console${NC} (URL: jdbc:h2:mem:pie_db)"
+  fi
+  
   echo -e "Run ${YELLOW}./pie.sh status${NC} or ${YELLOW}./pie.sh logs${NC} to monitor."
 }
 
@@ -123,8 +164,10 @@ stop_all() {
     rm "$PID_DIR/frontend.pid"
   fi
 
-  echo -e "${YELLOW}Stopping Docker Infrastructure...${NC}"
-  docker-compose down
+  if command -v docker &> /dev/null && docker-compose ps &> /dev/null; then
+    echo -e "${YELLOW}Stopping Docker Infrastructure...${NC}"
+    docker-compose down 2>/dev/null || true
+  fi
 
   echo -e "${GREEN}All services stopped clean.${NC}"
 }
@@ -132,8 +175,10 @@ stop_all() {
 status_all() {
   echo -e "${YELLOW}--- P.I.E. Ecosystem Status ---${NC}"
   
-  echo -e "\n${YELLOW}Docker Infrastructure:${NC}"
-  docker-compose ps
+  if command -v docker &> /dev/null; then
+    echo -e "\n${YELLOW}Docker Infrastructure:${NC}"
+    docker-compose ps 2>/dev/null || echo "No containers running."
+  fi
 
   echo -e "\n${YELLOW}Backend Status:${NC}"
   if [ -f "$PID_DIR/backend.pid" ] && kill -0 $(cat "$PID_DIR/backend.pid") 2>/dev/null; then

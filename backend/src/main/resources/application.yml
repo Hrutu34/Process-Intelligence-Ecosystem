@@ -8,3 +8,14 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+      spring:
+
+# Google GenAI / Gemini Configuration (Active across all profiles)
+spring.ai:
+  google:
+    genai:
+      api-key: ${GEMINI_API_KEY:placeholder_key_if_not_set}
+      chat:
+        options:
+          model: gemini-2.5-flash
