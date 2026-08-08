@@ -43,6 +43,14 @@ verify_env() {
     echo -e "${GREEN}[✓] Java found ($(java -version 2>&1 | head -n 1))${NC}"
   fi
 
+  if ! command -v mvn &> /dev/null; then
+    echo -e "${RED}[X] Maven (mvn) is not installed natively or not in PATH${NC}"
+    errors=$((errors+1))
+  else
+    # Extract just the version line to keep the logs clean
+    echo -e "${GREEN}[✓] Maven found ($(mvn --version 2>&1 | head -n 1))${NC}"
+  fi
+
   if ! command -v node &> /dev/null; then
     echo -e "${RED}[X] Node.js is not installed or not in PATH${NC}"
     errors=$((errors+1))
