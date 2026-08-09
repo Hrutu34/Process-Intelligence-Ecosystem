@@ -1,5 +1,7 @@
 version: '3.8'
 
+# docker compose up -d
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -19,7 +21,7 @@ services:
     volumes:
       - ollama_models:/root/.ollama
     # Run this command manually once to pull the model:
-    # docker exec -it pie_ollama ollama run llama3
+    # docker exec -it pie_ollama ollama run llama3.2:3b
 
 volumes:
   pgdata:
