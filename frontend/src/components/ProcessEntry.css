@@ -1,0 +1,154 @@
+.process-entry {
+  margin-top: 55px;
+  background: linear-gradient(145deg, #103263, #071a3d);
+  border: 1px solid rgba(88, 170, 205, 0.2);
+  border-radius: 18px;
+  box-shadow: 12px 14px 30px rgba(1, 10, 25, 0.55), 
+              -8px -8px 20px rgba(31, 72, 117, 0.3), 
+              inset 1px 1px rgba(255, 255, 255, 0.08), 
+              inset -1px -1px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.entry-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(116, 183, 220, 0.16);
+  background: rgba(4, 18, 45, 0.4);
+}
+
+.entry-tabs button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  padding: 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.entry-tabs button:hover {
+  color: var(--soft-white);
+}
+
+.entry-tabs button.active {
+  color: var(--aqua);
+  background: rgba(57, 245, 208, 0.05);
+  box-shadow: inset 0 -2px var(--aqua);
+}
+
+.entry-content {
+  padding: 30px;
+}
+
+.drop-zone {
+  border: 2px dashed rgba(57, 245, 208, 0.2);
+  border-radius: 12px;
+  padding: 50px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(7, 26, 61, 0.4);
+}
+
+.drop-zone.dragging {
+  border-color: var(--aqua);
+  background: rgba(57, 245, 208, 0.08);
+  transform: scale(1.02);
+}
+
+.drop-zone.has-file {
+  border-style: solid;
+  border-color: rgba(116, 183, 220, 0.3);
+  cursor: default;
+}
+
+.drop-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  pointer-events: none;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  color: var(--aqua);
+  font-weight: 500;
+}
+
+.file-icon {
+  font-size: 24px;
+}
+
+.file-name {
+  color: var(--white);
+}
+
+.file-size {
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.remove-file {
+  background: transparent;
+  border: 1px solid var(--dim);
+  color: var(--dim);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.remove-file:hover {
+  border-color: #ff4757;
+  color: #ff4757;
+  transform: rotate(90deg);
+}
+
+.text-zone textarea {
+  width: 100%;
+  min-height: 190px;
+  background: rgba(4, 18, 45, 0.6);
+  border: 1px solid rgba(88, 170, 205, 0.2);
+  border-radius: 8px;
+  color: var(--white);
+  padding: 20px;
+  font-family: var(--display);
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: 0.2s;
+}
+
+.text-zone textarea:focus {
+  border-color: var(--aqua);
+  box-shadow: 0 0 15px rgba(57, 245, 208, 0.1);
+}
+
+.error-message {
+  color: #ff4757;
+  padding: 0 30px 15px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.entry-actions {
+  padding: 0 30px 30px;
+  display: flex;
+  justify-content: flex-end;
+}

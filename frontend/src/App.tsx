@@ -1,4 +1,5 @@
 import "./App.css";
+import ProcessEntry from "./components/ProcessEntry";
 
 function App() {
   const agents = [
@@ -6,32 +7,28 @@ function App() {
       number: "01",
       icon: "🧠",
       title: "Knowledge Extraction",
-      description:
-        "Turns messy documents, policies, and tribal knowledge into structured process intelligence.",
+      description: "Turns messy documents, policies, and tribal knowledge into structured process intelligence.",
       accent: "aqua",
     },
     {
       number: "02",
       icon: "◉",
       title: "Process Intelligence",
-      description:
-        "Finds gaps, dead ends, missing owners, contradictions, and hidden process risks.",
+      description: "Finds gaps, dead ends, missing owners, contradictions, and hidden process risks.",
       accent: "yellow",
     },
     {
       number: "03",
       icon: "⌘",
       title: "BPMN Modelling",
-      description:
-        "Transforms validated process knowledge into clean, editable BPMN 2.0 models.",
+      description: "Transforms validated process knowledge into clean, editable BPMN 2.0 models.",
       accent: "aqua",
     },
     {
       number: "04",
       icon: "✦",
       title: "Process Review",
-      description:
-        "Turns complex process diagrams back into language your business actually understands.",
+      description: "Turns complex process diagrams back into language your business actually understands.",
       accent: "yellow",
     },
   ];
@@ -44,14 +41,14 @@ function App() {
       <header className="header">
         <div className="container nav">
           <a href="/" className="logo">
-            <span className="logo-mark">π</span>
-            <span>P.I.E.</span>
+            <span className="logo-mark">{"π"}</span>
+            <span>{"P.I.E."}</span>
           </a>
 
           <div className="nav-center">
-            <span>PROCESS INTELLIGENCE</span>
+            <span>{"PROCESS INTELLIGENCE"}</span>
             <span className="nav-line" />
-            <span>v0.1</span>
+            <span>{"v0.1"}</span>
           </div>
 
           <a
@@ -60,7 +57,7 @@ function App() {
             rel="noopener noreferrer"
             className="github"
           >
-            GitHub ↗
+            {"GitHub ↗"}
           </a>
         </div>
       </header>
@@ -73,68 +70,35 @@ function App() {
           <div className="container hero-inner">
             <div className="status-pill">
               <span className="status-dot" />
-              SYSTEM ONLINE
-              <span className="status-separator">/</span>
-              HACKATHON MVP
+              {"SYSTEM ONLINE"}
+              <span className="status-separator">{"/"}</span>
+              {"HACKATHON MVP"}
             </div>
 
             <div className="hero-label">
-              <span>01</span>
+              <span>{"01"}</span>
               <span className="label-line" />
-              <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
+              <span>{"PROCESS INTELLIGENCE ECOSYSTEM"}</span>
             </div>
 
             <h1>
-              Make the
-              <span className="outline-text"> invisible </span>
+              {"Make the"}
+              <span className="outline-text">{" invisible "}</span>
               <br />
-              <span className="aqua-text">process visible.</span>
+              <span className="aqua-text">{"process visible."}</span>
             </h1>
 
             <p className="hero-copy">
-              P.I.E. transforms unstructured business knowledge into
-              <span> validated processes</span>, editable
-              <span> BPMN 2.0 models</span>, and explanations your team can
-              actually use.
+              {"P.I.E. transforms unstructured business knowledge into "}
+              <span>{"validated processes"}</span>
+              {", editable "}
+              <span>{"BPMN 2.0 models"}</span>
+              {", and explanations your team can actually use."}
             </p>
 
-            {/* Upload */}
-            <div className="upload-zone">
-              <div className="upload-corner corner-tl" />
-              <div className="upload-corner corner-tr" />
-              <div className="upload-corner corner-bl" />
-              <div className="upload-corner corner-br" />
+            {/* THE NEW UPLOAD COMPONENT IS INJECTED HERE */}
+            <ProcessEntry/>
 
-              <div className="upload-main">
-                <div className="document-symbol">
-                  <span>+</span>
-                </div>
-
-                <div>
-                  <div className="upload-title">
-                    Feed P.I.E. some knowledge.
-                  </div>
-                  <div className="upload-subtitle">
-                    PDF / DOCX / TXT · Drop it here or select a file
-                  </div>
-                </div>
-              </div>
-
-              <button className="yellow-button" type="button">
-                SELECT FILE
-                <span>↗</span>
-              </button>
-            </div>
-
-            <div className="hero-meta">
-              <span>INPUT</span>
-              <div className="meta-arrow">→</div>
-              <span className="aqua-small">KNOWLEDGE</span>
-              <div className="meta-arrow">→</div>
-              <span>INTELLIGENCE</span>
-              <div className="meta-arrow">→</div>
-              <span className="yellow-small">BPMN 2.0</span>
-            </div>
           </div>
         </section>
 
@@ -143,18 +107,16 @@ function App() {
           <div className="container">
             <div className="section-intro">
               <div>
-                <div className="section-number">02 / THE ENGINE</div>
+                <div className="section-number">{"02 / THE ENGINE"}</div>
                 <h2>
-                  Four agents.
+                  {"Four agents."}
                   <br />
-                  <span>One process brain.</span>
+                  <span>{"One process brain."}</span>
                 </h2>
               </div>
 
               <p>
-                P.I.E. doesn't just generate a diagram. It creates a chain of
-                reasoning from raw business knowledge to a process that can be
-                inspected, edited, and understood.
+                {"P.I.E. doesn't just generate a diagram. It creates a chain of reasoning from raw business knowledge to a process that can be inspected, edited, and understood."}
               </p>
             </div>
 
@@ -166,7 +128,6 @@ function App() {
                 >
                   <div className="agent-header">
                     <span className="agent-index">{agent.number}</span>
-
                     <span className="agent-icon">{agent.icon}</span>
                   </div>
 
@@ -176,8 +137,8 @@ function App() {
                   </div>
 
                   <div className="agent-footer">
-                    <span>AGENT {agent.number}</span>
-                    <span>0{index + 1} ———→</span>
+                    <span>{"AGENT "}{agent.number}</span>
+                    <span>{"0"}{index + 1}{" ———→"}</span>
                   </div>
                 </article>
               ))}
@@ -185,19 +146,19 @@ function App() {
 
             {/* Process line */}
             <div className="process-line">
-              <div className="process-node aqua-node">KNOWLEDGE</div>
+              <div className="process-node aqua-node">{"KNOWLEDGE"}</div>
               <div className="process-connector">
                 <span />
               </div>
-              <div className="process-node">INTELLIGENCE</div>
+              <div className="process-node">{"INTELLIGENCE"}</div>
               <div className="process-connector">
                 <span />
               </div>
-              <div className="process-node yellow-node">BPMN</div>
+              <div className="process-node yellow-node">{"BPMN"}</div>
               <div className="process-connector">
                 <span />
               </div>
-              <div className="process-node">EXPLAIN</div>
+              <div className="process-node">{"EXPLAIN"}</div>
             </div>
           </div>
         </section>
@@ -207,19 +168,19 @@ function App() {
           <div className="container">
             <div className="statement-card">
               <div className="statement-top">
-                <span>03</span>
-                <span>WHY P.I.E.?</span>
-                <span>✦</span>
+                <span>{"03"}</span>
+                <span>{"WHY P.I.E.?"}</span>
+                <span>{"✦"}</span>
               </div>
 
               <h2>
-                Your business already has the knowledge.
-                <span> It's just trapped in documents.</span>
+                {"Your business already has the knowledge."}
+                <span>{" It's just trapped in documents."}</span>
               </h2>
 
               <div className="statement-bottom">
-                <span>UNSTRUCTURED → STRUCTURED</span>
-                <span className="yellow-tag">AI + BPMN 2.0</span>
+                <span>{"UNSTRUCTURED → STRUCTURED"}</span>
+                <span className="yellow-tag">{"AI + BPMN 2.0"}</span>
               </div>
             </div>
           </div>
@@ -233,21 +194,21 @@ function App() {
               <div className="cta-orbit orbit-two" />
 
               <div className="cta-content">
-                <span className="section-number">04 / INITIALIZE</span>
+                <span className="section-number">{"04 / INITIALIZE"}</span>
 
                 <h2>
-                  Let's make your
+                  {"Let's make your"}
                   <br />
-                  <span>processes visible.</span>
+                  <span>{"processes visible."}</span>
                 </h2>
 
                 <button className="mega-button" type="button">
-                  <span>START WITH A DOCUMENT</span>
-                  <strong>↗</strong>
+                  <span>{"START WITH A DOCUMENT"}</span>
+                  <strong>{"↗"}</strong>
                 </button>
               </div>
 
-              <div className="pie-mark">π</div>
+              <div className="pie-mark">{"π"}</div>
             </div>
           </div>
         </section>
@@ -255,9 +216,9 @@ function App() {
 
       <footer className="footer">
         <div className="container footer-inner">
-          <span>🥧 P.I.E.</span>
-          <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
-          <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
+          <span>{"🥧 P.I.E."}</span>
+          <span>{"PROCESS INTELLIGENCE ECOSYSTEM"}</span>
+          <span>{"BUILT FOR THE I.MOBILOTHON © 2026"}</span>
         </div>
       </footer>
     </div>
