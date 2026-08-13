@@ -152,3 +152,161 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* =========================================
+   UI PATCH FOR NEW TSX CLASS NAMES
+   ========================================= */
+
+/* 1. Raw Text Input Fix (Restores full width and dark mode styling) */
+.text-input-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.process-textarea {
+  width: 100%;
+  min-height: 250px;
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 20px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.process-textarea:focus {
+  border-color: #ccff00; /* P.I.E. Yellow accent */
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* 2. Empty Drop Zone Fix (Centers the text and icon) */
+.empty-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  pointer-events: none; /* Ensures the parent drop-zone still catches drag events */
+}
+
+.upload-icon {
+  font-size: 2.5rem;
+  color: #ccff00;
+  margin-bottom: 12px;
+  font-weight: 300;
+}
+
+.upload-description {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 8px;
+}
+
+/* 3. Multi-File List Styling (Styles the stacked list of uploaded documents) */
+.file-list-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.file-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+  color: #fff;
+}
+
+.add-more-button {
+  background: rgba(204, 255, 0, 0.1);
+  border: 1px solid #ccff00;
+  color: #ccff00;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.add-more-button:hover {
+  background: #ccff00;
+  color: #000;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 5px; /* Space for the scrollbar */
+}
+
+/* Custom Scrollbar for the file list */
+.file-list::-webkit-scrollbar {
+  width: 6px;
+}
+.file-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px 15px;
+  border-radius: 6px;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.file-icon {
+  font-size: 1.5rem;
+}
+
+.file-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.file-size {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+.remove-file-button {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.remove-file-button:hover {
+  color: #ff4444;
+}

@@ -7,5 +7,6 @@ public record ProcessKnowledgeDTO(
     List<String> actors,
     List<String> systems,
     List<String> events,
-    List<String> decisions
+    List<String> decisions,
+    List<String> conflicts // NEW: Array for cross-document contradictions
 ) {}

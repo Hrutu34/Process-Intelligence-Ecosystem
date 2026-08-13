@@ -1,13 +1,14 @@
 package com.pie.backend.controller;
 
-import com.pie.backend.service.DocumentParsingService;
-import com.pie.backend.service.KnowledgeExtractionService;
-import com.pie.shared.dto.ProcessDocumentDTO;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
+import com.pie.backend.service.KnowledgeExtractionService;
+import com.pie.backend.service.DocumentParsingService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List; // THIS is the critical import that fixes the Object mismatch
 
 @RestController
 @RequestMapping("/api/v1/process")
@@ -23,23 +24,31 @@ public class ProcessController {
     }
 
     @PostMapping("/extract-text")
-    public ResponseEntity extractFromText(@RequestBody ProcessDocumentDTO request) {
-        if (request.content() == null || request.content().isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(extractionService.extractKnowledge(request.content()));
+    public ResponseEntity<ProcessKnowledgeDTO> extractFromText(@RequestBody TextPayload payload) {
+        return ResponseEntity.ok(extractionService.extractKnowledge(payload.content()));
     }
 
     @PostMapping(value = "/extract-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity extractFromFile(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
+    public ResponseEntity<ProcessKnowledgeDTO> extractFromFile(@RequestParam("files") List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        
-        // 1. Extract raw text from PDF/DOCX/TXT/XLSX
-        String extractedText = parsingService.parseDocument(file);
-        
-        // 2. Pass text to AI Agent
-        return ResponseEntity.ok(extractionService.extractKnowledge(extractedText));
+
+        StringBuilder combinedText = new StringBuilder();
+
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            if (!file.isEmpty()) {
+                String extractedText = parsingService.parseDocument(file);
+                combinedText.append("\n\n--- BEGIN DOCUMENT ").append(i + 1)
+                            .append(" (").append(file.getOriginalFilename()).append(") ---\n");
+                combinedText.append(extractedText);
+                combinedText.append("\n--- END DOCUMENT ").append(i + 1).append(" ---\n");
+            }
+        }
+
+        return ResponseEntity.ok(extractionService.extractKnowledge(combinedText.toString()));
     }
+
+    public record TextPayload(String content) {}
 }
