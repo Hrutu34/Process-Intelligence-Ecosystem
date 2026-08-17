@@ -85,6 +85,51 @@ build_apps() {
   echo -e "${GREEN}Build complete!${NC}\n"
 }
 
+run_tests() {
+  TARGET="$1"
+  echo -e "${YELLOW}--- Running Test Suites (${TARGET:-all}) ---${NC}"
+  verify_env || return 1
+
+  BACK_EXIT=0
+  FRONT_EXIT=0
+
+  if [ "$TARGET" = "f" ]; then
+    echo -e "${YELLOW}Frontend-only mode selected${NC}"
+  elif [ "$TARGET" = "b" ]; then
+    echo -e "${YELLOW}Backend-only mode selected${NC}"
+  fi
+
+  if [ "$TARGET" = "f" ] || [ -z "$TARGET" ]; then
+    echo -e "${YELLOW}1) Backend tests (Maven)...${NC}"
+    (cd backend && mvn -q test) > "$LOG_DIR/backend-tests.log" 2>&1
+    BACK_EXIT=$?
+    if [ $BACK_EXIT -ne 0 ]; then
+      echo -e "${RED}[X] Backend tests failed. See $LOG_DIR/backend-tests.log${NC}"
+    else
+      echo -e "${GREEN}[✓] Backend tests passed. Log: $LOG_DIR/backend-tests.log${NC}"
+    fi
+  fi
+
+  if [ "$TARGET" = "b" ] || [ -z "$TARGET" ]; then
+    echo -e "${YELLOW}2) Frontend tests (npm)...${NC}"
+    (cd frontend && npm test --silent) > "$LOG_DIR/frontend-tests.log" 2>&1 || true
+    FRONT_EXIT=$?
+    if [ $FRONT_EXIT -ne 0 ]; then
+      echo -e "${RED}[X] Frontend tests failed or no test script. See $LOG_DIR/frontend-tests.log${NC}"
+    else
+      echo -e "${GREEN}[✓] Frontend tests passed. Log: $LOG_DIR/frontend-tests.log${NC}"
+    fi
+  fi
+
+  if [ $BACK_EXIT -ne 0 ] || [ $FRONT_EXIT -ne 0 ]; then
+    echo -e "${RED}One or more test suites failed.${NC}"
+    return 1
+  fi
+
+  echo -e "${GREEN}All test suites passed.${NC}"
+  return 0
+}
+
 choose_profile() {
   echo -e "${YELLOW}Select the environment profile to run:${NC}"
   echo "1) Local (H2 In-Memory DB - Instant start, no Docker)"
@@ -234,8 +279,11 @@ case "$1" in
   logs)
     logs_all $2
     ;;
+  test)
+    run_tests "$2"
+    ;;
   *)
-    echo -e "${YELLOW}Usage: $0 {verify|build|start|stop|status|logs [backend|frontend]}${NC}"
+    echo -e "${YELLOW}Usage: $0 {verify|build|start|stop|status|logs [backend|frontend]|test [b|f]}${NC}"
     exit 1
     ;;
 esac

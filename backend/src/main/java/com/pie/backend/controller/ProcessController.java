@@ -2,7 +2,7 @@ package com.pie.backend.controller;
 
 import com.pie.shared.dto.ProcessKnowledgeDTO;
 import com.pie.backend.service.KnowledgeExtractionService;
-import com.pie.backend.service.DocumentParsingService;
+import com.pie.backend.service.DocumentIngestionService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,16 +16,16 @@ import java.util.List; // THIS is the critical import that fixes the Object mism
 public class ProcessController {
 
     private final KnowledgeExtractionService extractionService;
-    private final DocumentParsingService parsingService;
+    private final DocumentIngestionService ingestionService;
 
-    public ProcessController(KnowledgeExtractionService extractionService, DocumentParsingService parsingService) {
+    public ProcessController(KnowledgeExtractionService extractionService, DocumentIngestionService ingestionService) {
         this.extractionService = extractionService;
-        this.parsingService = parsingService;
+        this.ingestionService = ingestionService;
     }
 
     @PostMapping("/extract-text")
     public ResponseEntity<ProcessKnowledgeDTO> extractFromText(@RequestBody TextPayload payload) {
-        return ResponseEntity.ok(extractionService.extractKnowledge(payload.content()));
+        return ResponseEntity.ok(ingestionService.ingestText(payload.content(), null, null));
     }
 
     @PostMapping(value = "/extract-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -33,22 +33,9 @@ public class ProcessController {
         if (files == null || files.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-
-        StringBuilder combinedText = new StringBuilder();
-
-        for (int i = 0; i < files.size(); i++) {
-            MultipartFile file = files.get(i);
-            if (!file.isEmpty()) {
-                String extractedText = parsingService.parseDocument(file);
-                combinedText.append("\n\n--- BEGIN DOCUMENT ").append(i + 1)
-                            .append(" (").append(file.getOriginalFilename()).append(") ---\n");
-                combinedText.append(extractedText);
-                combinedText.append("\n--- END DOCUMENT ").append(i + 1).append(" ---\n");
-            }
-        }
-
-        return ResponseEntity.ok(extractionService.extractKnowledge(combinedText.toString()));
+        return ResponseEntity.ok(ingestionService.ingestFilesCombined(files, null, null));
     }
 
-    public record TextPayload(String content) {}
+    public record TextPayload(String content) {
+    }
 }
