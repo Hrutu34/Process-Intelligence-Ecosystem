@@ -99,7 +99,7 @@ run_tests() {
     echo -e "${YELLOW}Backend-only mode selected${NC}"
   fi
 
-  if [ "$TARGET" = "f" ] || [ -z "$TARGET" ]; then
+  if [ "$TARGET" = "b" ] || [ -z "$TARGET" ]; then
     echo -e "${YELLOW}1) Backend tests (Maven)...${NC}"
     (cd backend && mvn -q test) > "$LOG_DIR/backend-tests.log" 2>&1
     BACK_EXIT=$?
@@ -110,7 +110,7 @@ run_tests() {
     fi
   fi
 
-  if [ "$TARGET" = "b" ] || [ -z "$TARGET" ]; then
+  if [ "$TARGET" = "f" ] || [ -z "$TARGET" ]; then
     echo -e "${YELLOW}2) Frontend tests (npm)...${NC}"
     (cd frontend && npm test --silent) > "$LOG_DIR/frontend-tests.log" 2>&1 || true
     FRONT_EXIT=$?
@@ -248,6 +248,49 @@ status_all() {
   fi
 }
 
+kill_backend() {
+  echo -e "${YELLOW}--- Kill Backend ---${NC}"
+  if [ -f "$PID_DIR/backend.pid" ]; then
+    PID=$(cat "$PID_DIR/backend.pid")
+    if kill -0 $PID 2>/dev/null; then
+      echo -e "${YELLOW}Stopping Backend (PID: $PID)...${NC}"
+      kill $PID 2>/dev/null || true
+      rm "$PID_DIR/backend.pid" 2>/dev/null || true
+      echo -e "${GREEN}Backend process $PID killed.${NC}"
+    else
+      echo -e "${YELLOW}PID file exists but process $PID is not running. Removing PID file...${NC}"
+      rm "$PID_DIR/backend.pid" 2>/dev/null || true
+    fi
+  else
+    echo -e "${YELLOW}No PID file found. Attempting to detect process listening on port 8080...${NC}"
+
+    # Try lsof
+    PID_PORT=""
+    if command -v lsof >/dev/null 2>&1; then
+      PID_PORT=$(lsof -ti :8080 2>/dev/null | head -n1 || true)
+    fi
+
+    # Try ss
+    if [ -z "$PID_PORT" ] && command -v ss >/dev/null 2>&1; then
+      PID_PORT=$(ss -ltnp 2>/dev/null | grep ':8080' | sed -E 's/.*pid=([0-9]+),.*/\1/' | head -n1 || true)
+    fi
+
+    # Try netstat (common on Windows/git-bash)
+    if [ -z "$PID_PORT" ] && command -v netstat >/dev/null 2>&1; then
+      # netstat -ano output: Proto LocalAddress ForeignAddress State PID
+      PID_PORT=$(netstat -ano 2>/dev/null | grep -E ':8080\s' | awk '{print $NF}' | head -n1 || true)
+    fi
+
+    if [ -n "$PID_PORT" ]; then
+      echo -e "${YELLOW}Found process on port 8080 with PID: $PID_PORT. Attempting to kill...${NC}"
+      kill $PID_PORT 2>/dev/null || kill -9 $PID_PORT 2>/dev/null || true
+      echo -e "${GREEN}Process $PID_PORT killed (if it existed).${NC}"
+    else
+      echo -e "${RED}Could not detect a process listening on port 8080. Please kill the process manually.${NC}"
+    fi
+  fi
+}
+
 logs_all() {
   SERVICE=$1
   if [ "$SERVICE" = "backend" ]; then
@@ -282,8 +325,18 @@ case "$1" in
   test)
     run_tests "$2"
     ;;
+  kill-backend)
+    kill_backend
+    ;;
+  kill)
+    if [ "$2" = "backend" ]; then
+      kill_backend
+    else
+      echo -e "${YELLOW}Usage: $0 kill backend${NC}"
+    fi
+    ;;
   *)
-    echo -e "${YELLOW}Usage: $0 {verify|build|start|stop|status|logs [backend|frontend]|test [b|f]}${NC}"
+    echo -e "${YELLOW}Usage: $0 {verify|build|start|stop|status|logs [backend|frontend]|test [b|f]|kill-backend|kill backend}${NC}"
     exit 1
     ;;
 esac

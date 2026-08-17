@@ -45,8 +45,9 @@ public class DocumentIngestionService {
             rec.groupId = groupId;
             storageService.updateMetadata(rec);
 
-            // route to extraction using persisted extracted text
-            return extractionService.extractKnowledge(normalized);
+            // route to extraction using persisted extracted text and persist extracted
+            // knowledge
+            return extractionService.extractKnowledge(normalized, docId);
         } catch (IOException e) {
             throw new RuntimeException("Failed to persist document: " + e.getMessage(), e);
         } catch (Exception e) {
@@ -81,7 +82,7 @@ public class DocumentIngestionService {
                 combinedText.append("\n--- END DOCUMENT ").append(i + 1).append(" ---\n");
             }
 
-            return extractionService.extractKnowledge(combinedText.toString());
+            return extractionService.extractKnowledge(combinedText.toString(), null);
         } catch (IOException e) {
             throw new RuntimeException("Failed to persist document(s): " + e.getMessage(), e);
         } catch (Exception e) {
@@ -106,7 +107,7 @@ public class DocumentIngestionService {
             rec.groupId = groupId;
             storageService.updateMetadata(rec);
 
-            return extractionService.extractKnowledge(normalized);
+            return extractionService.extractKnowledge(normalized, docId);
         } catch (IOException e) {
             throw new RuntimeException("Failed to persist text: " + e.getMessage(), e);
         } catch (Exception e) {
