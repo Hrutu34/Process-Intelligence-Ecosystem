@@ -1,7 +1,5 @@
 package com.pie.backend.service;
 
-import com.pie.backend.model.DocumentRecord;
-
 public interface ClassificationService {
     ClassificationResult classify(String extractedText) throws Exception;
 

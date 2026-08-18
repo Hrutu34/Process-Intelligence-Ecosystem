@@ -1,0 +1,38 @@
+DOCUMENT CONTROL BLOCK 
+Title: Assembly Line Sensor Integration & Digital Twin Sync 
+Author: Dave (Data Analytics Dept) 
+Version: 1.4 (Draft - DO NOT DISTRIBUTE TO EXTERNAL VENDORS) 
+Date: October 12, 2025 
+CC: hardware-team@company.internal, hr-updates@company.internal 
+ 
+========================================= 
+MEETING NOTES FROM 10/10/2025 
+Before we get into the SOP, a quick reminder that the breakroom fridge on floor 3 is being 
+cleaned out this Friday. Anything not labeled will be thrown away. Also, parking spaces 44-50 
+are reserved for the executive team next week during the audit.  
+ 
+PROCESS OVERVIEW 
+This document outlines how we connect physical assembly line hardware to our virtual models. 
+It is critical that this is followed strictly to ensure data integrity. 
+ 
+STEP-BY-STEP PROCEDURE 
+When a Hardware Engineer physically installs a new Industrial IoT sensor on the factory floor, 
+they must immediately write down the MAC address on a physical clipboard. At the end of their 
+shift, the Hardware Engineer manually types these MAC addresses into the legacy ERP system 
+to register the device.  
+ 
+Once registered, the sensor begins transmitting data. However, this raw data is often noisy. 
+Therefore, the Data Analytics team is required to intercept this feed. A Data Analyst will run a 
+custom Python script to scrub and validate the sensor output for a 24-hour observation period.  
+ 
+If the Python script flags the data as clean, the Data Analyst logs into the admin dashboard and 
+manually approves the feed. Only after this human approval does the telemetry route to the 
+main Java Full Stack portal, which stores the records permanently in our PostgreSQL database.  
+ 
+Finally, we need to keep our simulation updated. Every Friday at 5:00 PM, the System Admin 
+exports a CSV batch file from the PostgreSQL database. The System Admin then manually 
+imports this CSV batch file into the Unity Game Engine to update the factory's digital twin for the 
+weekly Monday review meeting.  
+ 
+NOTE: Do not use the new Autodesk platform for any of this yet, the licenses are still pending 
+approval from finance.

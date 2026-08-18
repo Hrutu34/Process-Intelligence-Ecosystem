@@ -1,25 +1,22 @@
 package com.pie.backend.controller;
 
 import com.pie.shared.dto.ProcessKnowledgeDTO;
-import com.pie.backend.service.KnowledgeExtractionService;
 import com.pie.backend.service.DocumentIngestionService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List; // THIS is the critical import that fixes the Object mismatch
+import java.util.List; 
 
 @RestController
 @RequestMapping("/api/v1/process")
 @CrossOrigin(origins = "http://localhost:5173")
 public class ProcessController {
 
-    private final KnowledgeExtractionService extractionService;
     private final DocumentIngestionService ingestionService;
 
-    public ProcessController(KnowledgeExtractionService extractionService, DocumentIngestionService ingestionService) {
-        this.extractionService = extractionService;
+    public ProcessController(DocumentIngestionService ingestionService) {
         this.ingestionService = ingestionService;
     }
 

@@ -39,7 +39,8 @@ public class DocumentAdminController {
             File meta = d.toPath().resolve("metadata.json").toFile();
             if (meta.exists()) {
                 try {
-                    Map m = mapper.readValue(meta, Map.class);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> m = mapper.readValue(meta, Map.class);
                     out.add(m);
                 } catch (Exception e) {
                     out.add(Map.of("documentId", d.getName(), "error", e.getMessage()));

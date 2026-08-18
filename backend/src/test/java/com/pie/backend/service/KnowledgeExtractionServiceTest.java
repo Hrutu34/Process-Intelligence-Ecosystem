@@ -1,10 +1,12 @@
 package com.pie.backend.service;
 
 import com.pie.shared.dto.ProcessKnowledgeDTO;
+import com.pie.backend.repository.ProcessKnowledgeRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -30,7 +32,8 @@ public class KnowledgeExtractionServiceTest {
         when(chatClient.prompt().system(anyString()).user(anyString()).call().entity(eq(ProcessKnowledgeDTO.class)))
                 .thenReturn(dto);
 
-        KnowledgeExtractionService svc = new KnowledgeExtractionService(builder);
+        ProcessKnowledgeRepository mockRepo = mock(ProcessKnowledgeRepository.class);
+        KnowledgeExtractionService svc = new KnowledgeExtractionService(builder, mockRepo, Optional.empty());
         ProcessKnowledgeDTO res = svc.extractKnowledge("# Car Manufacturing Process – Detailed Process Document\r\n" + //
                 "\r\n" + //
                 "## 1. Purpose\r\n" + //
