@@ -1,0 +1,21 @@
+FROM: Chief Technology Officer
+TO: All Engineering and Analytics Teams
+DATE: March 4, 2026
+SUBJECT: URGENT: Deprecation of Legacy Processes and Real-Time Mandate
+
+Team,
+
+We are losing our competitive edge because our processes are too slow. We are paying for advanced technology and using it like it's 2010. The weekly digital twin updates are completely unacceptable for a modern production facility. We need real-time latency, and we are overhauling the architecture effective immediately. 
+
+Furthermore, whoever keeps unplugging the server rack cooling fan to charge their phone, please stop immediately. IT has been notified.
+
+NEW DEPLOYMENT PROTOCOL
+The old ERP system is officially decommissioned as of midnight tonight. Hardware Engineers will no longer use clipboards or the ERP system for MAC registration. Instead, when an Industrial IoT sensor is installed, the Hardware Engineer must provision it directly through the Autodesk Fusion360 Asset Manager using the mobile app. 
+
+We are also completely eliminating the 24-hour data validation bottleneck. The Python scrubbing scripts are deprecated and must be deleted from the repository. Data Analysts are no longer required (or authorized) to manually approve sensor feeds. 
+
+Instead, all Industrial IoT sensors must stream their raw telemetry directly to the Java Full Stack portal via secure WebSockets. The Java backend will handle all sanitization dynamically in-memory.
+
+Most importantly, the Unity digital twin architecture has been completely refactored. The System Admin will no longer do manual CSV batch uploads on Fridays. The Unity Game Engine has been reconfigured to consume the WebSocket feed directly from the Java backend. The digital twin must reflect the physical factory floor in absolute real-time (sub-50ms latency). 
+
+Any team found using the old Python validation scripts or CSV exports will face disciplinary action.

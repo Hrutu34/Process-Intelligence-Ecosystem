@@ -1,5 +1,4 @@
 spring:
-  spring:
   datasource:
     url: jdbc:h2:mem:pie_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driverClassName: org.h2.Driver
@@ -7,8 +6,7 @@ spring:
     password:
   h2:
     console:
-      enabled: true
-      path: /h2-console
+      enabled: false
   jpa:
     hibernate:
       ddl-auto: update
