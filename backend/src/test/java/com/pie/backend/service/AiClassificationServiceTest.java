@@ -1,5 +1,5 @@
 package com.pie.backend.service;
-
+import com.pie.shared.dto.ClassificationResultDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 
@@ -22,8 +22,8 @@ public class AiClassificationServiceTest {
                 .thenReturn(Map.of("category", "Meeting Notes", "confidence", 85));
 
         AiClassificationService svc = new AiClassificationService(builder);
-        ClassificationService.ClassificationResult res = svc
-                .classify("# Car Manufacturing Process – Detailed Process Document\r\n" + //
+        ClassificationResultDTO res = svc
+                .classifyDocument("# Car Manufacturing Process – Detailed Process Document\r\n" + //
                         "\r\n" + //
                         "## 1. Purpose\r\n" + //
                         "\r\n" + //
@@ -938,8 +938,8 @@ public class AiClassificationServiceTest {
                         "");
 
         assertNotNull(res);
-        assertEquals("Meeting Notes", res.category);
-        assertEquals(85, res.confidence);
+        assertEquals("Meeting Notes", res.category());
+        assertEquals(85, res.confidence());
     }
 
     @Test
@@ -955,11 +955,11 @@ public class AiClassificationServiceTest {
                 .thenAnswer(invocation -> (Object) json);
 
         AiClassificationService svc = new AiClassificationService(builder);
-        ClassificationService.ClassificationResult res = svc.classify("Policy content here");
+        ClassificationResultDTO res = svc.classifyDocument("Policy content here");
 
         assertNotNull(res);
-        assertEquals("Policy Document", res.category);
-        assertEquals(90, res.confidence);
+        assertEquals("Policy Document", res.category());
+        assertEquals(90, res.confidence());
     }
 
     @Test
@@ -973,10 +973,10 @@ public class AiClassificationServiceTest {
                 .thenReturn(Map.of("category", "Requirements Document"));
 
         AiClassificationService svc = new AiClassificationService(builder);
-        ClassificationService.ClassificationResult res = svc.classify("Some requirement text");
+        ClassificationResultDTO res = svc.classifyDocument("Some requirement text");
 
         assertNotNull(res);
-        assertEquals("Unknown", res.category);
-        assertEquals(0, res.confidence);
+        assertEquals("Unknown", res.category());
+        assertEquals(0, res.confidence());
     }
 }
