@@ -1,0 +1,7 @@
+[TASK-E2-01] Document Classification Tuning
+- Issue: Architecture memos with procedural directives bias towards "Standard Operating Procedure".
+- Target: Validate prompt disambiguation rules or migrate classification to 70B/Groq endpoint.
+
+[TASK-E2-02] Input vs System Semantic Isolation
+- Issue: LLM extracts software entities (e.g., "Legacy ERP system") under both `inputs` and `systems`.
+- Target: Implement cross-field filtering in ProcessKnowledgeNormalizer to prune system names from input lists.

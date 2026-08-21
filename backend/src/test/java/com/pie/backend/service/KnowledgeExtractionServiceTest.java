@@ -1,4 +1,5 @@
 package com.pie.backend.service;
+
 import com.pie.shared.dto.ProcessKnowledgeDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
@@ -12,12 +13,13 @@ import static org.mockito.Mockito.*;
 public class KnowledgeExtractionServiceTest {
 
     @Test
-    void extractKnowledge_returnsDtoFromChatClient() throws Exception {
+    void extractKnowledge_returnsDtoFromChatClient() {
         ChatClient.Builder builder = mock(ChatClient.Builder.class);
         ChatClient chatClient = mock(ChatClient.class, RETURNS_DEEP_STUBS);
         when(builder.build()).thenReturn(chatClient);
 
-        // Sample JSON string returned by the LLM
+        ProcessKnowledgeNormalizer normalizer = new ProcessKnowledgeNormalizer();
+
         String rawJsonResponse = """
                 {
                   "activities": ["Activity A"],
@@ -37,11 +39,9 @@ public class KnowledgeExtractionServiceTest {
         when(chatClient.prompt().system(anyString()).user(anyString()).call().content())
                 .thenReturn(rawJsonResponse);
 
-        KnowledgeExtractionService svc = new KnowledgeExtractionService(builder);
+        KnowledgeExtractionService svc = new KnowledgeExtractionService(builder, normalizer);
 
-        ProcessKnowledgeDTO res = svc.extractKnowledge("# Car Manufacturing Process – Detailed Process Document\r\n" +
-                "## 1. Purpose\r\n" +
-                "The purpose of this document is to describe the major processes...");
+        ProcessKnowledgeDTO res = svc.extractKnowledge("Car manufacturing documentation sample text");
 
         assertNotNull(res);
         assertEquals(List.of("Activity A"), res.activities());
