@@ -1,74 +1,105 @@
 package com.pie.backend.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Optional;
-import com.pie.backend.model.ProcessKnowledgeEntity;
-import com.pie.backend.repository.ProcessKnowledgeRepository;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class KnowledgeExtractionService {
 
+    private static final Logger log = LoggerFactory.getLogger(KnowledgeExtractionService.class);
+
     private final ChatClient chatClient;
-    private final ProcessKnowledgeRepository knowledgeRepository;
-    private final ObjectMapper mapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public KnowledgeExtractionService(ChatClient.Builder chatClientBuilder,
-            ProcessKnowledgeRepository knowledgeRepository,
-            Optional<ObjectMapper> mapper) {
+    @Value("classpath:prompts/knowledge-extraction-prompt.txt")
+    private Resource extractionPromptResource;
+
+    public KnowledgeExtractionService(ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();
-        this.knowledgeRepository = knowledgeRepository;
-        this.mapper = mapper.orElseGet(ObjectMapper::new);
     }
 
-    public ProcessKnowledgeDTO extractKnowledge(String unstructuredText) {
-        return extractKnowledge(unstructuredText, null);
-    }
-
-    public ProcessKnowledgeDTO extractKnowledge(String unstructuredText, String documentId) {
-        String systemPrompt = """
-                You are a strict, highly analytical Business Process Architect. Your task is to extract structured intelligence strictly from the provided text.
-
-                ABSOLUTE RULES (ANTI-HALLUCINATION):
-                - ONLY extract information explicitly stated in the text.
-                - DO NOT invent decisions, actors, or systems based on outside knowledge.
-
-                The user input may contain multiple documents separated by "--- BEGIN DOCUMENT X ---".
-
-                EXTRACTION CATEGORIES:
-                1. ACTORS: Strictly human roles, teams, or departments (e.g., 'Hardware Engineer'). NEVER classify hardware, sensors, scripts, or software as actors.
-                2. SYSTEMS: Software applications, databases, or physical hardware (e.g., 'ERP', 'Unity Game Engine', 'Java Portal').
-                3. DECISIONS: Explicit branching logic or conditional human approvals explicitly mentioned in the text (e.g., 'If the feed is clean...').
-                4. EVENTS: Specific triggers that initiate or interrupt a process (e.g., 'Sensor installed').
-                5. ACTIVITIES: Actionable steps performed in the workflow.
-
-                CROSS-DOCUMENT CONFLICT DETECTION:
-                6. CONFLICTS: You are analyzing multiple documents separated by boundaries. You MUST identify contradictions. Check specifically for:
-                - Did Document 1 use a system that Document 2 decommissioned or replaced?
-                - Did Document 1 have a human actor do a task that Document 2 automated?
-                - Are there conflicting rules?
-                List every contradiction explicitly. Example: "Document 1 States the use of PLM, but Document 2 mandates use of JIRA."
-
-                If any category is empty, return an empty array.
-                """;
-
-        ProcessKnowledgeDTO dto = chatClient.prompt()
-                .system(systemPrompt)
-                .user(unstructuredText)
-                .call()
-                .entity(ProcessKnowledgeDTO.class);
-
+    public ProcessKnowledgeDTO extractKnowledge(String documentContent) {
         try {
-            String json = mapper.writeValueAsString(dto);
-            ProcessKnowledgeEntity ent = new ProcessKnowledgeEntity(documentId, json);
-            knowledgeRepository.save(ent);
+            String systemPrompt = new String(extractionPromptResource.getContentAsByteArray(), StandardCharsets.UTF_8);
+
+            String rawResponse = chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(documentContent)
+                    .call()
+                    .content();
+
+            if (rawResponse == null || rawResponse.isBlank()) {
+                throw new IllegalStateException("LLM returned an empty response");
+            }
+
+            // Extract only the substring between the first '{' and the last '}'
+            int startIndex = rawResponse.indexOf('{');
+            int endIndex = rawResponse.lastIndexOf('}');
+
+            if (startIndex == -1 || endIndex == -1 || startIndex >= endIndex) {
+                throw new IllegalStateException("No valid JSON object found in model output: " + rawResponse);
+            }
+
+            String cleanJson = rawResponse.substring(startIndex, endIndex + 1);
+
+            JsonNode root = objectMapper.readTree(cleanJson);
+
+            return new ProcessKnowledgeDTO(
+                    extractStringList(root, "activities"),
+                    extractStringList(root, "actors"),
+                    extractStringList(root, "roles"),
+                    extractStringList(root, "systems"),
+                    extractStringList(root, "events"),
+                    extractStringList(root, "gateways"),
+                    extractStringList(root, "inputs"),
+                    extractStringList(root, "outputs"),
+                    extractStringList(root, "businessRules"),
+                    extractStringList(root, "risks"),
+                    extractStringList(root, "conflicts")
+            );
+
         } catch (Exception e) {
-            // log and continue - do not fail ingestion because of persistence
-            System.err.println("Failed to persist ProcessKnowledgeDTO: " + e.getMessage());
+            log.error("Failed to extract knowledge: {}", e.getMessage());
+            throw new RuntimeException("Knowledge extraction failed: " + e.getMessage(), e);
+        }
+    }
+
+    private List<String> extractStringList(JsonNode rootNode, String fieldName) {
+        List<String> result = new ArrayList<>();
+        JsonNode fieldNode = rootNode.get(fieldName);
+
+        if (fieldNode == null || !fieldNode.isArray()) {
+            return result;
         }
 
-        return dto;
+        for (JsonNode item : fieldNode) {
+            if (item.isTextual()) {
+                result.add(item.asText());
+            } else if (item.isArray()) {
+                for (JsonNode subItem : item) {
+                    result.add(subItem.isTextual() ? subItem.asText() : subItem.toString());
+                }
+            } else if (item.isObject()) {
+                if (item.has("description")) {
+                    result.add(item.get("description").asText());
+                } else {
+                    result.add(item.toString());
+                }
+            } else {
+                result.add(item.asText());
+            }
+        }
+        return result;
     }
 }
