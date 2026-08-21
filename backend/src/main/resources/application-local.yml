@@ -17,3 +17,6 @@ spring:
       chat:
         options:
           model: llama3.2:3b
+          options:
+            num-predict: 4096
+            temperature: 0.1

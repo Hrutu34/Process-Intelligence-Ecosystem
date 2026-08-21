@@ -12,5 +12,6 @@ public record ProcessKnowledgeDTO(
     List<String> inputs,
     List<String> outputs,
     List<String> businessRules,
-    List<String> risks
+    List<String> risks,
+    List<String> conflicts
 ) {}

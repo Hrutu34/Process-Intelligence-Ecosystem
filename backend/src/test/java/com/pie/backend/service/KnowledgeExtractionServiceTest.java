@@ -1,5 +1,4 @@
 package com.pie.backend.service;
-
 import com.pie.shared.dto.ProcessKnowledgeDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
@@ -8,49 +7,53 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 public class KnowledgeExtractionServiceTest {
 
     @Test
-    void extractKnowledge_returnsDtoFromChatClient() {
+    void extractKnowledge_returnsDtoFromChatClient() throws Exception {
         ChatClient.Builder builder = mock(ChatClient.Builder.class);
         ChatClient chatClient = mock(ChatClient.class, RETURNS_DEEP_STUBS);
         when(builder.build()).thenReturn(chatClient);
 
-        // Updated mock DTO matching the new full scope fields
-        ProcessKnowledgeDTO dto = new ProcessKnowledgeDTO(
-                List.of("Activity A"), // activities
-                List.of("Actor 1"),    // actors
-                List.of("Role R"),     // roles
-                List.of("System X"),   // systems
-                List.of("Event E"),    // events
-                List.of("Gateway G"),  // gateways
-                List.of("Input I"),    // inputs
-                List.of("Output O"),   // outputs
-                List.of("Rule R"),     // businessRules
-                List.of("Risk R")      // risks
-        );
+        // Sample JSON string returned by the LLM
+        String rawJsonResponse = """
+                {
+                  "activities": ["Activity A"],
+                  "actors": ["Actor 1"],
+                  "roles": ["Role R"],
+                  "systems": ["System X"],
+                  "events": ["Event E"],
+                  "gateways": ["Gateway G"],
+                  "inputs": ["Input I"],
+                  "outputs": ["Output O"],
+                  "businessRules": ["Rule R"],
+                  "risks": ["Risk R"],
+                  "conflicts": ["Conflict between doc1 and doc2"]
+                }
+                """;
 
-        when(chatClient.prompt().system(anyString()).user(anyString()).call().entity(eq(ProcessKnowledgeDTO.class)))
-                .thenReturn(dto);
+        when(chatClient.prompt().system(anyString()).user(anyString()).call().content())
+                .thenReturn(rawJsonResponse);
 
-        // Updated constructor to match our clean YAGNI implementation
         KnowledgeExtractionService svc = new KnowledgeExtractionService(builder);
-        
-        ProcessKnowledgeDTO res = svc.extractKnowledge("# Car Manufacturing Process – Detailed Process Document\r\n" + //
-                "\r\n" + //
-                "## 1. Purpose\r\n" + //
-                "\r\n" + //
-                "The purpose of this document is to describe the major processes and important steps involved in manufacturing a car...\r\n");
+
+        ProcessKnowledgeDTO res = svc.extractKnowledge("# Car Manufacturing Process – Detailed Process Document\r\n" +
+                "## 1. Purpose\r\n" +
+                "The purpose of this document is to describe the major processes...");
 
         assertNotNull(res);
-        assertEquals(dto.activities(), res.activities());
-        assertEquals(dto.actors(), res.actors());
-        assertEquals(dto.systems(), res.systems());
-        assertEquals(dto.events(), res.events());
-        assertEquals(dto.businessRules(), res.businessRules());
-        assertEquals(dto.risks(), res.risks());
+        assertEquals(List.of("Activity A"), res.activities());
+        assertEquals(List.of("Actor 1"), res.actors());
+        assertEquals(List.of("Role R"), res.roles());
+        assertEquals(List.of("System X"), res.systems());
+        assertEquals(List.of("Event E"), res.events());
+        assertEquals(List.of("Gateway G"), res.gateways());
+        assertEquals(List.of("Input I"), res.inputs());
+        assertEquals(List.of("Output O"), res.outputs());
+        assertEquals(List.of("Rule R"), res.businessRules());
+        assertEquals(List.of("Risk R"), res.risks());
+        assertEquals(List.of("Conflict between doc1 and doc2"), res.conflicts());
     }
 }

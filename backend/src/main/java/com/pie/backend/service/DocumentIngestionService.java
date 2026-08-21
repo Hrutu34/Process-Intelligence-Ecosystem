@@ -2,6 +2,8 @@ package com.pie.backend.service;
 
 import com.pie.shared.dto.ClassificationResultDTO;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
@@ -9,9 +11,12 @@ import java.util.List;
 @Service
 public class DocumentIngestionService {
 
+    // Define the SLF4J logger for this class
+    private static final Logger log = LoggerFactory.getLogger(DocumentIngestionService.class);
+
     private final DocumentParsingService parsingService;
     private final KnowledgeExtractionService extractionService;
-    private final ClassificationService classificationService; // 1. Inject the new Classification Layer
+    private final ClassificationService classificationService;
 
     public DocumentIngestionService(
             DocumentParsingService parsingService,
@@ -23,13 +28,12 @@ public class DocumentIngestionService {
     }
 
     public ProcessKnowledgeDTO ingestText(String content, String uploaderId, String tenantId) {
-        // 2. Classify the raw text
         ClassificationResultDTO classification = classificationService.classifyDocument(content);
-        System.out.println("✅ AI Classification: " + classification.category() + " (Confidence: " + classification.confidence() + "%)");
+        
+        // Formatted Spring Boot log output
+        log.info("Classified content as: '{}' with confidence: {}%", 
+                classification.category(), classification.confidence());
 
-        // TODO: Store 'classification.category()' in your Document metadata database here
-
-        // 3. Proceed to Extraction
         return extractionService.extractKnowledge(content);
     }
 
@@ -37,16 +41,23 @@ public class DocumentIngestionService {
         StringBuilder combinedText = new StringBuilder();
 
         for (int i = 0; i < files.size(); i++) {
-            String extractedText = parsingService.parseDocument(files.get(i)); // Ensure parsingService has this method
-            combinedText.append("--- BEGIN DOCUMENT ").append(i + 1).append(" ---\n");
-            combinedText.append(extractedText).append("\n");
+            MultipartFile file = files.get(i);
+            String extractedText = parsingService.parseDocument(file);
             
-            // Optional: Classify each document individually before combining
-            ClassificationResultDTO docClass = classificationService.classifyDocument(extractedText);
-            System.out.println("📄 File " + files.get(i).getOriginalFilename() + " classified as: " + docClass.category());
+            log.info("Parsing file [{}/{}]: {}", i + 1, files.size(), file.getOriginalFilename());
+
+            // Classify each file individually and log the result
+            ClassificationResultDTO classification = classificationService.classifyDocument(extractedText);
+            log.info("File [{}] classified as: '{}' with confidence: {}%", 
+                    file.getOriginalFilename(), classification.category(), classification.confidence());
+
+            combinedText.append("--- BEGIN DOCUMENT ").append(i + 1)
+                        .append(": ").append(file.getOriginalFilename())
+                        .append(" ---\n")
+                        .append(extractedText)
+                        .append("\n--- END DOCUMENT ").append(i + 1).append(" ---\n\n");
         }
 
-        // Proceed to Extraction on the combined text
         return extractionService.extractKnowledge(combinedText.toString());
     }
 }
