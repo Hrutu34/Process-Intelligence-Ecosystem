@@ -8,8 +8,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-
-      spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
 
 # Google GenAI / Gemini Configuration (Active across all profiles)
 spring.ai:
@@ -19,3 +19,8 @@ spring.ai:
       chat:
         options:
           model: gemini-2.5-flash
+
+server:
+  port: 8080
+  shutdown: graceful
+  
