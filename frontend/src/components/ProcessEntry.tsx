@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import type { ProcessKnowledgeDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import './ProcessEntry.css';
 
 const MAX_FILE_SIZE_MB = 10;
@@ -13,7 +14,11 @@ const ALLOWED_TYPES = [
 
 type ActiveTab = 'file' | 'text';
 
-export default function ProcessEntry() {
+interface Props {
+  onSuccess?: (data: ProcessKnowledgeDTO) => void;
+}
+
+export default function ProcessEntry({ onSuccess }: Props) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('file');
   const [files, setFiles] = useState<File[]>([]);
   const [text, setText] = useState<string>('');
@@ -25,7 +30,6 @@ export default function ProcessEntry() {
 
   const validateFiles = (newFiles: FileList | File[]): File[] => {
     setError(null);
-
     const validFiles: File[] = [];
     const currentFiles = files;
 
@@ -43,13 +47,11 @@ export default function ProcessEntry() {
       const alreadyExists =
         currentFiles.some(
           (existingFile) =>
-            existingFile.name === file.name &&
-            existingFile.size === file.size
+            existingFile.name === file.name && existingFile.size === file.size
         ) ||
         validFiles.some(
           (existingFile) =>
-            existingFile.name === file.name &&
-            existingFile.size === file.size
+            existingFile.name === file.name && existingFile.size === file.size
         );
 
       if (!alreadyExists) {
@@ -66,7 +68,6 @@ export default function ProcessEntry() {
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const valid = validateFiles(e.dataTransfer.files);
-
       if (valid.length > 0) {
         setFiles((prev) => [...prev, ...valid]);
       }
@@ -76,20 +77,15 @@ export default function ProcessEntry() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const valid = validateFiles(e.target.files);
-
       if (valid.length > 0) {
         setFiles((prev) => [...prev, ...valid]);
       }
     }
-
-    // Allows selecting the same file again after removing it.
     e.target.value = '';
   };
 
   const removeFile = (indexToRemove: number) => {
-    setFiles((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
-    );
+    setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSubmit = async () => {
@@ -100,7 +96,7 @@ export default function ProcessEntry() {
       return;
     }
 
-    if (activeTab === 'text' && text.trim().length < 50) {
+    if (activeTab === 'text' && text.trim().length < 10) {
       setError('Please enter a more detailed process description.');
       return;
     }
@@ -112,63 +108,39 @@ export default function ProcessEntry() {
 
       if (activeTab === 'file') {
         const formData = new FormData();
-
         files.forEach((file) => {
           formData.append('files', file);
         });
 
-        response = await fetch(
-          'http://localhost:8080/api/v1/process/extract-file',
-          {
-            method: 'POST',
-            body: formData,
-          }
-        );
+        response = await fetch('http://localhost:8080/api/v1/process/extract-file', {
+          method: 'POST',
+          body: formData,
+        });
       } else {
-        response = await fetch(
-          'http://localhost:8080/api/v1/process/extract-text',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              content: text,
-            }),
-          }
-        );
+        response = await fetch('http://localhost:8080/api/v1/process/extract-text', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: text,
+          }),
+        });
       }
 
       if (!response.ok) {
-        throw new Error(
-          `Server returned ${response.status}: Failed to extract knowledge.`
-        );
+        throw new Error(`Server returned ${response.status}: Failed to extract knowledge.`);
       }
 
-      const processIntelligence = await response.json();
+      const processIntelligence: ProcessKnowledgeDTO = await response.json();
+      console.log('✅ Multi-File Extraction Complete:', processIntelligence);
 
-      console.log(
-        '✅ Multi-File Extraction Complete:',
-        processIntelligence
-      );
-
-      if (
-        processIntelligence.conflicts &&
-        processIntelligence.conflicts.length > 0
-      ) {
-        alert(
-          `Extraction successful! Warning: ${processIntelligence.conflicts.length} conflict(s) detected. Check console.`
-        );
-      } else {
-        alert(
-          'Extraction successful! Check the browser console to see the JSON structure.'
-        );
+      if (onSuccess) {
+        onSuccess(processIntelligence);
       }
     } catch (err: unknown) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'An unknown connection error occurred.'
+        err instanceof Error ? err.message : 'An unknown connection error occurred.'
       );
     } finally {
       setIsExtracting(false);
@@ -177,13 +149,10 @@ export default function ProcessEntry() {
 
   return (
     <div className="process-entry">
-      {/* Tabs */}
       <div className="entry-tabs">
         <button
           type="button"
-          className={`entry-tab ${
-            activeTab === 'file' ? 'active' : ''
-          }`}
+          className={`entry-tab ${activeTab === 'file' ? 'active' : ''}`}
           onClick={() => setActiveTab('file')}
         >
           DOCUMENT UPLOAD
@@ -191,16 +160,13 @@ export default function ProcessEntry() {
 
         <button
           type="button"
-          className={`entry-tab ${
-            activeTab === 'text' ? 'active' : ''
-          }`}
+          className={`entry-tab ${activeTab === 'text' ? 'active' : ''}`}
           onClick={() => setActiveTab('text')}
         >
           RAW TEXT INPUT
         </button>
       </div>
 
-      {/* Content */}
       <div className="entry-content">
         {activeTab === 'file' ? (
           <>
@@ -214,9 +180,9 @@ export default function ProcessEntry() {
             />
 
             <div
-              className={`drop-zone ${
-                isDragging ? 'dragging' : ''
-              } ${files.length > 0 ? 'has-file' : ''}`}
+              className={`drop-zone ${isDragging ? 'dragging' : ''} ${
+                files.length > 0 ? 'has-file' : ''
+              }`}
               onDragOver={(e) => {
                 e.preventDefault();
                 setIsDragging(true);
@@ -236,8 +202,7 @@ export default function ProcessEntry() {
                   <div className="file-list-header">
                     <div>
                       <strong>
-                        {files.length} Document
-                        {files.length !== 1 ? 's' : ''} Ready
+                        {files.length} Document{files.length !== 1 ? 's' : ''} Ready
                       </strong>
                     </div>
 
@@ -255,12 +220,8 @@ export default function ProcessEntry() {
                       <div className="file-item" key={`${file.name}-${idx}`}>
                         <div className="file-info">
                           <span className="file-icon">📄</span>
-
                           <div className="file-details">
-                            <span className="file-name">
-                              {file.name}
-                            </span>
-
+                            <span className="file-name">{file.name}</span>
                             <span className="file-size">
                               {(file.size / 1024 / 1024).toFixed(2)} MB
                             </span>
@@ -282,14 +243,9 @@ export default function ProcessEntry() {
               ) : (
                 <div className="empty-drop-zone">
                   <div className="upload-icon">+</div>
-
-                  <div className="upload-title">
-                    Feed P.I.E. multiple documents.
-                  </div>
-
+                  <div className="upload-title">Feed P.I.E. multiple documents.</div>
                   <div className="upload-description">
-                    PDF / DOCX / TXT / XLSX · Drop them here or click
-                    to browse
+                    PDF / DOCX / TXT / XLSX · Drop them here or click to browse
                   </div>
                 </div>
               )}
@@ -300,9 +256,7 @@ export default function ProcessEntry() {
             <textarea
               className="process-textarea"
               value={text}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setText(e.target.value)
-              }
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
               placeholder="Describe the process you want P.I.E. to analyze..."
               rows={12}
             />
@@ -310,10 +264,8 @@ export default function ProcessEntry() {
         )}
       </div>
 
-      {/* Error */}
       {error && <div className="error-message">{error}</div>}
 
-      {/* Actions */}
       <div className="entry-actions">
         <button
           className="yellow-button"
@@ -325,10 +277,7 @@ export default function ProcessEntry() {
             cursor: isExtracting ? 'wait' : 'pointer',
           }}
         >
-          {isExtracting
-            ? 'EXTRACTING & COMPARING...'
-            : 'INITIALIZE EXTRACTION'}
-
+          {isExtracting ? 'EXTRACTING & COMPARING...' : 'INITIALIZE EXTRACTION'}
           {!isExtracting && <span>↗</span>}
         </button>
       </div>

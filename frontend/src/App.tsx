@@ -1,9 +1,13 @@
 import "./App.css";
 import ProcessEntry from "./components/ProcessEntry";
-import { useRef } from "react";
+import { ProcessKnowledgeReview } from "./components/ProcessKnowledgeReview";
+import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
+import { useRef, useState } from "react";
 
 function App() {
   const processEntryRef = useRef<HTMLDivElement | null>(null);
+  const [extractedData, setExtractedData] = useState<ProcessKnowledgeDTO | null>(null);
+
   const agents = [
     {
       number: "01",
@@ -69,7 +73,7 @@ function App() {
       </header>
 
       <main>
-        {/* Hero */}
+        {/* Hero Section */}
         <section className="hero">
           <div className="grid-background" />
 
@@ -101,11 +105,18 @@ function App() {
               actually use.
             </p>
 
-            {/* Upload */}
+            {/* Ingestion Console / Review Dashboard */}
             <div ref={processEntryRef} className="process-entry-wrapper">
-                <ProcessEntry />
+              {!extractedData ? (
+                <ProcessEntry onSuccess={(data) => setExtractedData(data)} />
+              ) : (
+                <ProcessKnowledgeReview
+                  data={extractedData}
+                  onReset={() => setExtractedData(null)}
+                  onProceedToBpmn={() => alert('Proceeding to Agent 03: BPMN Modelling...')}
+                />
+              )}
             </div>
-           
           </div>
         </section>
 
@@ -124,9 +135,8 @@ function App() {
 
               <p>
                 P.I.E. transforms unstructured business knowledge into
-                validated processes, editable
-                BPMN 2.0 models, and explanations your team can
-                actually use.
+                validated processes, editable BPMN 2.0 models, and explanations
+                your team can actually use.
               </p>
             </div>
 
@@ -138,7 +148,6 @@ function App() {
                 >
                   <div className="agent-header">
                     <span className="agent-index">{agent.number}</span>
-
                     <span className="agent-icon">{agent.icon}</span>
                   </div>
 
@@ -213,9 +222,9 @@ function App() {
                   <span>processes visible.</span>
                 </h2>
 
-                <button 
-                  className="mega-button" 
-                  type="button" 
+                <button
+                  className="mega-button"
+                  type="button"
                   onClick={() =>
                     processEntryRef.current?.scrollIntoView({
                       behavior: "smooth",
