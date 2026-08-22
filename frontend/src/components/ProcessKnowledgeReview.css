@@ -1,5 +1,5 @@
 .review-wrapper {
-  margin-top: 55px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -11,7 +11,7 @@
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 20px;
-  padding: 24px 30px;
+  padding: 24px 32px;
   background: linear-gradient(145deg, #103263, #071a3d);
   border: 1px solid rgba(88, 170, 205, 0.2);
   border-radius: 18px;
@@ -21,23 +21,23 @@
 }
 
 .review-headline h3 {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--white);
-  margin: 10px 0 4px;
+  margin: 12px 0 4px;
   letter-spacing: -0.5px;
 }
 
 .review-headline p {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   margin: 0;
 }
 
 .review-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -46,9 +46,9 @@
   border: 1px solid rgba(116, 183, 220, 0.2);
   border-radius: 8px;
   color: var(--soft-white);
-  padding: 10px 14px;
+  padding: 10px 16px;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
   transition: all 0.2s ease;
 }
@@ -62,38 +62,45 @@
 .conflict-banner {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
+  gap: 18px;
+  padding: 18px 24px;
   background: rgba(255, 71, 87, 0.12);
   border: 1px solid rgba(255, 71, 87, 0.4);
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(255, 71, 87, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 0 25px rgba(255, 71, 87, 0.12);
 }
 
 .conflict-icon {
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .conflict-details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .conflict-details strong {
   color: #ff6b81;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .conflict-details span {
   color: var(--soft-white);
-  font-size: 12px;
+  font-size: 13px;
 }
 
+/* Responsive 3-column Grid for widescreen */
 .review-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1300px) {
+  .review-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 850px) {
@@ -105,16 +112,17 @@
 .review-card {
   background: linear-gradient(145deg, #0e2d5b, #061735);
   border: 1px solid rgba(102, 160, 194, 0.15);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
   box-shadow: 8px 10px 20px rgba(1, 10, 25, 0.4),
               -4px -4px 12px rgba(34, 79, 126, 0.18),
               inset 1px 1px rgba(255, 255, 255, 0.04);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, transform 0.2s ease;
 }
 
 .review-card:hover {
   border-color: rgba(57, 245, 208, 0.25);
+  transform: translateY(-2px);
 }
 
 .critical-card {
@@ -127,7 +135,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 18px 22px;
   background: rgba(4, 18, 45, 0.4);
   border-bottom: 1px solid rgba(116, 183, 220, 0.08);
   cursor: pointer;
@@ -137,16 +145,16 @@
 .card-header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .card-icon {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .card-header-left h4 {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--white);
 }
@@ -166,10 +174,10 @@
   background: rgba(57, 245, 208, 0.15);
   color: var(--aqua);
   border: 1px solid rgba(57, 245, 208, 0.3);
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -188,24 +196,24 @@
 .collapse-arrow {
   color: var(--dim);
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .review-card-body {
-  padding: 18px 20px;
+  padding: 20px 24px;
 }
 
 .entity-list {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .entity-list li {
   color: var(--soft-white);
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.5;
 }
 

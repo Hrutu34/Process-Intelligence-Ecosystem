@@ -15,16 +15,16 @@ const ALLOWED_TYPES = [
 type ActiveTab = 'file' | 'text';
 
 interface Props {
-  onSuccess?: (data: ProcessKnowledgeDTO) => void;
+  onStart: (fileCount: number) => void;
+  onSuccess: (data: ProcessKnowledgeDTO) => void;
 }
 
-export default function ProcessEntry({ onSuccess }: Props) {
+export default function ProcessEntry({ onStart, onSuccess }: Props) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('file');
   const [files, setFiles] = useState<File[]>([]);
   const [text, setText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [isExtracting, setIsExtracting] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -65,7 +65,6 @@ export default function ProcessEntry({ onSuccess }: Props) {
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const valid = validateFiles(e.dataTransfer.files);
       if (valid.length > 0) {
@@ -101,7 +100,7 @@ export default function ProcessEntry({ onSuccess }: Props) {
       return;
     }
 
-    setIsExtracting(true);
+    onStart(activeTab === 'file' ? files.length : 1);
 
     try {
       let response: Response;
@@ -133,17 +132,9 @@ export default function ProcessEntry({ onSuccess }: Props) {
       }
 
       const processIntelligence: ProcessKnowledgeDTO = await response.json();
-      console.log('✅ Multi-File Extraction Complete:', processIntelligence);
-
-      if (onSuccess) {
-        onSuccess(processIntelligence);
-      }
+      onSuccess(processIntelligence);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'An unknown connection error occurred.'
-      );
-    } finally {
-      setIsExtracting(false);
+      setError(err instanceof Error ? err.message : 'An unknown connection error occurred.');
     }
   };
 
@@ -267,18 +258,8 @@ export default function ProcessEntry({ onSuccess }: Props) {
       {error && <div className="error-message">{error}</div>}
 
       <div className="entry-actions">
-        <button
-          className="yellow-button"
-          type="button"
-          onClick={handleSubmit}
-          disabled={isExtracting}
-          style={{
-            opacity: isExtracting ? 0.7 : 1,
-            cursor: isExtracting ? 'wait' : 'pointer',
-          }}
-        >
-          {isExtracting ? 'EXTRACTING & COMPARING...' : 'INITIALIZE EXTRACTION'}
-          {!isExtracting && <span>↗</span>}
+        <button className="yellow-button" type="button" onClick={handleSubmit}>
+          INITIALIZE EXTRACTION <span>↗</span>
         </button>
       </div>
     </div>
