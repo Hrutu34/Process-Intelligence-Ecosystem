@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # P.I.E. Ecosystem - CLI Management Script
-# Usage: ./pie.sh [verify|build|start|stop|status|logs]
+# Usage: ./pie.sh [verify|build|start|stop [backend|frontend]|status|logs|test]
 
 LOG_DIR=".logs"
 PID_DIR=".pids"
@@ -26,7 +26,6 @@ verify_env() {
   echo -e "${YELLOW}--- Verifying Prerequisites & Environment ---${NC}"
   local errors=0
 
-  # Only enforce Docker if running the e2e profile
   if [ "$PROFILE" = "e2e" ]; then
     if ! command -v docker &> /dev/null; then
       echo -e "${RED}[X] Docker is not installed or not in PATH (Required for e2e)${NC}"
@@ -47,7 +46,6 @@ verify_env() {
     echo -e "${RED}[X] Maven (mvn) is not installed natively or not in PATH${NC}"
     errors=$((errors+1))
   else
-    # Extract just the version line to keep the logs clean
     echo -e "${GREEN}[✓] Maven found ($(mvn --version 2>&1 | head -n 1))${NC}"
   fi
 
@@ -75,7 +73,6 @@ verify_env() {
 
 build_apps() {
   echo -e "${YELLOW}--- Compiling & Building Applications ---${NC}"
-  
   echo -e "${YELLOW}1. Compiling Backend (Java Spring Boot)...${NC}"
   (cd backend && mvn clean compile)
   
@@ -83,6 +80,45 @@ build_apps() {
   (cd frontend && npm install)
   
   echo -e "${GREEN}Build complete!${NC}\n"
+}
+
+run_tests() {
+  TARGET="$1"
+  echo -e "${YELLOW}--- Running Test Suites (${TARGET:-all}) ---${NC}"
+  verify_env || return 1
+
+  BACK_EXIT=0
+  FRONT_EXIT=0
+
+  if [ "$TARGET" = "b" ] || [ -z "$TARGET" ]; then
+    echo -e "${YELLOW}1) Backend tests (Maven)...${NC}"
+    (cd backend && mvn -q test) > "$LOG_DIR/backend-tests.log" 2>&1
+    BACK_EXIT=$?
+    if [ $BACK_EXIT -ne 0 ]; then
+      echo -e "${RED}[X] Backend tests failed. See $LOG_DIR/backend-tests.log${NC}"
+    else
+      echo -e "${GREEN}[✓] Backend tests passed. Log: $LOG_DIR/backend-tests.log${NC}"
+    fi
+  fi
+
+  if [ "$TARGET" = "f" ] || [ -z "$TARGET" ]; then
+    echo -e "${YELLOW}2) Frontend tests (npm)...${NC}"
+    (cd frontend && npm test --silent) > "$LOG_DIR/frontend-tests.log" 2>&1 || true
+    FRONT_EXIT=$?
+    if [ $FRONT_EXIT -ne 0 ]; then
+      echo -e "${RED}[X] Frontend tests failed. See $LOG_DIR/frontend-tests.log${NC}"
+    else
+      echo -e "${GREEN}[✓] Frontend tests passed. Log: $LOG_DIR/frontend-tests.log${NC}"
+    fi
+  fi
+
+  if [ $BACK_EXIT -ne 0 ] || [ $FRONT_EXIT -ne 0 ]; then
+    echo -e "${RED}One or more test suites failed.${NC}"
+    return 1
+  fi
+
+  echo -e "${GREEN}All test suites passed.${NC}"
+  return 0
 }
 
 choose_profile() {
@@ -94,15 +130,9 @@ choose_profile() {
   read -p "Enter choice [1-3] (Default: 1): " choice
 
   case $choice in
-    2)
-      PROFILE="e2e"
-      ;;
-    3)
-      PROFILE="prod"
-      ;;
-    *)
-      PROFILE="local"
-      ;;
+    2) PROFILE="e2e" ;;
+    3) PROFILE="prod" ;;
+    *) PROFILE="local" ;;
   esac
   
   export SPRING_PROFILE=$PROFILE
@@ -110,15 +140,11 @@ choose_profile() {
 }
 
 start_all() {
-  # 1. Ask for profile first
   choose_profile
-
-  # 2. Verify based on selected profile
   verify_env || exit 1
 
   echo -e "${YELLOW}--- Starting P.I.E. Ecosystem (Profile: $PROFILE) ---${NC}"
 
-  # 3. Smart Infrastructure Routing
   if [ "$PROFILE" = "e2e" ]; then
     echo -e "${YELLOW}[1/3] Starting Database (Docker PostgreSQL)...${NC}"
     docker-compose up -d
@@ -126,7 +152,6 @@ start_all() {
     echo -e "${YELLOW}[1/3] Skipping Docker (Using H2 or Cloud DB)...${NC}"
   fi
 
-  # 4. Start Backend in background
   echo -e "${YELLOW}[2/3] Starting Backend (Spring Boot)...${NC}"
   (
     cd backend
@@ -135,7 +160,6 @@ start_all() {
   )
   echo -e "${GREEN}Backend running in background (PID: $(cat $PID_DIR/backend.pid)). Logs: $LOG_DIR/backend.log${NC}"
 
-  # 5. Start Frontend in background
   echo -e "${YELLOW}[3/3] Starting Frontend (React + Vite)...${NC}"
   (
     cd frontend
@@ -155,29 +179,63 @@ start_all() {
   echo -e "Run ${YELLOW}./pie.sh status${NC} or ${YELLOW}./pie.sh logs${NC} to monitor."
 }
 
-stop_all() {
-  echo -e "${YELLOW}--- Stopping P.I.E. Ecosystem ---${NC}"
+kill_process_and_port() {
+  local service_name=$1
+  local pid_file="$PID_DIR/$service_name.pid"
+  local port=$2
 
-  if [ -f "$PID_DIR/backend.pid" ]; then
-    PID=$(cat "$PID_DIR/backend.pid")
-    echo -e "${YELLOW}Stopping Backend (PID: $PID)...${NC}"
-    kill $PID 2>/dev/null || true
-    rm "$PID_DIR/backend.pid"
+  if [ -f "$pid_file" ]; then
+    local pid=$(cat "$pid_file")
+    echo -e "${YELLOW}Stopping $service_name (PID: $pid)...${NC}"
+    kill -TERM -$pid 2>/dev/null || kill -TERM $pid 2>/dev/null || true
+    sleep 1
+    if kill -0 $pid 2>/dev/null; then
+      kill -9 -$pid 2>/dev/null || kill -9 $pid 2>/dev/null || true
+    fi
+    rm -f "$pid_file"
   fi
 
-  if [ -f "$PID_DIR/frontend.pid" ]; then
-    PID=$(cat "$PID_DIR/frontend.pid")
-    echo -e "${YELLOW}Stopping Frontend (PID: $PID)...${NC}"
-    kill $PID 2>/dev/null || true
-    rm "$PID_DIR/frontend.pid"
+  # Purge process on the assigned port
+  if [ -n "$port" ]; then
+    local found_pid=""
+    if command -v lsof >/dev/null 2>&1; then
+      found_pid=$(lsof -ti :"$port" 2>/dev/null | head -n1 || true)
+    elif command -v netstat >/dev/null 2>&1; then
+      found_pid=$(netstat -ano 2>/dev/null | grep -E ":$port\s" | awk '{print $NF}' | head -n1 || true)
+    elif command -v ss >/dev/null 2>&1; then
+      found_pid=$(ss -ltnp 2>/dev/null | grep ":$port" | sed -E 's/.*pid=([0-9]+),.*/\1/' | head -n1 || true)
+    fi
+
+    if [ -n "$found_pid" ] && [ "$found_pid" != "0" ]; then
+      if command -v taskkill &> /dev/null; then
+        taskkill //F //PID "$found_pid" 2>/dev/null || kill -9 "$found_pid" 2>/dev/null || true
+      else
+        kill -9 "$found_pid" 2>/dev/null || true
+      fi
+    fi
+  fi
+}
+
+stop_services() {
+  local target=$1
+  echo -e "${YELLOW}--- Stopping P.I.E. Ecosystem ($target) ---${NC}"
+
+  if [ "$target" = "backend" ] || [ "$target" = "all" ]; then
+    kill_process_and_port "backend" "8080"
+    echo -e "${GREEN}[✓] Backend stopped and port 8080 cleared.${NC}"
   fi
 
-  if command -v docker &> /dev/null && docker-compose ps &> /dev/null; then
+  if [ "$target" = "frontend" ] || [ "$target" = "all" ]; then
+    kill_process_and_port "frontend" "5173"
+    echo -e "${GREEN}[✓] Frontend stopped and port 5173 cleared.${NC}"
+  fi
+
+  if [ "$target" = "all" ] && command -v docker &> /dev/null && docker-compose ps &> /dev/null; then
     echo -e "${YELLOW}Stopping Docker Infrastructure...${NC}"
     docker-compose down 2>/dev/null || true
   fi
 
-  echo -e "${GREEN}All services stopped clean.${NC}"
+  echo -e "${GREEN}All requested services stopped cleanly.${NC}"
 }
 
 status_all() {
@@ -188,14 +246,14 @@ status_all() {
     docker-compose ps 2>/dev/null || echo "No containers running."
   fi
 
-  echo -e "\n${YELLOW}Backend Status:${NC}"
+  echo -e "\n${YELLOW}Backend Status (Port 8080):${NC}"
   if [ -f "$PID_DIR/backend.pid" ] && kill -0 $(cat "$PID_DIR/backend.pid") 2>/dev/null; then
     echo -e "${GREEN}Running (PID: $(cat $PID_DIR/backend.pid))${NC}"
   else
     echo -e "${RED}Stopped${NC}"
   fi
 
-  echo -e "\n${YELLOW}Frontend Status:${NC}"
+  echo -e "\n${YELLOW}Frontend Status (Port 5173):${NC}"
   if [ -f "$PID_DIR/frontend.pid" ] && kill -0 $(cat "$PID_DIR/frontend.pid") 2>/dev/null; then
     echo -e "${GREEN}Running (PID: $(cat $PID_DIR/frontend.pid))${NC}"
   else
@@ -226,16 +284,19 @@ case "$1" in
     start_all
     ;;
   stop)
-    stop_all
+    stop_services "${2:-all}"
     ;;
   status)
     status_all
     ;;
   logs)
-    logs_all $2
+    logs_all "$2"
+    ;;
+  test)
+    run_tests "$2"
     ;;
   *)
-    echo -e "${YELLOW}Usage: $0 {verify|build|start|stop|status|logs [backend|frontend]}${NC}"
+    echo -e "${YELLOW}Usage: $0 {verify|build|start|stop [backend|frontend]|status|logs [backend|frontend]|test [b|f]}${NC}"
     exit 1
     ;;
 esac

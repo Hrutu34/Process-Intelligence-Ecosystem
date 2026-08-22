@@ -1,0 +1,183 @@
+.agent-loading-card {
+  padding: 55px 30px;
+  background: linear-gradient(145deg, #103263, #071a3d);
+  border: 1px solid rgba(57, 245, 208, 0.3);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 15px 18px 35px rgba(1, 10, 25, 0.6),
+              0 0 30px rgba(57, 245, 208, 0.08);
+  margin-top: 40px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.loading-orbit {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 22px;
+}
+
+.inner-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px dashed var(--aqua);
+  animation: rotateOrbit 6s linear infinite;
+}
+
+@keyframes rotateOrbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.agent-mascot {
+  font-size: 34px;
+}
+
+.pulsing {
+  animation: pulseGlow 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+.loading-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.status-pill-centered {
+  margin: 0 auto 16px auto !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+}
+
+.loading-header h3 {
+  font-size: 24px;
+  margin: 8px 0 8px;
+  color: var(--white);
+  letter-spacing: -0.5px;
+}
+
+.active-step-text {
+  color: var(--aqua);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  min-height: 22px;
+  margin: 0;
+}
+
+/* =====================================================
+   STEPPER TRACK & CONNECTORS
+   ===================================================== */
+.stepper-container {
+  margin-top: 45px;
+  width: 100%;
+  max-width: 780px;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
+
+.stepper-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+}
+
+.step-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #061735;
+  border: 1px solid rgba(116, 183, 220, 0.25);
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dim);
+  transition: all 0.35s ease;
+  box-shadow: 4px 4px 10px rgba(1, 10, 25, 0.5);
+}
+
+.step-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+/* Active State */
+.step-node.active .step-circle {
+  border-color: var(--aqua);
+  color: var(--aqua);
+  background: #08264d;
+  box-shadow: 0 0 16px rgba(57, 245, 208, 0.5), inset 0 0 8px rgba(57, 245, 208, 0.3);
+  transform: scale(1.1);
+}
+
+.step-node.active .step-label {
+  color: var(--aqua);
+  font-weight: 600;
+}
+
+/* Completed Validation Checkmark State */
+.step-node.completed .step-circle {
+  background: var(--aqua);
+  color: #04122d;
+  border-color: var(--aqua);
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 0 14px rgba(57, 245, 208, 0.4);
+}
+
+.step-node.completed .step-label {
+  color: var(--soft-white);
+}
+
+/* Progress Lines Between Nodes */
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: rgba(116, 183, 220, 0.15);
+  margin: 0 8px;
+  margin-bottom: 22px; /* Align with center of the circle */
+  position: relative;
+  transition: background 0.4s ease;
+}
+
+.step-line.filled {
+  background: var(--aqua);
+  box-shadow: 0 0 8px rgba(57, 245, 208, 0.4);
+}
+
+@media (max-width: 650px) {
+  .step-label {
+    display: none;
+  }
+  .step-line {
+    margin-bottom: 0;
+  }
+}
