@@ -8,9 +8,20 @@ export interface ProcessDocumentDTO {
 export interface ProcessKnowledgeDTO {
   activities: string[];
   actors: string[];
+  roles: string[];
   systems: string[];
   events: string[];
-  decisions: string[];
+  gateways: string[];
+  inputs: string[];
+  outputs: string[];
+  businessRules: string[];
+  risks: string[];
+  conflicts: string[];
+}
+
+export interface ClassificationResultDTO {
+  category: string;
+  confidence: number;
 }
 
 export interface ProcessNode {
