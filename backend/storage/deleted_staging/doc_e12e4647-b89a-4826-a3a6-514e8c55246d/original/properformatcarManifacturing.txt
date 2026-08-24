@@ -1,0 +1,551 @@
+# Car Manufacturing Process – Process Analysis Document
+
+## 1. Process Overview
+
+**Process Name:** Car Manufacturing
+**Process Objective:** Convert raw materials and purchased components into a completed, tested, and approved vehicle ready for dispatch.
+
+### Process Flow
+
+**Product Planning → Engineering → Supplier Procurement → Incoming Inspection → Stamping → Body Shop → Paint Shop → Powertrain → Final Assembly → Testing → Quality Release → Dispatch**
+
+---
+
+# 2. Process Elements
+
+## 2.1 Activities
+
+The major activities performed during car manufacturing are:
+
+1. Product planning
+2. Vehicle design and engineering
+3. Supplier selection
+4. Component procurement
+5. Incoming material inspection
+6. Material storage
+7. Sheet-metal stamping
+8. Body assembly
+9. Welding
+10. Body dimensional inspection
+11. Surface treatment
+12. Painting
+13. Paint inspection
+14. Engine/motor assembly
+15. Transmission assembly
+16. Battery assembly for EVs
+17. Chassis assembly
+18. Interior assembly
+19. Electrical system installation
+20. Glass installation
+21. Seat installation
+22. Wheel and tyre installation
+23. Fluid filling
+24. Software programming
+25. Vehicle configuration
+26. End-of-line inspection
+27. Dynamic testing
+28. Defect correction/rework
+29. Final quality approval
+30. Vehicle dispatch
+
+---
+
+# 3. Actors
+
+Actors are the people, teams, organizations, or external parties involved in the process.
+
+| Actor                     | Responsibility                            |
+| ------------------------- | ----------------------------------------- |
+| Product Manager           | Defines product requirements              |
+| Design Engineer           | Develops vehicle design                   |
+| Manufacturing Engineer    | Develops manufacturing process            |
+| Quality Engineer          | Defines and monitors quality requirements |
+| Production Manager        | Manages production operations             |
+| Production Operator       | Performs manufacturing activities         |
+| Maintenance Team          | Maintains production equipment            |
+| Supplier                  | Provides components and materials         |
+| Supplier Quality Engineer | Monitors supplier quality                 |
+| Logistics Team            | Manages material movement                 |
+| Warehouse Team            | Receives and stores parts                 |
+| IT/OT Team                | Supports manufacturing systems            |
+| Software Engineer         | Manages vehicle software/configuration    |
+| Safety Team               | Manages workplace safety                  |
+| Test Engineer             | Performs vehicle testing                  |
+| Quality Inspector         | Performs inspections                      |
+| Dealer/Distributor        | Receives finished vehicles                |
+| Customer                  | Final recipient of vehicle                |
+
+---
+
+# 4. Systems
+
+Systems are the software, machines, equipment, and technical platforms supporting manufacturing.
+
+### Business and Manufacturing Systems
+
+1. **ERP System**
+
+   * Production planning
+   * Purchasing
+   * Inventory
+   * Finance
+
+2. **MES – Manufacturing Execution System**
+
+   * Production tracking
+   * Work orders
+   * Production status
+   * Traceability
+
+3. **PLM – Product Lifecycle Management**
+
+   * Product design
+   * Engineering data
+   * Engineering changes
+   * Product documentation
+
+4. **WMS – Warehouse Management System**
+
+   * Material receiving
+   * Inventory
+   * Storage
+   * Material movement
+
+5. **QMS – Quality Management System**
+
+   * Inspections
+   * Defects
+   * Non-conformance
+   * Corrective actions
+
+6. **SCADA/PLC Systems**
+
+   * Machine control
+   * Production equipment monitoring
+   * Process parameters
+
+7. **Vehicle Diagnostic Systems**
+
+   * ECU diagnostics
+   * Fault-code detection
+   * Software configuration
+
+### Manufacturing Equipment
+
+* Stamping presses
+* Welding robots
+* Conveyors
+* Paint booths
+* Ovens
+* Torque tools
+* Lifting equipment
+* Inspection equipment
+* Wheel alignment machines
+* Vehicle dynamometers/test equipment
+
+---
+
+# 5. Events
+
+Events are conditions that start, interrupt, or complete a process.
+
+### Start Events
+
+* New vehicle project approved
+* Production order released
+* Required material received
+* Production schedule created
+* Vehicle enters production line
+
+### Intermediate Events
+
+* Material shortage
+* Machine failure
+* Quality defect detected
+* Supplier delay
+* Engineering change released
+* Safety incident
+* Production line stopped
+* Software programming failure
+
+### End Events
+
+* Vehicle passes final inspection
+* Vehicle fails inspection
+* Rework completed
+* Vehicle released for dispatch
+* Vehicle dispatched to dealer/customer
+
+---
+
+# 6. Decisions
+
+Decisions determine which path the process should follow.
+
+### Decision 1 – Is the material acceptable?
+
+**Yes →** Release material to production
+**No →** Quarantine material and initiate supplier/non-conformance process
+
+### Decision 2 – Is the stamped panel within specification?
+
+**Yes →** Send to body shop
+**No →** Reject/rework panel
+
+### Decision 3 – Is the body dimensionally correct?
+
+**Yes →** Send to paint shop
+**No →** Correct/rework body
+
+### Decision 4 – Is paint quality acceptable?
+
+**Yes →** Send to assembly
+**No →** Paint repair/rework
+
+### Decision 5 – Is assembly complete?
+
+**Yes →** Continue to testing
+**No →** Return to relevant assembly station
+
+### Decision 6 – Does the vehicle pass diagnostic testing?
+
+**Yes →** Continue final inspection
+**No →** Troubleshoot and repair
+
+### Decision 7 – Does the vehicle pass final quality inspection?
+
+**Yes →** Release vehicle
+**No →** Send for rework
+
+### Decision 8 – Is the vehicle approved for dispatch?
+
+**Yes →** Dispatch
+**No →** Hold vehicle until requirements are satisfied
+
+---
+
+# 7. Conflicts
+
+Conflicts are situations where different requirements, teams, systems, or process conditions compete with each other.
+
+### Common Manufacturing Conflicts
+
+| Conflict                     | Example                                             | Potential Impact              |
+| ---------------------------- | --------------------------------------------------- | ----------------------------- |
+| Production vs Quality        | Production wants to continue despite defects        | Quality risk                  |
+| Production vs Maintenance    | Equipment requires maintenance during production    | Production downtime           |
+| Cost vs Quality              | Lower-cost component may have higher quality risk   | Customer complaints           |
+| Delivery vs Quality          | Shipment deadline conflicts with unresolved defects | Unsafe/non-conforming vehicle |
+| Supplier vs Manufacturer     | Supplier disputes responsibility for defective part | Production disruption         |
+| Engineering vs Manufacturing | Design is difficult to manufacture                  | Increased cost/time           |
+| Inventory vs Production      | Required component unavailable                      | Line stoppage                 |
+| Manual vs Automated Process  | Automation failure requires manual intervention     | Reduced productivity          |
+| Software vs Hardware         | ECU/software incompatibility                        | Vehicle test failure          |
+| Model Mix vs Line Capacity   | Multiple variants require different operations      | Line imbalance                |
+
+### Conflict Resolution
+
+Typical resolution steps are:
+
+**Conflict Identified → Containment → Investigation → Root Cause Analysis → Decision → Corrective Action → Verification**
+
+---
+
+# 8. Inputs
+
+The manufacturing process requires several inputs.
+
+### Material Inputs
+
+* Steel
+* Aluminium
+* Plastic components
+* Glass
+* Rubber
+* Paint
+* Adhesives
+* Fasteners
+* Electrical components
+* Batteries
+* Engines
+* Motors
+* Tyres
+* Seats
+
+### Information Inputs
+
+* Engineering drawings
+* Vehicle specifications
+* Production orders
+* Bill of Materials (BOM)
+* Work instructions
+* Quality standards
+* Customer requirements
+* Supplier specifications
+
+### Resource Inputs
+
+* Operators
+* Engineers
+* Machines
+* Production lines
+* Energy
+* Factory space
+* Tools
+* Inspection equipment
+
+---
+
+# 9. Outputs
+
+The major output is a **completed and approved vehicle**.
+
+Other outputs include:
+
+* Production records
+* Quality records
+* Inspection results
+* Traceability information
+* Test results
+* Defect records
+* Rework records
+* Inventory transactions
+* Vehicle software/configuration records
+* Dispatch documentation
+
+---
+
+# 10. Controls
+
+Controls ensure that the manufacturing process operates correctly.
+
+### Quality Controls
+
+* Incoming inspection
+* First-piece inspection
+* In-process inspection
+* Automated inspection
+* Torque verification
+* Dimensional inspection
+* Paint inspection
+* End-of-line inspection
+
+### Process Controls
+
+* Standard operating procedures
+* Work instructions
+* Machine parameter controls
+* Tool calibration
+* Production monitoring
+* Operator qualification
+* Preventive maintenance
+
+### Safety Controls
+
+* PPE
+* Machine guarding
+* Emergency stops
+* Lockout/tagout
+* Safety interlocks
+* High-voltage safety procedures for EVs
+* Chemical handling procedures
+
+---
+
+# 11. Detailed Process Matrix
+
+| Process        | Activity               | Actor                    | System            | Event                        | Decision                | Conflict                   | Output                    |
+| -------------- | ---------------------- | ------------------------ | ----------------- | ---------------------------- | ----------------------- | -------------------------- | ------------------------- |
+| Planning       | Create production plan | Production Planner       | ERP/MES           | Production order created     | Is capacity available?  | Demand vs capacity         | Production plan           |
+| Procurement    | Order components       | Purchasing               | ERP               | Material requirement created | Supplier available?     | Cost vs quality            | Purchase order            |
+| Receiving      | Receive parts          | Warehouse                | WMS               | Truck arrives                | Parts acceptable?       | Supplier delay             | Accepted material         |
+| Stamping       | Form panels            | Operator/Robot           | Press PLC         | Blank loaded                 | Panel within spec?      | Machine capacity           | Body panels               |
+| Body Shop      | Weld body              | Operator/Robot           | PLC/MES           | Panels arrive                | Weld quality OK?        | Quality vs speed           | BIW                       |
+| Paint          | Paint body             | Paint Operator           | Paint/SCADA       | BIW enters paint             | Paint quality OK?       | Color/appearance issues    | Painted body              |
+| Powertrain     | Install engine/motor   | Assembly Operator        | MES               | Powertrain available         | Assembly correct?       | Part shortage              | Powertrain assembly       |
+| Trim           | Install interior       | Assembly Operator        | MES               | Body arrives                 | Parts complete?         | Variant complexity         | Interior-installed body   |
+| Final Assembly | Join major systems     | Assembly Team            | MES               | Components ready             | Assembly complete?      | Line takt vs work content  | Completed vehicle         |
+| Software       | Program ECUs           | Software/Diagnostic Team | Diagnostic System | Vehicle connected            | Programming successful? | Software/hardware mismatch | Configured vehicle        |
+| Testing        | Test vehicle           | Test Engineer            | Test System       | Assembly completed           | Test passed?            | Test failure vs delivery   | Tested vehicle            |
+| Quality        | Final inspection       | Quality Inspector        | QMS               | Vehicle ready                | Release approved?       | Delivery vs quality        | Approved/rejected vehicle |
+| Dispatch       | Ship vehicle           | Logistics Team           | ERP/WMS           | Vehicle released             | Dispatch authorized?    | Transport availability     | Dispatched vehicle        |
+
+---
+
+# 12. Exception Handling
+
+The manufacturing process must also define what happens when something goes wrong.
+
+## Example: Defective Component
+
+**Defect Detected**
+↓
+**Stop/Contain Affected Material**
+↓
+**Identify Part and Supplier**
+↓
+**Record Non-Conformance**
+↓
+**Investigate Root Cause**
+↓
+**Decide: Rework / Return / Scrap / Use-As-Is if formally approved**
+↓
+**Verify Corrective Action**
+↓
+**Release Material**
+
+---
+
+# 13. Example: Vehicle Fails Final Inspection
+
+**Vehicle Fails Inspection**
+↓
+**Create Defect Record**
+↓
+**Identify Responsible Process**
+↓
+**Move Vehicle to Rework Area**
+↓
+**Perform Approved Repair**
+↓
+**Repeat Required Inspection/Test**
+↓
+**Decision: Pass?**
+
+**Yes → Final Approval → Dispatch**
+
+**No → Additional Investigation/Rework**
+
+---
+
+# 14. Process Start and End Conditions
+
+## Start Condition
+
+The process starts when:
+
+* Vehicle production program is approved.
+* Engineering information is released.
+* Production order is available.
+* Required materials and resources are available.
+
+## End Condition
+
+The process ends when:
+
+* Vehicle has completed manufacturing.
+* Required inspections have passed.
+* Required testing has passed.
+* Quality approval is complete.
+* Vehicle documentation is complete.
+* Vehicle is authorized for dispatch.
+
+---
+
+# 15. Key Performance Indicators
+
+Important manufacturing KPIs include:
+
+### Production
+
+* Vehicles produced per day
+* Production volume
+* Takt time
+* Cycle time
+* Line utilization
+
+### Quality
+
+* First-Time-Through (FTT)
+* Defects per vehicle
+* Rework rate
+* Scrap rate
+* Customer complaints
+
+### Equipment
+
+* Overall Equipment Effectiveness (OEE)
+* Downtime
+* Mean Time Between Failures (MTBF)
+* Mean Time To Repair (MTTR)
+
+### Delivery
+
+* Schedule adherence
+* On-time delivery
+* Production plan achievement
+
+### Cost
+
+* Cost per vehicle
+* Material cost
+* Rework cost
+* Scrap cost
+* Manufacturing labor cost
+
+---
+
+# 16. Summary Process Model
+
+```text
+                    CAR MANUFACTURING
+                           |
+        +------------------+------------------+
+        |                  |                  |
+    ACTIVITIES           ACTORS            SYSTEMS
+        |                  |                  |
+ Planning             Engineers             ERP
+ Engineering          Operators             MES
+ Stamping             Suppliers              PLM
+ Welding              Quality                WMS
+ Painting             Logistics              QMS
+ Assembly             Maintenance            SCADA
+ Testing              Management             Diagnostic
+        |
+        +------------------+
+        |
+      EVENTS
+        |
+ Production Order
+ Material Arrival
+ Machine Failure
+ Quality Defect
+ Test Failure
+ Final Approval
+        |
+        +------------------+
+        |
+     DECISIONS
+        |
+ Material OK?
+ Body OK?
+ Paint OK?
+ Assembly OK?
+ Test OK?
+ Quality OK?
+ Dispatch OK?
+        |
+        +------------------+
+        |
+     CONFLICTS
+        |
+ Quality vs Production
+ Cost vs Quality
+ Delivery vs Quality
+ Supplier vs Manufacturer
+ Production vs Maintenance
+        |
+        +------------------+
+        |
+      OUTPUT
+        |
+ Completed + Tested
+ + Quality-Approved Vehicle
+        |
+        v
+     DISPATCH
+```
+
+# 17. Final Process Definition
+
+**Car manufacturing is a controlled, multi-actor, multi-system process in which materials, engineering information, people, machines, and software interact through a sequence of activities. Events trigger or interrupt activities, decisions determine process paths, and conflicts are managed through defined controls and escalation procedures. The final objective is to produce a vehicle that satisfies engineering, quality, safety, regulatory, and customer requirements before release and dispatch.**

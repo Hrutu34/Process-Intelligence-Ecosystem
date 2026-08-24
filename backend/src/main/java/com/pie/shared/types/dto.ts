@@ -24,6 +24,52 @@ export interface ClassificationResultDTO {
   confidence: number;
 }
 
+export type NodeType =
+  | 'Activity'
+  | 'Event'
+  | 'Gateway'
+  | 'Role'
+  | 'System'
+  | 'DataArtifact';
+
+export type EdgeType =
+  | 'sequence'
+  | 'conditional'
+  | 'association';
+
+export type GatewayType = 'exclusive' | 'parallel' | 'inclusive';
+
+export type EventType = 'start' | 'intermediate' | 'end';
+
+export interface NodeMetadata {
+  roleRef?: string;
+  systemRef?: string;
+  gatewayType?: GatewayType;
+  eventType?: EventType;
+  [key: string]: unknown;
+}
+
+export interface GraphNode {
+  id: string;
+  type: NodeType;
+  label: string;
+  metadata?: NodeMetadata;
+}
+
+export interface GraphEdge {
+  id: string;
+  from: string;
+  to: string;
+  edgeType: EdgeType;
+  label?: string | null;
+}
+
+export interface CanonicalProcessGraph {
+  graphId: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 export interface ProcessNode {
   id: string;
   type: string;
