@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import type { ProcessKnowledgeDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
-import { ProcessGraphViewer } from './ProcessGraphViewer';
 import './ProcessKnowledgeReview.css';
 
 interface Props {
@@ -38,7 +37,6 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
   onProceedToBpmn,
   onReset,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'graph' | 'cards'>('graph');
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   const toggleSection = (key: string) => {
@@ -72,39 +70,16 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
             {totalEntities} ENTITIES DETECTED
           </div>
           <h3>Normalized Process Knowledge</h3>
-          <p>Explore the extracted process entities and canonical topology before BPMN 2.0 generation.</p>
+          <p>Review the extracted blueprint before starting BPMN 2.0 generation.</p>
         </div>
 
         <div className="review-controls">
-          {/* Sub-view toggle */}
-          <div className="graph-view-tabs" style={{ marginRight: 8 }}>
-            <button
-              type="button"
-              className={`graph-tab-btn ${activeSubTab === 'graph' ? 'active' : ''}`}
-              onClick={() => setActiveSubTab('graph')}
-            >
-              ⚡ Canonical Graph
-            </button>
-            <button
-              type="button"
-              className={`graph-tab-btn ${activeSubTab === 'cards' ? 'active' : ''}`}
-              onClick={() => setActiveSubTab('cards')}
-            >
-              📊 Entity Blueprint
-            </button>
-          </div>
-
-          {activeSubTab === 'cards' && (
-            <>
-              <button type="button" className="btn-ghost" onClick={() => toggleAll(false)}>
-                Expand All
-              </button>
-              <button type="button" className="btn-ghost" onClick={() => toggleAll(true)}>
-                Collapse All
-              </button>
-            </>
-          )}
-
+          <button type="button" className="btn-ghost" onClick={() => toggleAll(false)}>
+            Expand All
+          </button>
+          <button type="button" className="btn-ghost" onClick={() => toggleAll(true)}>
+            Collapse All
+          </button>
           <button type="button" className="btn-ghost" onClick={onReset}>
             ↺ New Upload
           </button>
@@ -118,78 +93,68 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* VIEW A: CANONICAL PROCESS GRAPH */}
-      {activeSubTab === 'graph' && (
-        <ProcessGraphViewer knowledge={data} onProceedToBpmn={onProceedToBpmn} />
+      {/* Conflict Alert Banner (if conflicts exist) */}
+      {conflictCount > 0 && (
+        <div className="conflict-banner">
+          <span className="conflict-icon">🚨</span>
+          <div className="conflict-details">
+            <strong>{conflictCount} Cross-Document Conflict{conflictCount > 1 ? 's' : ''} Detected</strong>
+            <span>Contradictions found between versions have been captured below for review.</span>
+          </div>
+        </div>
       )}
 
-      {/* VIEW B: ENTITY CARDS BLUEPRINT */}
-      {activeSubTab === 'cards' && (
-        <>
-          {/* Conflict Alert Banner (if conflicts exist) */}
-          {conflictCount > 0 && (
-            <div className="conflict-banner">
-              <span className="conflict-icon">🚨</span>
-              <div className="conflict-details">
-                <strong>{conflictCount} Cross-Document Conflict{conflictCount > 1 ? 's' : ''} Detected</strong>
-                <span>Contradictions found between versions have been captured below for review.</span>
-              </div>
-            </div>
-          )}
+      {/* Grid of Entity Cards */}
+      <div className="review-grid">
+        {SECTIONS.map((section) => {
+          const items = (data[section.key] as string[]) || [];
+          const isCollapsed = !collapsedSections[section.key];
+          const isCritical = section.critical && items.length > 0;
 
-          {/* Grid of Entity Cards */}
-          <div className="review-grid">
-            {SECTIONS.map((section) => {
-              const items = (data[section.key] as string[]) || [];
-              const isCollapsed = !!collapsedSections[section.key];
-              const isCritical = section.critical && items.length > 0;
-
-              return (
-                <div
-                  key={section.key}
-                  className={`review-card ${isCritical ? 'critical-card' : ''}`}
-                >
-                  <div
-                    className="review-card-header"
-                    onClick={() => toggleSection(section.key)}
-                  >
-                    <div className="card-header-left">
-                      <span className="card-icon">{section.icon}</span>
-                      <div>
-                        <h4>{section.title}</h4>
-                        <span className="card-desc">{section.description}</span>
-                      </div>
-                    </div>
-
-                    <div className="card-header-right">
-                      <span className={`badge ${items.length === 0 ? 'badge-zero' : ''}`}>
-                        {items.length}
-                      </span>
-                      <span className="collapse-arrow">{isCollapsed ? '+' : '−'}</span>
-                    </div>
+          return (
+            <div
+              key={section.key}
+              className={`review-card ${isCritical ? 'critical-card' : ''}`}
+            >
+              <div
+                className="review-card-header"
+                onClick={() => toggleSection(section.key)}
+              >
+                <div className="card-header-left">
+                  <span className="card-icon">{section.icon}</span>
+                  <div>
+                    <h4>{section.title}</h4>
+                    <span className="card-desc">{section.description}</span>
                   </div>
+                </div>
 
-                  {!isCollapsed && (
-                    <div className="review-card-body">
-                      {items.length === 0 ? (
-                        <span className="empty-state">None detected in source material</span>
-                      ) : (
-                        <ul className="entity-list">
-                          {items.map((item: string, idx: number) => (
-                            <li key={idx} className={isCritical ? 'conflict-text' : ''}>
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
+                <div className="card-header-right">
+                  <span className={`badge ${items.length === 0 ? 'badge-zero' : ''}`}>
+                    {items.length}
+                  </span>
+                  <span className="collapse-arrow">{isCollapsed ? '+' : '−'}</span>
+                </div>
+              </div>
+
+              {!isCollapsed && (
+                <div className="review-card-body">
+                  {items.length === 0 ? (
+                    <span className="empty-state">None detected in source material</span>
+                  ) : (
+                    <ul className="entity-list">
+                      {items.map((item: string, idx: number) => (
+                        <li key={idx} className={isCritical ? 'conflict-text' : ''}>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

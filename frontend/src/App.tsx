@@ -170,10 +170,17 @@ function App() {
               )}
 
               {activeTab === "02_INTELLIGENCE" && (
-                <ProcessGraphViewer
-                  knowledge={extractedData}
-                  onProceedToBpmn={() => setActiveTab("03_BPMN")}
-                />
+                <div className="agent-placeholder-card">
+                  <span className="agent-icon">◉</span>
+                  <h3>Agent 02: Process Intelligence Agent</h3>
+                  <p>
+                    Analyzes the {extractedData.activities?.length || 0} activities and {extractedData.conflicts?.length || 0} conflicts
+                    for compliance gaps, unassigned roles, and operational dead-ends.
+                  </p>
+                  <button className="yellow-button" type="button" onClick={() => alert("Agent 02 ready to run!")}>
+                    ANALYZE PROCESS GAPS <span>↗</span>
+                  </button>
+                </div>
               )}
 
               {activeTab === "03_BPMN" && (
