@@ -1,6 +1,7 @@
 import "./App.css";
 import ProcessEntry from "./components/ProcessEntry";
 import { ProcessKnowledgeReview } from "./components/ProcessKnowledgeReview";
+import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import { useRef, useState } from "react";
@@ -169,30 +170,18 @@ function App() {
               )}
 
               {activeTab === "02_INTELLIGENCE" && (
-                <div className="agent-placeholder-card">
-                  <span className="agent-icon">◉</span>
-                  <h3>Agent 02: Process Intelligence Agent</h3>
-                  <p>
-                    Analyzes the {extractedData.activities?.length || 0} activities and {extractedData.conflicts?.length || 0} conflicts
-                    for compliance gaps, unassigned roles, and operational dead-ends.
-                  </p>
-                  <button className="yellow-button" type="button" onClick={() => alert("Agent 02 ready to run!")}>
-                    ANALYZE PROCESS GAPS <span>↗</span>
-                  </button>
-                </div>
+                <ProcessGraphViewer
+                  knowledge={extractedData}
+                  onProceedToBpmn={() => setActiveTab("03_BPMN")}
+                />
               )}
 
               {activeTab === "03_BPMN" && (
-                <div className="agent-placeholder-card">
-                  <span className="agent-icon">⌘</span>
-                  <h3>Agent 03: BPMN 2.0 Modelling Agent</h3>
-                  <p>
-                    Transforms validated knowledge and sequence flows into clean, standard BPMN 2.0 XML and interactive diagrams.
-                  </p>
-                  <button className="yellow-button" type="button" onClick={() => alert("Agent 03 ready to run!")}>
-                    GENERATE BPMN 2.0 DIAGRAM <span>↗</span>
-                  </button>
-                </div>
+                <ProcessGraphViewer
+                  knowledge={extractedData}
+                  defaultView="bpmn"
+                  onProceedToBpmn={() => setActiveTab("04_REVIEW")}
+                />
               )}
 
               {activeTab === "04_REVIEW" && (
