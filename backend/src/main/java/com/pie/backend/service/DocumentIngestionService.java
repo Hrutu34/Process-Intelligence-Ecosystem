@@ -34,7 +34,20 @@ public class DocumentIngestionService {
         log.info("Classified content as: '{}' with confidence: {}%", 
                 classification.category(), classification.confidence());
 
-        return extractionService.extractKnowledge(content);
+        ProcessKnowledgeDTO extractedKnowledge = extractionService.extractKnowledge(content);
+        return new ProcessKnowledgeDTO(
+            extractedKnowledge.activities(),
+            extractedKnowledge.actors(),
+            extractedKnowledge.roles(),
+            extractedKnowledge.systems(),
+            extractedKnowledge.events(),
+            extractedKnowledge.gateways(),
+            extractedKnowledge.inputs(),
+            extractedKnowledge.outputs(),
+            extractedKnowledge.businessRules(),
+            extractedKnowledge.risks(),
+            List.of()
+        );
     }
 
     public ProcessKnowledgeDTO ingestFilesCombined(List<MultipartFile> files, String uploaderId, String tenantId) {
