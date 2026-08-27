@@ -29,7 +29,17 @@ public class AiClassificationService implements ClassificationService {
     @Override
     public ClassificationResultDTO classifyDocument(String content) {
         try {
-            String systemPrompt = new String(classificationPromptResource.getContentAsByteArray(), StandardCharsets.UTF_8);
+            String systemPrompt;
+            if (classificationPromptResource != null && classificationPromptResource.exists()) {
+                systemPrompt = new String(classificationPromptResource.getContentAsByteArray(), StandardCharsets.UTF_8);
+            } else {
+                try {
+                    Resource defaultRes = new org.springframework.core.io.ClassPathResource("prompts/document-classification-prompt.txt");
+                    systemPrompt = new String(defaultRes.getContentAsByteArray(), StandardCharsets.UTF_8);
+                } catch (Exception ex) {
+                    systemPrompt = "Classify the input document into a category with confidence.";
+                }
+            }
 
             // Use only the first 2,000 characters for classification to prevent context exhaustion
             String snippet = (content != null && content.length() > 2000) 

@@ -28,7 +28,17 @@ public class KnowledgeExtractionService {
 
     public ProcessKnowledgeDTO extractKnowledge(String documentContent) {
         try {
-            String systemPrompt = new String(extractionPromptResource.getContentAsByteArray(), StandardCharsets.UTF_8);
+            String systemPrompt;
+            if (extractionPromptResource != null && extractionPromptResource.exists()) {
+                systemPrompt = new String(extractionPromptResource.getContentAsByteArray(), StandardCharsets.UTF_8);
+            } else {
+                try {
+                    Resource defaultRes = new org.springframework.core.io.ClassPathResource("prompts/knowledge-extraction-prompt.txt");
+                    systemPrompt = new String(defaultRes.getContentAsByteArray(), StandardCharsets.UTF_8);
+                } catch (Exception ex) {
+                    systemPrompt = "You are an expert Knowledge Extraction Agent. Extract structured JSON.";
+                }
+            }
 
             String rawResponse = chatClient.prompt()
                     .system(systemPrompt)

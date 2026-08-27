@@ -2,8 +2,10 @@ package com.pie.backend.controller;
 
 import com.pie.backend.service.DocumentIngestionService;
 import com.pie.backend.service.ProcessGraphBuilder;
+import com.pie.backend.service.ProcessQualityValidator;
 import com.pie.shared.dto.CanonicalProcessGraph;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
+import com.pie.shared.dto.ProcessQualityReportDTO;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +20,15 @@ public class ProcessController {
 
     private final DocumentIngestionService ingestionService;
     private final ProcessGraphBuilder graphBuilder;
+    private final ProcessQualityValidator qualityValidator;
 
-    public ProcessController(DocumentIngestionService ingestionService, ProcessGraphBuilder graphBuilder) {
+    public ProcessController(
+            DocumentIngestionService ingestionService,
+            ProcessGraphBuilder graphBuilder,
+            ProcessQualityValidator qualityValidator) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
+        this.qualityValidator = qualityValidator;
     }
 
     @PostMapping("/extract-text")
@@ -40,6 +47,17 @@ public class ProcessController {
     @PostMapping("/graph")
     public ResponseEntity<CanonicalProcessGraph> buildGraph(@RequestBody ProcessKnowledgeDTO knowledge) {
         return ResponseEntity.ok(graphBuilder.build(knowledge));
+    }
+
+    @PostMapping("/validate")
+    public ResponseEntity<ProcessQualityReportDTO> validateGraph(@RequestBody CanonicalProcessGraph graph) {
+        return ResponseEntity.ok(qualityValidator.validateQuality(graph));
+    }
+
+    @PostMapping("/validate-knowledge")
+    public ResponseEntity<ProcessQualityReportDTO> validateKnowledge(@RequestBody ProcessKnowledgeDTO knowledge) {
+        CanonicalProcessGraph graph = graphBuilder.build(knowledge);
+        return ResponseEntity.ok(qualityValidator.validateQuality(graph));
     }
 
     public record TextPayload(String content) {

@@ -4,6 +4,7 @@ import './ProcessKnowledgeReview.css';
 
 interface Props {
   data: ProcessKnowledgeDTO;
+  onProceedToIntelligence?: () => void;
   onProceedToBpmn?: () => void;
   onReset: () => void;
 }
@@ -34,6 +35,7 @@ const SECTIONS: SectionConfig[] = [
 
 export const ProcessKnowledgeReview: React.FC<Props> = ({
   data,
+  onProceedToIntelligence,
   onProceedToBpmn,
   onReset,
 }) => {
@@ -83,6 +85,16 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
           <button type="button" className="btn-ghost" onClick={onReset}>
             ↺ New Upload
           </button>
+          {onProceedToIntelligence && (
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ color: '#fbd437', borderColor: 'rgba(251, 212, 55, 0.4)' }}
+              onClick={onProceedToIntelligence}
+            >
+              ◉ ANALYZE GAPS (AGENT 02)
+            </button>
+          )}
           <button
             type="button"
             className="yellow-button"

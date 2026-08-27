@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pie.backend.service.CanonicalProcessGraphBuilder;
 import com.pie.backend.service.DocumentIngestionService;
 import com.pie.backend.service.ProcessGraphValidator;
+import com.pie.backend.service.ProcessQualityValidator;
 import com.pie.shared.dto.CanonicalProcessGraph;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +31,9 @@ class ProcessControllerTest {
         DocumentIngestionService ingestionService = mock(DocumentIngestionService.class);
         ProcessGraphValidator validator = new ProcessGraphValidator();
         CanonicalProcessGraphBuilder graphBuilder = new CanonicalProcessGraphBuilder(validator);
+        ProcessQualityValidator qualityValidator = new ProcessQualityValidator();
 
-        ProcessController controller = new ProcessController(ingestionService, graphBuilder);
+        ProcessController controller = new ProcessController(ingestionService, graphBuilder, qualityValidator);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
         objectMapper = new ObjectMapper();
     }
@@ -62,5 +64,25 @@ class ProcessControllerTest {
                 .andExpect(jsonPath("$.nodes[?(@.id == 'role-employee')].type").value("Role"))
                 .andExpect(jsonPath("$.nodes[?(@.id == 'gateway-manager-approval')].type").value("Gateway"))
                 .andExpect(jsonPath("$.edges[?(@.edgeType == 'conditional')].label").value("approved"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/process/validate-knowledge returns ProcessQualityReportDTO")
+    void testValidateKnowledgeEndpoint() throws Exception {
+        ProcessKnowledgeDTO payload = new ProcessKnowledgeDTO(
+                List.of("Submit Request", "Approve Request", "Complete Task"),
+                List.of("Employee", "Manager"),
+                List.of(), List.of(),
+                List.of("Start", "End"),
+                List.of(),
+                List.of(), List.of(), List.of(), List.of(), List.of()
+        );
+
+        mockMvc.perform(post("/api/v1/process/validate-knowledge")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.qualityScore").isNumber())
+                .andExpect(jsonPath("$.issues").isArray());
     }
 }

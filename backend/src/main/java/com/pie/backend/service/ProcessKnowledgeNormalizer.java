@@ -7,10 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class ProcessKnowledgeNormalizer {
@@ -23,14 +22,11 @@ public class ProcessKnowledgeNormalizer {
             throw new IllegalArgumentException("LLM response cannot be null or blank");
         }
 
-        // 1. JSON Repair: Extract content between first '{' and last '}'
-        String repairedJson = repairJson(rawLlmResponse);
-
         try {
-            // 2. JSON Validation: Parse into tree structure
+            // 1. Attempt JSON Repair & Parsing
+            String repairedJson = repairJson(rawLlmResponse);
             JsonNode root = objectMapper.readTree(repairedJson);
 
-            // 3. Normalization: Extract, clean, strip empty values, and deduplicate
             return new ProcessKnowledgeDTO(
                     normalizeList(root, "activities", true),    // Deduplicate
                     normalizeList(root, "actors", true),        // Deduplicate
@@ -44,9 +40,13 @@ public class ProcessKnowledgeNormalizer {
                     normalizeList(root, "risks", false),
                     normalizeList(root, "conflicts", false)
             );
+        } catch (IllegalArgumentException e) {
+            // Re-throw argument exceptions from repairJson if no JSON found
+            log.warn("JSON parsing of LLM response failed: {}. Attempting fallback heuristic text parser.", e.getMessage());
+            return parseFallbackMarkdownText(rawLlmResponse);
         } catch (Exception e) {
-            log.error("Failed to parse and normalize LLM JSON response: {}", e.getMessage());
-            throw new RuntimeException("Invalid JSON structure received from LLM: " + e.getMessage(), e);
+            log.warn("JSON parsing of LLM response failed: {}. Attempting fallback heuristic text parser.", e.getMessage());
+            return parseFallbackMarkdownText(rawLlmResponse);
         }
     }
 
@@ -68,7 +68,7 @@ public class ProcessKnowledgeNormalizer {
         int lastBrace = trimmed.lastIndexOf('}');
 
         if (firstBrace == -1 || lastBrace == -1 || firstBrace >= lastBrace) {
-            throw new IllegalArgumentException("No valid JSON object bounds found in output: " + raw);
+            throw new IllegalArgumentException("No valid JSON object bounds found in output");
         }
 
         return trimmed.substring(firstBrace, lastBrace + 1);
@@ -82,14 +82,19 @@ public class ProcessKnowledgeNormalizer {
 
         List<String> rawItems = new ArrayList<>();
         for (JsonNode node : fieldNode) {
+            if (node == null || node.isNull()) {
+                continue;
+            }
             if (node.isTextual()) {
                 rawItems.add(node.asText());
             } else if (node.isArray()) {
                 for (JsonNode subNode : node) {
-                    rawItems.add(subNode.isTextual() ? subNode.asText() : subNode.toString());
+                    if (subNode != null && !subNode.isNull()) {
+                        rawItems.add(subNode.isTextual() ? subNode.asText() : subNode.toString());
+                    }
                 }
             } else if (node.isObject()) {
-                if (node.has("description")) {
+                if (node.has("description") && !node.get("description").isNull()) {
                     rawItems.add(node.get("description").asText());
                 } else {
                     rawItems.add(node.toString());
@@ -99,24 +104,114 @@ public class ProcessKnowledgeNormalizer {
             }
         }
 
-        // Apply rules: Empty values removed, whitespace trimmed, case-aware deduplication
-        Set<String> cleanSet = new LinkedHashSet<>();
-        List<String> cleanList = new ArrayList<>();
+        return cleanAndFilter(rawItems, deduplicate);
+    }
 
-        for (String item : rawItems) {
-            if (item != null) {
-                String clean = item.trim();
-                // Rule: Remove empty/blank values
-                if (!clean.isEmpty()) {
-                    if (deduplicate) {
-                        cleanSet.add(clean);
-                    } else {
-                        cleanList.add(clean);
-                    }
+    private ProcessKnowledgeDTO parseFallbackMarkdownText(String rawText) {
+        List<String> activities = new ArrayList<>();
+        List<String> actors = new ArrayList<>();
+        List<String> systems = new ArrayList<>();
+        List<String> gateways = new ArrayList<>();
+        List<String> events = new ArrayList<>();
+        List<String> businessRules = new ArrayList<>();
+        List<String> risks = new ArrayList<>();
+
+        Pattern numberedListPattern = Pattern.compile("^\\s*\\d+[.)]\\s*(?:\\*\\*(.*?)\\*\\*:?\\s*)?(.*)$");
+        Pattern bulletPattern = Pattern.compile("^\\s*[-*•]\\s*(?:\\*\\*(.*?)\\*\\*:?\\s*)?(.*)$");
+
+        String[] lines = rawText.split("\n");
+        String currentSection = "activities";
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isBlank()) continue;
+
+            String lower = trimmed.toLowerCase(Locale.ROOT);
+            if (lower.contains("role") || lower.contains("actor") || lower.contains("team") || lower.contains("stakeholder")) {
+                currentSection = "actors";
+            } else if (lower.contains("system") || lower.contains("tool") || lower.contains("software") || lower.contains("platform")) {
+                currentSection = "systems";
+            } else if (lower.contains("control") || lower.contains("rule") || lower.contains("policy") || lower.contains("factor")) {
+                currentSection = "rules";
+            } else if (lower.contains("risk") || lower.contains("defect") || lower.contains("hazard")) {
+                currentSection = "risks";
+            } else if (lower.contains("process") || lower.contains("step") || lower.contains("activit") || lower.contains("overview")) {
+                currentSection = "activities";
+            }
+
+            Matcher numMatcher = numberedListPattern.matcher(trimmed);
+            Matcher bulletMatcher = bulletPattern.matcher(trimmed);
+
+            String item = null;
+            if (numMatcher.find()) {
+                String title = numMatcher.group(1);
+                String desc = numMatcher.group(2);
+                item = (title != null && !title.isBlank()) ? (title + (desc != null && !desc.isBlank() ? ": " + desc : "")) : desc;
+            } else if (bulletMatcher.find()) {
+                String title = bulletMatcher.group(1);
+                String desc = bulletMatcher.group(2);
+                item = (title != null && !title.isBlank()) ? (title + (desc != null && !desc.isBlank() ? ": " + desc : "")) : desc;
+            }
+
+            if (item != null && !item.isBlank()) {
+                item = item.replaceAll("[*#_]", "").trim();
+                if (item.endsWith("?")) {
+                    gateways.add(item);
+                } else if (currentSection.equals("actors")) {
+                    actors.add(item);
+                } else if (currentSection.equals("systems")) {
+                    systems.add(item);
+                } else if (currentSection.equals("rules")) {
+                    businessRules.add(item);
+                } else if (currentSection.equals("risks")) {
+                    risks.add(item);
+                } else {
+                    activities.add(item);
                 }
             }
         }
 
-        return deduplicate ? new ArrayList<>(cleanSet) : cleanList;
+        List<String> cleanActivities = cleanAndFilter(activities, true);
+        List<String> cleanActors = cleanAndFilter(actors, true);
+
+        if (cleanActivities.isEmpty() && cleanActors.isEmpty() && cleanAndFilter(systems, true).isEmpty()) {
+            throw new IllegalArgumentException("No valid process knowledge could be extracted from input: " + rawText);
+        }
+
+        if (events.isEmpty() && !cleanActivities.isEmpty()) {
+            events.add("Start Process");
+            events.add("Process Completed");
+        }
+
+        return new ProcessKnowledgeDTO(
+                cleanActivities,
+                cleanActors,
+                cleanActors,
+                cleanAndFilter(systems, true),
+                events,
+                gateways,
+                List.of(),
+                List.of(),
+                businessRules,
+                risks,
+                List.of()
+        );
+    }
+
+    private List<String> cleanAndFilter(List<String> items, boolean deduplicate) {
+        if (items == null) return List.of();
+
+        Collection<String> resultCollection = deduplicate ? new LinkedHashSet<>() : new ArrayList<>();
+
+        for (String raw : items) {
+            if (raw == null) continue;
+            String cleaned = raw.trim();
+            if (cleaned.isBlank() || cleaned.equalsIgnoreCase("none") || cleaned.equalsIgnoreCase("n/a") || cleaned.equalsIgnoreCase("null")) {
+                continue;
+            }
+            resultCollection.add(cleaned);
+        }
+
+        return new ArrayList<>(resultCollection);
     }
 }

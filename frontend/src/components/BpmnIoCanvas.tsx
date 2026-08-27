@@ -16,56 +16,93 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
   const viewerRef = useRef<any>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [xmlString, setXmlString] = useState<string>('');
+  const [renderError, setRenderError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !graph) return;
 
-    // Clear previous canvas elements if any
-    containerRef.current.innerHTML = '';
+    let isMounted = true;
+    let viewerInstance: any = null;
 
-    const viewer = new BpmnNavigatedViewer({
-      container: containerRef.current,
-      keyboard: {
-        bindTo: window,
-      },
-    });
-    viewerRef.current = viewer;
+    try {
+      // Clear container DOM
+      containerRef.current.innerHTML = '';
 
-    const xml = canonicalGraphToBpmnXml(graph);
-    setXmlString(xml);
-
-    viewer
-      .importXML(xml)
-      .then(() => {
-        const canvas = viewer.get('canvas');
-        canvas.zoom('fit-viewport', 'auto');
-      })
-      .catch((err: any) => {
-        console.error('Failed to render BPMN XML with bpmn-js:', err);
+      // Initialize NavigatedViewer without deprecated keyboard.bindTo
+      viewerInstance = new BpmnNavigatedViewer({
+        container: containerRef.current,
       });
+      viewerRef.current = viewerInstance;
+
+      const xml = canonicalGraphToBpmnXml(graph);
+      setXmlString(xml);
+      setRenderError(null);
+
+      viewerInstance
+        .importXML(xml)
+        .then(() => {
+          if (!isMounted) return;
+          try {
+            const canvas = viewerInstance.get('canvas');
+            if (canvas) {
+              canvas.zoom('fit-viewport', 'auto');
+            }
+          } catch (zoomErr) {
+            console.warn('Canvas zoom adjustment warning:', zoomErr);
+          }
+        })
+        .catch((err: any) => {
+          if (!isMounted) return;
+          console.error('Failed to render BPMN XML with bpmn-js:', err);
+          setRenderError(err.message || 'BPMN diagram rendering failed');
+        });
+    } catch (initErr: any) {
+      if (isMounted) {
+        console.error('Viewer initialization error:', initErr);
+        setRenderError(initErr.message || 'Failed to initialize BPMN viewer');
+      }
+    }
 
     return () => {
-      if (viewerRef.current) {
-        viewerRef.current.destroy();
+      isMounted = false;
+      if (viewerInstance) {
+        try {
+          viewerInstance.destroy();
+        } catch (e) {
+          // Ignore destroy errors during component unmount
+        }
       }
+      viewerRef.current = null;
     };
   }, [graph]);
 
   const handleZoomIn = () => {
     if (viewerRef.current) {
-      viewerRef.current.get('zoomScroll').stepZoom(1);
+      try {
+        viewerRef.current.get('zoomScroll').stepZoom(1);
+      } catch (e) {
+        console.warn('Zoom error', e);
+      }
     }
   };
 
   const handleZoomOut = () => {
     if (viewerRef.current) {
-      viewerRef.current.get('zoomScroll').stepZoom(-1);
+      try {
+        viewerRef.current.get('zoomScroll').stepZoom(-1);
+      } catch (e) {
+        console.warn('Zoom error', e);
+      }
     }
   };
 
   const handleResetZoom = () => {
     if (viewerRef.current) {
-      viewerRef.current.get('canvas').zoom('fit-viewport', 'auto');
+      try {
+        viewerRef.current.get('canvas').zoom('fit-viewport', 'auto');
+      } catch (e) {
+        console.warn('Reset zoom error', e);
+      }
     }
   };
 
@@ -115,6 +152,12 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
           </button>
         </div>
       </div>
+
+      {renderError && (
+        <div style={{ padding: '12px 16px', background: '#3b1818', color: '#ff8888', fontSize: 13, borderBottom: '1px solid #752a2a' }}>
+          ⚠️ Render Notice: {renderError}
+        </div>
+      )}
 
       <div ref={containerRef} className="bpmn-canvas-area" />
     </div>

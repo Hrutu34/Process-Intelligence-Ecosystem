@@ -17,9 +17,10 @@ type ActiveTab = 'file' | 'text';
 interface Props {
   onStart: (fileCount: number) => void;
   onSuccess: (data: ProcessKnowledgeDTO) => void;
+  onError?: (err: string) => void;
 }
 
-export default function ProcessEntry({ onStart, onSuccess }: Props) {
+export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('file');
   const [files, setFiles] = useState<File[]>([]);
   const [text, setText] = useState<string>('');
@@ -134,7 +135,9 @@ export default function ProcessEntry({ onStart, onSuccess }: Props) {
       const processIntelligence: ProcessKnowledgeDTO = await response.json();
       onSuccess(processIntelligence);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An unknown connection error occurred.');
+      const errMsg = err instanceof Error ? err.message : 'An unknown connection error occurred.';
+      setError(errMsg);
+      if (onError) onError(errMsg);
     }
   };
 

@@ -1,0 +1,341 @@
+/* ProcessWorkspace.css */
+
+.workspace-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Workspace Top Navigation Header */
+.workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px 28px;
+  background: linear-gradient(150deg, #092149, #051533);
+  border: 1px solid rgba(116, 183, 220, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.workspace-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workspace-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.workspace-title-group h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.5px;
+}
+
+.workspace-meta-pills {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Workspace Tabs Strip */
+.workspace-tabs-strip {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(116, 183, 220, 0.15);
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+
+.ws-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.ws-tab-btn:hover {
+  background: rgba(16, 50, 99, 0.4);
+  color: var(--white);
+}
+
+.ws-tab-btn.active {
+  background: rgba(57, 245, 208, 0.12);
+  border-color: rgba(57, 245, 208, 0.3);
+  color: var(--aqua);
+}
+
+/* Tab 1: Overview Styles */
+.overview-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 1100px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.quality-meter-card {
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(57, 245, 208, 0.08), rgba(9, 33, 73, 0.7));
+  border: 1px solid rgba(57, 245, 208, 0.3);
+  border-radius: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.quality-meter-score {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--aqua);
+  font-family: var(--mono);
+}
+
+.insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.insight-card {
+  padding: 16px 20px;
+  background: rgba(4, 18, 45, 0.7);
+  border: 1px solid rgba(116, 183, 220, 0.15);
+  border-left: 4px solid var(--aqua);
+  border-radius: 12px;
+}
+
+.insight-card.bottleneck {
+  border-left-color: #ff6b81;
+}
+
+.insight-card.automation {
+  border-left-color: var(--electric);
+}
+
+.insight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.insight-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--white);
+}
+
+.insight-impact {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(116, 183, 220, 0.12);
+  color: var(--soft-white);
+}
+
+.insight-desc {
+  font-size: 13px;
+  color: var(--soft-white);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.insight-suggestion {
+  font-size: 12px;
+  color: var(--aqua);
+  background: rgba(57, 245, 208, 0.08);
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* Validation Issues List */
+.validation-issues-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.validation-card {
+  padding: 20px 24px;
+  background: linear-gradient(150deg, #092149, #051533);
+  border: 1px solid rgba(116, 183, 220, 0.2);
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.validation-card.warning {
+  border-left: 4px solid #ffe57f;
+}
+
+.validation-card.critical {
+  border-left: 4px solid #ff6b81;
+}
+
+.validation-card.resolved {
+  border-left: 4px solid var(--aqua);
+  opacity: 0.7;
+}
+
+.validation-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 700px;
+}
+
+.validation-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* AI Review & Chat Panel */
+.ai-review-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 24px;
+}
+
+@media (max-width: 1100px) {
+  .ai-review-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-chat-box {
+  padding: 24px;
+  background: linear-gradient(160deg, #081d42, #04122d);
+  border: 1px solid rgba(57, 245, 208, 0.25);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+}
+
+.ai-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(116, 183, 220, 0.15);
+  margin-bottom: 16px;
+}
+
+.ai-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 6px;
+}
+
+.chat-bubble {
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 90%;
+}
+
+.chat-bubble.user {
+  align-self: flex-end;
+  background: rgba(16, 50, 99, 0.8);
+  border: 1px solid rgba(116, 183, 220, 0.3);
+  color: var(--white);
+}
+
+.chat-bubble.ai {
+  align-self: flex-start;
+  background: rgba(4, 18, 45, 0.9);
+  border: 1px solid rgba(57, 245, 208, 0.2);
+  color: var(--soft-white);
+}
+
+.chat-bubble.ai strong {
+  color: var(--aqua);
+}
+
+.chat-suggestions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.suggestion-pill {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(57, 245, 208, 0.1);
+  border: 1px solid rgba(57, 245, 208, 0.25);
+  border-radius: 12px;
+  color: var(--aqua);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.suggestion-pill:hover {
+  background: rgba(57, 245, 208, 0.2);
+}
+
+.ai-chat-input-row {
+  display: flex;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(116, 183, 220, 0.15);
+}
+
+.ai-chat-input {
+  flex: 1;
+  padding: 10px 16px;
+  background: rgba(4, 18, 45, 0.8);
+  border: 1px solid rgba(116, 183, 220, 0.25);
+  border-radius: 10px;
+  color: var(--white);
+  font-size: 13px;
+}
+
+.ai-chat-input:focus {
+  outline: none;
+  border-color: var(--aqua);
+}

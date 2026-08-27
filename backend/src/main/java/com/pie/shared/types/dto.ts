@@ -93,6 +93,21 @@ export interface ValidationResultDTO {
   recommendations: string[];
 }
 
+export interface ValidationIssueDTO {
+  ruleId: string;
+  severity: 'HIGH' | 'MEDIUM' | 'LOW' | 'WARNING';
+  elementId?: string | null;
+  issue: string;
+  suggestion: string;
+}
+
+export interface ProcessQualityReportDTO {
+  valid: boolean;
+  qualityScore: number;
+  issues: ValidationIssueDTO[];
+  recommendations: string[];
+}
+
 export interface ReviewReportDTO {
   summary: string;
   issues: string[];
