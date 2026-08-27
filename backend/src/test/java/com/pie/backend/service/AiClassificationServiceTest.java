@@ -33,4 +33,20 @@ public class AiClassificationServiceTest {
         assertEquals("Standard Operating Procedure", result.category());
         assertEquals(95, result.confidence());
     }
+
+      @Test
+      void classifyDocument_extractsJsonWhenModelPrefixesItWithProse() {
+        ChatClient.Builder builder = mock(ChatClient.Builder.class);
+        ChatClient chatClient = mock(ChatClient.class, RETURNS_DEEP_STUBS);
+        when(builder.build()).thenReturn(chatClient);
+
+        when(chatClient.prompt().system(anyString()).user(anyString()).call().content())
+            .thenReturn("Here is the classification:\n{\"category\":\"Process Description\",\"confidence\":85}");
+
+        AiClassificationService service = new AiClassificationService(builder);
+        ClassificationResultDTO result = service.classifyDocument("Sample process text");
+
+        assertEquals("Process Description", result.category());
+        assertEquals(85, result.confidence());
+      }
 }

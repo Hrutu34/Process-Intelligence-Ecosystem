@@ -59,6 +59,13 @@ public class AiClassificationService implements ClassificationService {
             }
             cleanJson = cleanJson.trim();
 
+            int firstBrace = cleanJson.indexOf('{');
+            int lastBrace = cleanJson.lastIndexOf('}');
+            if (firstBrace == -1 || lastBrace == -1 || firstBrace >= lastBrace) {
+                throw new IllegalArgumentException("No valid JSON object found in classification response");
+            }
+            cleanJson = cleanJson.substring(firstBrace, lastBrace + 1);
+
             return objectMapper.readValue(cleanJson, ClassificationResultDTO.class);
 
         } catch (Exception e) {

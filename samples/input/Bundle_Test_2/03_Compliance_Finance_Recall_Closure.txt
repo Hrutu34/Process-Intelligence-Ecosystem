@@ -1,0 +1,118 @@
+﻿Recall Financial, Compliance & Campaign Closure Procedure
+Document Owner: Finance / Regulatory Compliance
+Contributors: Warranty, Customer Operations, Product Quality, Dealer Network
+Process Area: Recall Settlement, Regulatory Reporting & Final Closure
+Document Status: Controlled Internal Procedure
+1. Purpose
+This procedure defines the activities required to financially settle recall activity, maintain appropriate regulatory records, monitor campaign performance, and formally close a recall campaign.
+Campaign closure is not based solely on the number of vehicles physically repaired. Regulatory obligations, unresolved vehicles, parts availability, customer contact attempts, open technical cases, and financial reconciliation may all need to be considered.
+2. Campaign Population
+At campaign launch, Compliance shall establish the affected vehicle population using the approved manufacturer campaign population report.
+The population should generally contain:
+* VIN
+* Market
+* Vehicle model
+* Production date
+* Dealer
+* Customer contact status
+* Campaign status
+* Repair status
+* Repair date
+* Claim reference
+Different operational systems may contain slightly different vehicle counts. This is not necessarily an error because the systems may use different population refresh dates. However, material differences must be investigated.
+The Compliance team should use the approved campaign population as the baseline for regulatory reporting unless the regulator specifies another methodology.
+3. Financial Settlement
+Approved recall claims are processed through the warranty settlement process. Finance should reconcile dealer submissions against approved campaign operations, parts costs, labour allowances, and applicable taxes.
+Certain campaigns may include additional approved expenses such as:
+* Vehicle recovery
+* Towing
+* Customer transportation
+* Loan vehicles
+* Emergency repairs
+* Customer reimbursement
+* Replacement of previously damaged components
+These expenses may not be included in the standard warranty operation and therefore require a separate authorization reference.
+A dealer should not assume that an expense is reimbursable simply because it was incurred while supporting a recall customer.
+4. Reimbursement and Customer Claims
+Customers who paid for a repair before the recall was formally announced may be eligible for reimbursement depending on campaign rules and local legislation.
+Customer reimbursement requests should be reviewed against:
+* Vehicle eligibility
+* Date of repair
+* Repair description
+* Original invoice
+* Proof of payment
+* Component replaced
+* Evidence of customer ownership or responsibility for the vehicle
+Requests involving repairs significantly different from the campaign action may require Technical Operations review.
+In exceptional circumstances, Customer Operations may authorize goodwill compensation. Goodwill payments must be distinguished from statutory reimbursement and should not be reported as warranty repair costs without the appropriate accounting treatment.
+5. Regulatory Reporting
+Where a campaign is subject to regulatory notification, Compliance shall maintain the required records and submit campaign information within the applicable reporting timelines.
+Reporting requirements vary by market. Depending on the authority, information may include campaign description, affected population, remedy, customer notification method, repair rate, parts availability, and progress against the affected population.
+Safety-related campaigns should receive priority treatment. Any indication that the available remedy is not sufficient to address the identified safety issue must be escalated immediately to Product Safety and the relevant regulatory contact.
+Regulatory reporting should not be delayed simply because the Finance reconciliation is incomplete, unless the specific reporting requirement depends on financially verified information.
+6. Unrepaired Vehicles
+An important distinction should be made between:
+Open – Customer Not Contacted
+No confirmed customer contact has been recorded.
+Open – Contacted / Not Booked
+Customer has been contacted but no appointment has been confirmed.
+Open – Appointment Pending
+Appointment exists but the repair has not yet been completed.
+Open – Parts Constraint
+Vehicle is known and action is required but the required remedy cannot currently be completed.
+Open – Technical Hold
+Repair requires technical or engineering resolution.
+Completed
+The required campaign action has been successfully performed and recorded.
+A campaign should not be considered complete merely because the dealer network reports that all currently booked vehicles have been repaired.
+7. Campaign Monitoring
+The campaign management team shall monitor progress using agreed performance indicators. Typical measures include:
+* Total affected vehicles
+* Vehicles contacted
+* Contact success rate
+* Vehicles booked
+* Vehicles repaired
+* Repair completion rate
+* Open vehicles by reason
+* Parts backorders
+* Average repair age
+* Repeat repairs
+* Rejected claims
+* Customer complaints
+* Safety escalations
+Data should be reconciled periodically because dealer, warranty, customer, and regulatory systems may update at different times.
+A high repair completion rate does not automatically indicate that the campaign is ready for closure. Remaining unrepaired vehicles should be reviewed individually where the campaign has significant safety or regulatory implications.
+8. Campaign Closure
+Campaign closure requires confirmation from the responsible campaign owner that:
+1. The approved remedy has been released.
+2. Required parts are available or an approved alternative exists.
+3. Dealer instructions are current.
+4. Regulatory obligations have been satisfied or formally transferred.
+5. Financial claims have reached an acceptable settlement position.
+6. Outstanding technical investigations have been addressed.
+7. Unrepaired vehicles have an appropriate disposition.
+8. Customer communications have been completed or exhausted according to the approved contact strategy.
+The campaign owner may request an exception to close a campaign with outstanding vehicles where those vehicles cannot reasonably be repaired, for example due to export, scrappage, theft, permanent loss, or inability to locate the vehicle. Such exceptions must be documented.
+9. Post-Closure Activity
+Closing the campaign does not necessarily terminate all obligations. Claims may continue to require financial reconciliation, regulatory authorities may request additional information, and customers may subsequently raise reimbursement or repair concerns.
+Historical campaign information should therefore be retained according to applicable record-retention requirements.
+Product Quality should review completed campaigns for evidence of repeat failures or unexpected repair outcomes. Where campaign data indicates that the original remedy was ineffective, a new technical investigation may be opened independently of the closed campaign.
+10. Exception and Escalation Matrix
+The following escalation principles apply:
+* Safety concern: Product Safety / Compliance immediately
+* Regulatory deadline: Compliance owner
+* Technical uncertainty: Technical Operations
+* Repeated component failure: Product Quality / Engineering
+* Parts shortage: Parts Operations / Campaign Management
+* Customer compensation: Customer Operations / Finance
+* Claim rejection: Warranty
+* Financial discrepancy: Finance
+* VIN population discrepancy: Campaign Management / Data Owner
+Where multiple categories apply, the highest-risk category should determine the escalation priority.
+11. Final Record
+The final campaign record shall contain the approved campaign documentation, affected population, regulatory submissions, customer communication evidence, repair statistics, financial reconciliation, technical escalations, exception approvals, and closure authorization.
+The campaign owner shall ensure that the final record is stored in the designated document repository and remains accessible for audit or regulatory review.
+Cross-Reference:
+01_Dealer_Customer_Recall_Operations describes customer and dealer execution.
+02_Technical_Warranty_Recall_Process describes technical diagnosis and warranty processing.
+Important: This document should be read together with the other two documents. No individual document represents the complete recall process.
