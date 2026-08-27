@@ -8,8 +8,9 @@ spring:
       ddl-auto: validate
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   ai:
-    gemini:
-      api-key: ${GEMINI_API_KEY}
-      chat:
-        options:
-          model: gemini-2.5-flash
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: gemini-2.5-flash

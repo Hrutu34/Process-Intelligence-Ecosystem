@@ -18,11 +18,19 @@ public class AiRoutingConfig {
         return geminiModel;
     }
 
-    // When ANY profile OTHER than 'prod' is active (local, e2e), make Ollama the default
+    // Local development uses the Ollama model.
     @Bean
     @Primary
-    @Profile("!prod")
+    @Profile("local")
     public ChatModel localChatModel(@Qualifier("ollamaChatModel") ChatModel ollamaModel) {
         return ollamaModel;
+    }
+
+    // E2E runs against cloud PostgreSQL and the Groq OpenAI-compatible endpoint.
+    @Bean
+    @Primary
+    @Profile("e2e")
+    public ChatModel e2eChatModel(@Qualifier("openAiChatModel") ChatModel groqModel) {
+        return groqModel;
     }
 }

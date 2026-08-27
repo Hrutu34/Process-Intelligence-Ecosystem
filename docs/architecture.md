@@ -1,12 +1,32 @@
 ## Local Development Setup
 
-### 1. Start Infrastructure (Postgres & Ollama)
+The application has three Spring profiles:
+
+- `local`: H2 in-memory database and Ollama.
+- `e2e`: cloud PostgreSQL and Groq. This profile does not start or require Docker.
+- `prod`: PostgreSQL and Gemini, intended for Render deployment.
+
+For `e2e`, set these variables in the root `.env` file. Use the JDBC connection details supplied by your PostgreSQL provider; keep the credentials out of source control.
 
 ```bash
-docker-compose up -d
-# Pull your local LLM (first time only)
-docker exec -it pie_ollama ollama run llama3
+SPRING_PROFILE=e2e
+GROQ_API_KEY=your-groq-api-key
+GROQ_MODEL=openai/gpt-oss-20b
+DB_URL=jdbc:postgresql://your-host:5432/your-database?sslmode=require
+DB_USER=your-database-user
+DB_PASS=your-database-password
 ```
+
+Groq exposes an OpenAI-compatible API, so the backend uses `https://api.groq.com/openai` as its default endpoint. `DB_URL`, `DB_USER`, and `DB_PASS` are intentionally required for `e2e`; there is no localhost fallback.
+
+### 1. Start Local Ollama (local profile only)
+
+```bash
+# Ensure Ollama is running locally and pull the model (first time only)
+ollama run llama3.2:3b
+```
+
+The `e2e` profile uses the configured cloud PostgreSQL and Groq API directly, so it does not need this step.
 
 ### 2. Start Backend (Java Spring Boot)
 

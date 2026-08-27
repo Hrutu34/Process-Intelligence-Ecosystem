@@ -26,15 +26,6 @@ verify_env() {
   echo -e "${YELLOW}--- Verifying Prerequisites & Environment ---${NC}"
   local errors=0
 
-  if [ "$PROFILE" = "e2e" ]; then
-    if ! command -v docker &> /dev/null; then
-      echo -e "${RED}[X] Docker is not installed or not in PATH (Required for e2e)${NC}"
-      errors=$((errors+1))
-    else
-      echo -e "${GREEN}[✓] Docker found${NC}"
-    fi
-  fi
-
   if ! command -v java &> /dev/null; then
     echo -e "${RED}[X] Java is not installed or not in PATH${NC}"
     errors=$((errors+1))
@@ -56,11 +47,17 @@ verify_env() {
     echo -e "${GREEN}[✓] Node.js found ($(node -v))${NC}"
   fi
 
-  if [ "$PROFILE" = "prod" ] && [ -z "$GEMINI_API_KEY" ]; then
+  if [ "$PROFILE" = "e2e" ] && [ -z "$GROQ_API_KEY" ]; then
+    echo -e "${RED}[X] GROQ_API_KEY is missing from environment / .env file${NC}"
+    errors=$((errors+1))
+  elif [ "$PROFILE" = "prod" ] && [ -z "$GEMINI_API_KEY" ]; then
     echo -e "${RED}[X] GEMINI_API_KEY is missing from environment / .env file${NC}"
     errors=$((errors+1))
+  elif [ "$PROFILE" = "e2e" ] && { [ -z "$DB_URL" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; }; then
+    echo -e "${RED}[X] DB_URL, DB_USER, and DB_PASS are required for the e2e cloud database${NC}"
+    errors=$((errors+1))
   else
-    echo -e "${GREEN}[✓] API Key check passed${NC}"
+    echo -e "${GREEN}[✓] API and database checks passed${NC}"
   fi
 
   if [ $errors -gt 0 ]; then
@@ -124,7 +121,7 @@ run_tests() {
 choose_profile() {
   echo -e "${YELLOW}Select the environment profile to run:${NC}"
   echo "1) Local (H2 In-Memory DB - Instant start, no Docker)"
-  echo "2) E2E   (Local Docker PostgreSQL - Production parity)"
+  echo "2) E2E   (Cloud PostgreSQL + Groq API)"
   echo "3) Prod  (Cloud Database - Connects to Render)"
   
   read -p "Enter choice [1-3] (Default: 1): " choice
@@ -145,12 +142,7 @@ start_all() {
 
   echo -e "${YELLOW}--- Starting P.I.E. Ecosystem (Profile: $PROFILE) ---${NC}"
 
-  if [ "$PROFILE" = "e2e" ]; then
-    echo -e "${YELLOW}[1/3] Starting Database (Docker PostgreSQL)...${NC}"
-    docker-compose up -d
-  else
-    echo -e "${YELLOW}[1/3] Skipping Docker (Using H2 or Cloud DB)...${NC}"
-  fi
+  echo -e "${YELLOW}[1/3] Using configured database (H2 or cloud PostgreSQL)...${NC}"
 
   echo -e "${YELLOW}[2/3] Starting Backend (Spring Boot)...${NC}"
   (
@@ -230,22 +222,12 @@ stop_services() {
     echo -e "${GREEN}[✓] Frontend stopped and port 5173 cleared.${NC}"
   fi
 
-  if [ "$target" = "all" ] && command -v docker &> /dev/null && docker-compose ps &> /dev/null; then
-    echo -e "${YELLOW}Stopping Docker Infrastructure...${NC}"
-    docker-compose down 2>/dev/null || true
-  fi
-
   echo -e "${GREEN}All requested services stopped cleanly.${NC}"
 }
 
 status_all() {
   echo -e "${YELLOW}--- P.I.E. Ecosystem Status ---${NC}"
   
-  if command -v docker &> /dev/null; then
-    echo -e "\n${YELLOW}Docker Infrastructure:${NC}"
-    docker-compose ps 2>/dev/null || echo "No containers running."
-  fi
-
   echo -e "\n${YELLOW}Backend Status (Port 8080):${NC}"
   if [ -f "$PID_DIR/backend.pid" ] && kill -0 $(cat "$PID_DIR/backend.pid") 2>/dev/null; then
     echo -e "${GREEN}Running (PID: $(cat $PID_DIR/backend.pid))${NC}"
