@@ -8,7 +8,7 @@ Ensure the following global dependencies are installed and available in your sys
 *   **Java 17+**
 *   **Maven 3.8+** (Native installation via `winget` or `brew`, I used `chocolatey` btw)
 *   **Node.js 18+**
-*   A cloud PostgreSQL database and `GROQ_API_KEY` (Required for the `e2e` profile)
+*   A cloud PostgreSQL database and `GROQ_API_KEY` (Required for the `staging` profile)
 
 ---
 
@@ -24,7 +24,7 @@ Run the script by passing a command argument:
 When you run `./pie.sh start`, the script will prompt you to select an environment profile:
 
 1.  **Local (Default):** Instant startup. Uses an in-memory H2 database. Bypasses Docker entirely. Best for UI/UX testing and rapid API development.
-2.  **E2E (End-to-End):** Connects to a cloud PostgreSQL database and Groq before booting the backend. Best for testing against persistent shared session data.
+2.  **Staging:** Connects to a cloud PostgreSQL database and Groq before booting the backend. Best for testing against persistent shared session data.
 3.  **Prod:** Bypasses Docker. Connects to the cloud-hosted Render database.
 
 ---
@@ -33,7 +33,7 @@ When you run `./pie.sh start`, the script will prompt you to select an environme
 
 | Command | Action | Description |
 | :--- | :--- | :--- |
-| `verify` | **Pre-flight Check** | Validates that Java, Maven, Node, the selected API key, and e2e database credentials are configured. |
+| `verify` | **Pre-flight Check** | Validates that Java, Maven, Node, the selected API key, and staging database credentials are configured. |
 | `build` | **Compile Stack** | Installs React dependencies (`npm install`) and compiles the Spring Boot backend (`mvn clean compile`). |
 | `start` | **Launch System** | Prompts for a profile, verifies the environment, and launches all required services in the background. |
 | `status` | **Health Check** | Displays active process IDs (PIDs) for the backend and frontend. |

@@ -47,14 +47,14 @@ verify_env() {
     echo -e "${GREEN}[✓] Node.js found ($(node -v))${NC}"
   fi
 
-  if [ "$PROFILE" = "e2e" ] && [ -z "$GROQ_API_KEY" ]; then
+  if [ "$PROFILE" = "staging" ] && [ -z "$GROQ_API_KEY" ]; then
     echo -e "${RED}[X] GROQ_API_KEY is missing from environment / .env file${NC}"
     errors=$((errors+1))
   elif [ "$PROFILE" = "prod" ] && [ -z "$GEMINI_API_KEY" ]; then
     echo -e "${RED}[X] GEMINI_API_KEY is missing from environment / .env file${NC}"
     errors=$((errors+1))
-  elif [ "$PROFILE" = "e2e" ] && { [ -z "$DB_URL" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; }; then
-    echo -e "${RED}[X] DB_URL, DB_USER, and DB_PASS are required for the e2e cloud database${NC}"
+  elif [ "$PROFILE" = "staging" ] && { [ -z "$DB_URL" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; }; then
+    echo -e "${RED}[X] DB_URL, DB_USER, and DB_PASS are required for the staging cloud database${NC}"
     errors=$((errors+1))
   else
     echo -e "${GREEN}[✓] API and database checks passed${NC}"
@@ -121,13 +121,13 @@ run_tests() {
 choose_profile() {
   echo -e "${YELLOW}Select the environment profile to run:${NC}"
   echo "1) Local (H2 In-Memory DB - Instant start, no Docker)"
-  echo "2) E2E   (Cloud PostgreSQL + Groq API)"
+  echo "2) Staging (Cloud PostgreSQL + Groq API)"
   echo "3) Prod  (Cloud Database - Connects to Render)"
   
   read -p "Enter choice [1-3] (Default: 1): " choice
 
   case $choice in
-    2) PROFILE="e2e" ;;
+    2) PROFILE="staging" ;;
     3) PROFILE="prod" ;;
     *) PROFILE="local" ;;
   esac
