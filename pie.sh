@@ -21,6 +21,7 @@ fi
 
 # Fallback profile if not starting interactively
 PROFILE=${SPRING_PROFILE:-local}
+SPRING_PROFILES=$PROFILE
 
 verify_env() {
   echo -e "${YELLOW}--- Verifying Prerequisites & Environment ---${NC}"
@@ -47,14 +48,18 @@ verify_env() {
     echo -e "${GREEN}[✓] Node.js found ($(node -v))${NC}"
   fi
 
-  if [ "$PROFILE" = "staging" ] && [ -z "$GROQ_API_KEY" ]; then
-    echo -e "${RED}[X] GROQ_API_KEY is missing from environment / .env file${NC}"
-    errors=$((errors+1))
+  if [ "$PROFILE" = "staging-local" ] || [ "$PROFILE" = "staging" ]; then
+    if [ -z "$GROQ_API_KEY" ]; then
+      echo -e "${RED}[X] GROQ_API_KEY is missing from environment / .env file${NC}"
+      errors=$((errors+1))
+    elif [ "$PROFILE" = "staging" ] && { [ -z "$DB_URL" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; }; then
+      echo -e "${RED}[X] DB_URL, DB_USER, and DB_PASS are required for the staging cloud database${NC}"
+      errors=$((errors+1))
+    else
+      echo -e "${GREEN}[✓] API and database checks passed${NC}"
+    fi
   elif [ "$PROFILE" = "prod" ] && [ -z "$GEMINI_API_KEY" ]; then
     echo -e "${RED}[X] GEMINI_API_KEY is missing from environment / .env file${NC}"
-    errors=$((errors+1))
-  elif [ "$PROFILE" = "staging" ] && { [ -z "$DB_URL" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; }; then
-    echo -e "${RED}[X] DB_URL, DB_USER, and DB_PASS are required for the staging cloud database${NC}"
     errors=$((errors+1))
   else
     echo -e "${GREEN}[✓] API and database checks passed${NC}"
@@ -121,18 +126,18 @@ run_tests() {
 choose_profile() {
   echo -e "${YELLOW}Select the environment profile to run:${NC}"
   echo "1) Local (H2 In-Memory DB - Instant start, no Docker)"
-  echo "2) Staging (Cloud PostgreSQL + Groq API)"
+  echo "2) Staging Local (H2 + Groq API)"
   echo "3) Prod  (Cloud Database - Connects to Render)"
   
   read -p "Enter choice [1-3] (Default: 1): " choice
 
   case $choice in
-    2) PROFILE="staging" ;;
-    3) PROFILE="prod" ;;
-    *) PROFILE="local" ;;
+    2) PROFILE="staging-local"; SPRING_PROFILES="staging,staging-local" ;;
+    3) PROFILE="prod"; SPRING_PROFILES="prod" ;;
+    *) PROFILE="local"; SPRING_PROFILES="local" ;;
   esac
   
-  export SPRING_PROFILE=$PROFILE
+  export SPRING_PROFILE=$SPRING_PROFILES
   echo -e "${GREEN}Selected Profile: $PROFILE${NC}\n"
 }
 
@@ -147,7 +152,7 @@ start_all() {
   echo -e "${YELLOW}[2/3] Starting Backend (Spring Boot)...${NC}"
   (
     cd backend
-    SPRING_PROFILE=$PROFILE mvn spring-boot:run > "../$LOG_DIR/backend.log" 2>&1 &
+    SPRING_PROFILE=$SPRING_PROFILES mvn spring-boot:run > "../$LOG_DIR/backend.log" 2>&1 &
     echo $! > "../$PID_DIR/backend.pid"
   )
   echo -e "${GREEN}Backend running in background (PID: $(cat $PID_DIR/backend.pid)). Logs: $LOG_DIR/backend.log${NC}"
@@ -164,7 +169,7 @@ start_all() {
   echo -e "Frontend: ${YELLOW}http://localhost:5173${NC}"
   echo -e "Backend:  ${YELLOW}http://localhost:8080${NC}"
   
-  if [ "$PROFILE" = "local" ]; then
+  if [ "$PROFILE" = "local" ] || [ "$PROFILE" = "staging-local" ]; then
     echo -e "H2 DB:    ${YELLOW}http://localhost:8080/h2-console${NC} (URL: jdbc:h2:mem:pie_db)"
   fi
   

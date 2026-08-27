@@ -17,7 +17,7 @@ DB_USER=your-database-user
 DB_PASS=your-database-password
 ```
 
-Groq exposes an OpenAI-compatible API, so the backend uses `https://api.groq.com/openai` as its default endpoint. `DB_URL`, `DB_USER`, and `DB_PASS` are intentionally required for `staging`; there is no localhost fallback.
+Groq exposes an OpenAI-compatible API. The backend uses `https://api.groq.com/openai/v1` as its base endpoint and the client appends `/chat/completions`. `DB_URL`, `DB_USER`, and `DB_PASS` are intentionally required for `staging`; there is no localhost fallback.
 
 ### 1. Start Local Ollama (local profile only)
 
