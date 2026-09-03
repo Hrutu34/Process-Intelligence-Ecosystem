@@ -498,26 +498,135 @@ function buildLocalFallbackGraph(k: ProcessKnowledgeDTO): CanonicalProcessGraph 
     }
   });
 
+  const gatewayNodes: GraphNode[] = [];
   (k.gateways || []).forEach((gw) => {
     const slug = gw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    nodes.push({
+    const gwNode: GraphNode = {
       id: `gateway-${slug}`,
       type: 'Gateway',
       label: gw,
       metadata: { gatewayType: 'exclusive' },
-    });
+    };
+    nodes.push(gwNode);
+    gatewayNodes.push(gwNode);
   });
 
-  // Basic sequence links
-  for (let i = 0; i < (k.activities || []).length - 1; i++) {
-    const fromSlug = (k.activities || [])[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    const toSlug = (k.activities || [])[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const acts = k.activities || [];
+  if (gatewayNodes.length > 0 && acts.length >= 2) {
+    // Find evaluating activity (e.g. one with review/check/assess/detect, or index right before split)
+    let evalIdx = -1;
+    for (let i = 0; i < acts.length; i++) {
+      const l = acts[i].toLowerCase();
+      if (l.includes('review') || l.includes('check') || l.includes('inspect') || l.includes('detect') || l.includes('monitor')) {
+        evalIdx = i;
+        break;
+      }
+    }
+    if (evalIdx === -1 || evalIdx >= acts.length - 1) {
+      evalIdx = Math.max(0, Math.min(acts.length - 2, 1));
+    }
+
+    const evalSlug = acts[evalIdx].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const branch1Idx = evalIdx + 1;
+    const branch1Slug = acts[branch1Idx].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+    // Sequence before eval
+    for (let i = 0; i < evalIdx; i++) {
+      const fromSlug = acts[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const toSlug = acts[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      edges.push({
+        id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
+        from: `activity-${fromSlug}`,
+        to: `activity-${toSlug}`,
+        edgeType: 'sequence',
+      });
+    }
+
+    // Connect eval -> Gateway 0
     edges.push({
-      id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
-      from: `activity-${fromSlug}`,
-      to: `activity-${toSlug}`,
+      id: `edge-activity-${evalSlug}-${gatewayNodes[0].id}-sequence`,
+      from: `activity-${evalSlug}`,
+      to: gatewayNodes[0].id,
       edgeType: 'sequence',
     });
+
+    // Gateway 0 -> Branch 1
+    edges.push({
+      id: `edge-${gatewayNodes[0].id}-activity-${branch1Slug}-conditional`,
+      from: gatewayNodes[0].id,
+      to: `activity-${branch1Slug}`,
+      edgeType: 'conditional',
+      label: 'yes',
+    });
+
+    if (gatewayNodes.length > 1 && branch1Idx + 1 < acts.length) {
+      const branch2Idx = branch1Idx + 1;
+      const branch2Slug = acts[branch2Idx].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+      // Gateway 0 -> Gateway 1
+      edges.push({
+        id: `edge-${gatewayNodes[0].id}-${gatewayNodes[1].id}-conditional`,
+        from: gatewayNodes[0].id,
+        to: gatewayNodes[1].id,
+        edgeType: 'conditional',
+        label: 'no',
+      });
+
+      // Gateway 1 -> Branch 2
+      edges.push({
+        id: `edge-${gatewayNodes[1].id}-activity-${branch2Slug}-conditional`,
+        from: gatewayNodes[1].id,
+        to: `activity-${branch2Slug}`,
+        edgeType: 'conditional',
+        label: 'critical',
+      });
+
+      // Sequential path for Branch 2 onwards
+      for (let i = branch2Idx; i < acts.length - 1; i++) {
+        const fromSlug = acts[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const toSlug = acts[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        edges.push({
+          id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
+          from: `activity-${fromSlug}`,
+          to: `activity-${toSlug}`,
+          edgeType: 'sequence',
+        });
+      }
+    } else if (branch1Idx + 1 < acts.length) {
+      const branch2Idx = branch1Idx + 1;
+      const branch2Slug = acts[branch2Idx].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      // Single gateway alternative branch
+      edges.push({
+        id: `edge-${gatewayNodes[0].id}-activity-${branch2Slug}-conditional`,
+        from: gatewayNodes[0].id,
+        to: `activity-${branch2Slug}`,
+        edgeType: 'conditional',
+        label: 'no',
+      });
+
+      for (let i = branch2Idx; i < acts.length - 1; i++) {
+        const fromSlug = acts[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const toSlug = acts[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        edges.push({
+          id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
+          from: `activity-${fromSlug}`,
+          to: `activity-${toSlug}`,
+          edgeType: 'sequence',
+        });
+      }
+    }
+  } else {
+    // Pure linear fallback when no gateways
+    for (let i = 0; i < acts.length - 1; i++) {
+      const fromSlug = acts[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const toSlug = acts[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      edges.push({
+        id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
+        from: `activity-${fromSlug}`,
+        to: `activity-${toSlug}`,
+        edgeType: 'sequence',
+      });
+    }
   }
 
   return {

@@ -11,20 +11,26 @@ public class GraphEdge {
     private String to;
     private EdgeType edgeType;
     private String label;
+    private Double confidence;
 
     public GraphEdge() {
     }
 
     public GraphEdge(String id, String from, String to, EdgeType edgeType) {
-        this(id, from, to, edgeType, null);
+        this(id, from, to, edgeType, null, null);
     }
 
     public GraphEdge(String id, String from, String to, EdgeType edgeType, String label) {
+        this(id, from, to, edgeType, label, null);
+    }
+
+    public GraphEdge(String id, String from, String to, EdgeType edgeType, String label, Double confidence) {
         this.id = id;
         this.from = from;
         this.to = to;
         this.edgeType = edgeType;
         this.label = label;
+        this.confidence = confidence;
     }
 
     public String getId() {
@@ -67,6 +73,14 @@ public class GraphEdge {
         this.label = label;
     }
 
+    public Double getConfidence() {
+        return confidence;
+    }
+
+    public void setConfidence(Double confidence) {
+        this.confidence = confidence;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -77,6 +91,7 @@ public class GraphEdge {
         private String to;
         private EdgeType edgeType;
         private String label;
+        private Double confidence;
 
         public Builder id(String id) {
             this.id = id;
@@ -98,18 +113,18 @@ public class GraphEdge {
             return this;
         }
 
-        public Builder edgeType(String edgeType) {
-            this.edgeType = edgeType != null ? EdgeType.fromString(edgeType) : null;
-            return this;
-        }
-
         public Builder label(String label) {
             this.label = label;
             return this;
         }
 
+        public Builder confidence(Double confidence) {
+            this.confidence = confidence;
+            return this;
+        }
+
         public GraphEdge build() {
-            return new GraphEdge(id, from, to, edgeType, label);
+            return new GraphEdge(id, from, to, edgeType, label, confidence);
         }
     }
 
@@ -121,12 +136,13 @@ public class GraphEdge {
                Objects.equals(from, graphEdge.from) &&
                Objects.equals(to, graphEdge.to) &&
                edgeType == graphEdge.edgeType &&
-               Objects.equals(label, graphEdge.label);
+               Objects.equals(label, graphEdge.label) &&
+               Objects.equals(confidence, graphEdge.confidence);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, from, to, edgeType, label);
+        return Objects.hash(id, from, to, edgeType, label, confidence);
     }
 
     @Override
@@ -137,6 +153,7 @@ public class GraphEdge {
                 ", to='" + to + '\'' +
                 ", edgeType=" + edgeType +
                 ", label='" + label + '\'' +
+                ", confidence=" + confidence +
                 '}';
     }
 }

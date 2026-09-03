@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum EventType {
     start("start"),
     intermediate("intermediate"),
+    timer("timer"),
     end("end");
 
     private final String value;

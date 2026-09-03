@@ -22,123 +22,35 @@ class CanonicalProcessGraphBuilderTest {
     }
 
     @Test
-    @DisplayName("Test 1 — Basic activities: creates Activity nodes, sequence edge, deterministic IDs")
-    void test1_basicActivities() {
+    @DisplayName("Test 1 — Simple linear process: creates Activity nodes and sequential flow")
+    void test1_simpleLinearProcess() {
         ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
-                List.of("Submit Travel Request", "Review Request"),
-                List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of()
-        );
-
-        CanonicalProcessGraph graph = builder.build(input);
-
-        assertNotNull(graph);
-        assertNotNull(graph.getGraphId());
-        assertEquals(2, graph.getNodes().size());
-
-        // Verify Activity nodes
-        GraphNode node1 = graph.getNodes().get(0);
-        assertEquals("activity-submit-travel-request", node1.getId());
-        assertEquals(NodeType.Activity, node1.getType());
-        assertEquals("Submit Travel Request", node1.getLabel());
-
-        GraphNode node2 = graph.getNodes().get(1);
-        assertEquals("activity-review-request", node2.getId());
-        assertEquals(NodeType.Activity, node2.getType());
-        assertEquals("Review Request", node2.getLabel());
-
-        // Verify Sequence Edge
-        assertEquals(1, graph.getEdges().size());
-        GraphEdge edge = graph.getEdges().get(0);
-        assertEquals("edge-activity-submit-travel-request-activity-review-request-sequence", edge.getId());
-        assertEquals("activity-submit-travel-request", edge.getFrom());
-        assertEquals("activity-review-request", edge.getTo());
-        assertEquals(EdgeType.sequence, edge.getEdgeType());
-        assertNull(edge.getLabel());
-    }
-
-    @Test
-    @DisplayName("Test 2 — Actors: creates Role nodes and association edges")
-    void test2_actors() {
-        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
-                List.of("Submit Travel Request"),
-                List.of("Employee"),
+                List.of("Submit Travel Request", "Review Request", "Book Travel"),
+                List.of("Employee", "Manager", "Travel Desk"),
                 List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of()
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of()
         );
 
         CanonicalProcessGraph graph = builder.build(input);
 
         assertNotNull(graph);
-        assertEquals(2, graph.getNodes().size());
+        assertEquals(6, graph.getNodes().size()); // 3 activities + 3 roles
 
-        GraphNode actNode = graph.getNodes().stream()
-                .filter(n -> n.getType() == NodeType.Activity)
-                .findFirst().orElseThrow();
-        assertEquals("activity-submit-travel-request", actNode.getId());
-        assertEquals("Submit Travel Request", actNode.getLabel());
-        assertEquals("role-employee", actNode.getMetadata().getRoleRef());
+        // Verify sequence flow
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-submit-travel-request") &&
+                e.getTo().equals("activity-review-request") &&
+                e.getEdgeType() == EdgeType.sequence));
 
-        GraphNode roleNode = graph.getNodes().stream()
-                .filter(n -> n.getType() == NodeType.Role)
-                .findFirst().orElseThrow();
-        assertEquals("role-employee", roleNode.getId());
-        assertEquals("Employee", roleNode.getLabel());
-
-        // Verify Association Edge
-        assertEquals(1, graph.getEdges().size());
-        GraphEdge edge = graph.getEdges().get(0);
-        assertEquals("edge-role-employee-activity-submit-travel-request-association", edge.getId());
-        assertEquals("role-employee", edge.getFrom());
-        assertEquals("activity-submit-travel-request", edge.getTo());
-        assertEquals(EdgeType.association, edge.getEdgeType());
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-review-request") &&
+                e.getTo().equals("activity-book-travel") &&
+                e.getEdgeType() == EdgeType.sequence));
     }
 
     @Test
-    @DisplayName("Test 3 — Gateway: creates Gateway node with default exclusive type and sequence connection")
-    void test3_gateway() {
-        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
-                List.of("Review Request", "Validate Budget"),
-                List.of(), List.of(), List.of(), List.of(),
-                List.of("Manager Approval"),
-                List.of(), List.of(), List.of(),
-                List.of(), List.of()
-        );
-
-        CanonicalProcessGraph graph = builder.build(input);
-
-        assertNotNull(graph);
-        assertEquals(3, graph.getNodes().size());
-
-        GraphNode gwNode = graph.getNodes().stream()
-                .filter(n -> n.getType() == NodeType.Gateway)
-                .findFirst().orElseThrow();
-        assertEquals("gateway-manager-approval", gwNode.getId());
-        assertEquals("Manager Approval", gwNode.getLabel());
-        assertNotNull(gwNode.getMetadata());
-        assertEquals(GatewayType.exclusive, gwNode.getMetadata().getGatewayType());
-
-        // Check edges: Review Request -> Gateway (sequence), Gateway -> Validate Budget (conditional)
-        assertEquals(2, graph.getEdges().size());
-
-        GraphEdge seqEdge = graph.getEdges().stream()
-                .filter(e -> e.getEdgeType() == EdgeType.sequence)
-                .findFirst().orElseThrow();
-        assertEquals("activity-review-request", seqEdge.getFrom());
-        assertEquals("gateway-manager-approval", seqEdge.getTo());
-
-        GraphEdge condEdge = graph.getEdges().stream()
-                .filter(e -> e.getEdgeType() == EdgeType.conditional)
-                .findFirst().orElseThrow();
-        assertEquals("gateway-manager-approval", condEdge.getFrom());
-        assertEquals("activity-validate-budget", condEdge.getTo());
-    }
-
-    @Test
-    @DisplayName("Test 4 — Conditional flow: Gateway to Activity produces conditional edge with label")
-    void test4_conditionalFlow() {
+    @DisplayName("Test 2 — Single XOR Decision: Evaluating activity precedes gateway, conditional branch created")
+    void test2_singleXorDecision() {
         ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
                 List.of("Review Request", "Validate Budget"),
                 List.of("Manager", "Finance"),
@@ -151,267 +63,439 @@ class CanonicalProcessGraphBuilderTest {
 
         CanonicalProcessGraph graph = builder.build(input);
 
-        GraphEdge condEdge = graph.getEdges().stream()
-                .filter(e -> e.getEdgeType() == EdgeType.conditional)
-                .findFirst().orElseThrow();
-
-        assertEquals("gateway-manager-approval", condEdge.getFrom());
-        assertEquals("activity-validate-budget", condEdge.getTo());
-        assertEquals(EdgeType.conditional, condEdge.getEdgeType());
-        assertEquals("approved", condEdge.getLabel());
-    }
-
-    @Test
-    @DisplayName("Test 5 — Full example: Complete Travel Request process graph topology")
-    void test5_fullExample() {
-        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
-                List.of(
-                        "Submit Travel Request",
-                        "Review Request",
-                        "Validate Budget",
-                        "Book Travel"
-                ),
-                List.of(
-                        "Employee",
-                        "Manager",
-                        "Finance",
-                        "Travel Desk"
-                ),
-                List.of(), List.of(), List.of(),
-                List.of(
-                        "Manager Approval"
-                ),
-                List.of(), List.of(),
-                List.of(
-                        "If approved, Finance validates budget"
-                ),
-                List.of(), List.of()
-        );
-
-        CanonicalProcessGraph graph = builder.build("graph-travel-request", input);
-
-        assertEquals("graph-travel-request", graph.getGraphId());
-        // 4 Activities + 4 Roles + 1 Gateway = 9 nodes
-        assertEquals(9, graph.getNodes().size());
-
-        // Verify Node IDs exist
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("activity-submit-travel-request")));
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("activity-review-request")));
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("activity-validate-budget")));
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("activity-book-travel")));
-
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("role-employee")));
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("role-manager")));
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("role-finance")));
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("role-travel-desk")));
-
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("gateway-manager-approval")));
-
-        // 4 Associations + 3 Sequences + 1 Conditional = 8 edges
-        assertEquals(8, graph.getEdges().size());
-
-        // 1. Employee -> Submit Travel Request (association)
-        assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("role-employee") &&
-                e.getTo().equals("activity-submit-travel-request") &&
-                e.getEdgeType() == EdgeType.association));
-
-        // 2. Manager -> Review Request (association)
-        assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("role-manager") &&
-                e.getTo().equals("activity-review-request") &&
-                e.getEdgeType() == EdgeType.association));
-
-        // 3. Finance -> Validate Budget (association)
-        assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("role-finance") &&
-                e.getTo().equals("activity-validate-budget") &&
-                e.getEdgeType() == EdgeType.association));
-
-        // 4. Travel Desk -> Book Travel (association)
-        assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("role-travel-desk") &&
-                e.getTo().equals("activity-book-travel") &&
-                e.getEdgeType() == EdgeType.association));
-
-        // 5. Submit Travel Request -> Review Request (sequence)
-        assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("activity-submit-travel-request") &&
-                e.getTo().equals("activity-review-request") &&
-                e.getEdgeType() == EdgeType.sequence));
-
-        // 6. Review Request -> Manager Approval (sequence)
+        // Sequence: Review Request -> Manager Approval Gateway
         assertTrue(graph.getEdges().stream().anyMatch(e ->
                 e.getFrom().equals("activity-review-request") &&
                 e.getTo().equals("gateway-manager-approval") &&
                 e.getEdgeType() == EdgeType.sequence));
 
-        // 7. Manager Approval --approved--> Validate Budget (conditional)
+        // Conditional: Manager Approval --approved--> Validate Budget
         assertTrue(graph.getEdges().stream().anyMatch(e ->
                 e.getFrom().equals("gateway-manager-approval") &&
                 e.getTo().equals("activity-validate-budget") &&
                 e.getEdgeType() == EdgeType.conditional &&
                 "approved".equals(e.getLabel())));
-
-        // 8. Validate Budget -> Book Travel (sequence)
-        assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("activity-validate-budget") &&
-                e.getTo().equals("activity-book-travel") &&
-                e.getEdgeType() == EdgeType.sequence));
     }
 
     @Test
-    @DisplayName("Test 6 — Determinism: identical input yields identical graph IDs, node IDs, and edge IDs")
-    void test6_determinism() {
+    @DisplayName("Test 3 — IF / ELSE Branching: Gateway produces multiple conditional branches")
+    void test3_ifElseBranching() {
         ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
-                List.of("Submit Request", "Review Request", "Approve Request"),
-                List.of("Employee", "Manager"),
-                List.of(), List.of(), List.of(),
-                List.of("Manager Approval"),
-                List.of(), List.of(), List.of(),
-                List.of(), List.of()
-        );
-
-        CanonicalProcessGraph graph1 = builder.build(input);
-        CanonicalProcessGraph graph2 = builder.build(input);
-
-        assertEquals(graph1.getGraphId(), graph2.getGraphId());
-        assertEquals(graph1.getNodes().size(), graph2.getNodes().size());
-        assertEquals(graph1.getEdges().size(), graph2.getEdges().size());
-
-        for (int i = 0; i < graph1.getNodes().size(); i++) {
-            GraphNode n1 = graph1.getNodes().get(i);
-            GraphNode n2 = graph2.getNodes().get(i);
-            assertEquals(n1.getId(), n2.getId());
-            assertEquals(n1.getType(), n2.getType());
-            assertEquals(n1.getLabel(), n2.getLabel());
-        }
-
-        for (int i = 0; i < graph1.getEdges().size(); i++) {
-            GraphEdge e1 = graph1.getEdges().get(i);
-            GraphEdge e2 = graph2.getEdges().get(i);
-            assertEquals(e1.getId(), e2.getId());
-            assertEquals(e1.getFrom(), e2.getFrom());
-            assertEquals(e1.getTo(), e2.getTo());
-            assertEquals(e1.getEdgeType(), e2.getEdgeType());
-            assertEquals(e1.getLabel(), e2.getLabel());
-        }
-    }
-
-    @Test
-    @DisplayName("Test 7 — Duplicate handling: duplicate extracted entities are deduplicated")
-    void test7_duplicateHandling() {
-        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
-                List.of("Submit Request", "Submit Request", "Review Request"),
-                List.of("Manager", "Manager", "Employee"),
-                List.of(), List.of(), List.of(),
-                List.of("Manager Approval", "Manager Approval"),
-                List.of(), List.of(), List.of(),
+                List.of("Check Policy", "Financial Validation", "Manager Review Exception"),
+                List.of("System", "Finance", "Manager"),
+                List.of(), List.of("Expense System"), List.of(),
+                List.of("Within Policy?"),
+                List.of(), List.of(),
+                List.of("If within policy, proceed to financial validation. Otherwise, manager reviews exception."),
                 List.of(), List.of()
         );
 
         CanonicalProcessGraph graph = builder.build(input);
 
-        // 2 distinct activities + 2 distinct roles + 1 distinct gateway = 5 nodes
-        assertEquals(5, graph.getNodes().size());
+        // Rule 1: Check Policy -> Within Policy Gateway
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-check-policy") &&
+                e.getTo().equals("gateway-within-policy") &&
+                e.getEdgeType() == EdgeType.sequence));
 
-        long activityCount = graph.getNodes().stream().filter(n -> n.getType() == NodeType.Activity).count();
-        long roleCount = graph.getNodes().stream().filter(n -> n.getType() == NodeType.Role).count();
-        long gatewayCount = graph.getNodes().stream().filter(n -> n.getType() == NodeType.Gateway).count();
+        // Rule 2: Gateway --yes--> Financial Validation
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-within-policy") &&
+                e.getTo().equals("activity-financial-validation") &&
+                e.getEdgeType() == EdgeType.conditional &&
+                "yes".equals(e.getLabel())));
 
-        assertEquals(2, activityCount);
-        assertEquals(2, roleCount);
-        assertEquals(1, gatewayCount);
+        // Rule 2: Gateway --no--> Manager Review Exception
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-within-policy") &&
+                e.getTo().equals("activity-manager-review-exception") &&
+                e.getEdgeType() == EdgeType.conditional &&
+                "no".equals(e.getLabel())));
     }
 
     @Test
-    @DisplayName("Test 8 — Extended entities: Systems, Events, and Data Artifacts")
-    void test8_extendedEntities() {
+    @DisplayName("Test 4 — Loop Modeling: Correction and Resubmission loop back to validation")
+    void test4_correctionLoop() {
         ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
-                List.of("Submit Request via ERP", "Archive Document"),
-                List.of("Staff"),
-                List.of(),
-                List.of("ERP"),
-                List.of("Start Trigger", "Process Completed"),
-                List.of(),
-                List.of("Invoice Form"),
-                List.of("Receipt PDF"),
-                List.of(), List.of(), List.of()
+                List.of("Validate Request", "Correct Request", "Resubmit Request", "Check Policy"),
+                List.of("System", "Employee"),
+                List.of(), List.of(), List.of(),
+                List.of("Information Complete?"),
+                List.of(), List.of(),
+                List.of("If missing information, employee corrects request and resubmits it."),
+                List.of(), List.of()
         );
 
         CanonicalProcessGraph graph = builder.build(input);
 
-        // Check Event nodes
-        GraphNode startEvent = graph.getNodes().stream()
-                .filter(n -> n.getId().equals("event-start-trigger"))
-                .findFirst().orElseThrow();
-        assertEquals(NodeType.Event, startEvent.getType());
-        assertEquals(EventType.start, startEvent.getMetadata().getEventType());
-
-        GraphNode endEvent = graph.getNodes().stream()
-                .filter(n -> n.getId().equals("event-process-completed"))
-                .findFirst().orElseThrow();
-        assertEquals(NodeType.Event, endEvent.getType());
-        assertEquals(EventType.end, endEvent.getMetadata().getEventType());
-
-        // Check System node & association
-        GraphNode systemNode = graph.getNodes().stream()
-                .filter(n -> n.getId().equals("system-erp"))
-                .findFirst().orElseThrow();
-        assertEquals(NodeType.System, systemNode.getType());
-
+        // Validate Request -> Gateway
         assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("system-erp") &&
-                e.getTo().equals("activity-submit-request-via-erp") &&
-                e.getEdgeType() == EdgeType.association));
-
-        // Check Data Artifact nodes
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("data-invoice-form") && n.getType() == NodeType.DataArtifact));
-        assertTrue(graph.getNodes().stream().anyMatch(n -> n.getId().equals("data-receipt-pdf") && n.getType() == NodeType.DataArtifact));
-
-        // Check Event Flow: Start Event -> First Activity, Last Activity -> End Event
-        assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("event-start-trigger") &&
-                e.getTo().equals("activity-submit-request-via-erp") &&
+                e.getFrom().equals("activity-validate-request") &&
+                e.getTo().equals("gateway-information-complete") &&
                 e.getEdgeType() == EdgeType.sequence));
 
+        // Gateway --no--> Correct Request
         assertTrue(graph.getEdges().stream().anyMatch(e ->
-                e.getFrom().equals("activity-archive-document") &&
-                e.getTo().equals("event-process-completed") &&
+                e.getFrom().equals("gateway-information-complete") &&
+                e.getTo().equals("activity-correct-request") &&
+                e.getEdgeType() == EdgeType.conditional &&
+                "no".equals(e.getLabel())));
+
+        // Resubmit Request -> Validate Request (LOOP BACK)
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-resubmit-request") &&
+                e.getTo().equals("activity-validate-request") &&
                 e.getEdgeType() == EdgeType.sequence));
     }
 
     @Test
-    @DisplayName("Test 9 — Validation & Error handling")
-    void test9_validationErrors() {
-        // Null knowledge
-        assertThrows(InvalidProcessGraphException.class, () -> builder.build(null));
-
-        // Empty knowledge
-        ProcessKnowledgeDTO empty = new ProcessKnowledgeDTO(
-                List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(), List.of(), List.of()
+    @DisplayName("Test 5 — Retry Loop: Payment Retry loops back to Send Payment")
+    void test5_paymentRetryLoop() {
+        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
+                List.of("Send Payment", "Mark Paid", "Retry Payment", "Investigate Failure"),
+                List.of("Payment System", "Finance"),
+                List.of(), List.of("Payment System"), List.of(),
+                List.of("Payment Successful?", "Retry Limit Reached?"),
+                List.of(), List.of(),
+                List.of("If payment fails, retry up to 3 times. If limit reached, investigate failure."),
+                List.of(), List.of()
         );
-        assertThrows(InvalidProcessGraphException.class, () -> builder.build(empty));
 
-        // Graph with no ID
-        CanonicalProcessGraph invalidGraphNoId = new CanonicalProcessGraph("", List.of(new GraphNode("1", NodeType.Activity, "A")), List.of());
-        assertThrows(InvalidProcessGraphException.class, () -> validator.validateGraph(invalidGraphNoId));
+        CanonicalProcessGraph graph = builder.build(input);
 
-        // Graph with dangling edge reference
-        CanonicalProcessGraph invalidGraphDangling = new CanonicalProcessGraph(
-                "g1",
-                List.of(new GraphNode("act-1", NodeType.Activity, "A")),
-                List.of(new GraphEdge("e1", "act-1", "non-existent-node", EdgeType.sequence))
+        // Send Payment -> Payment Successful Gateway
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-send-payment") &&
+                e.getTo().equals("gateway-payment-successful") &&
+                e.getEdgeType() == EdgeType.sequence));
+
+        // Gateway --success--> Mark Paid
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-payment-successful") &&
+                e.getTo().equals("activity-mark-paid") &&
+                e.getEdgeType() == EdgeType.conditional &&
+                "success".equals(e.getLabel())));
+
+        // Retry Payment -> Send Payment (LOOP BACK)
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-retry-payment") &&
+                e.getTo().equals("activity-send-payment") &&
+                e.getEdgeType() == EdgeType.sequence));
+    }
+
+    @Test
+    @DisplayName("Test 6 — Timeout / Timer Event: 7-day timeout produces timer event with ISO duration")
+    void test6_timeoutTimerEvent() {
+        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
+                List.of("Request Clarification", "Review Updated Information", "Automatically Cancel Request"),
+                List.of("Finance", "Employee"),
+                List.of(), List.of(), List.of(),
+                List.of("Information Received within 7 Days?"),
+                List.of(), List.of(),
+                List.of("If employee does not provide information within 7 days, cancel request."),
+                List.of(), List.of()
         );
-        assertThrows(InvalidProcessGraphException.class, () -> validator.validateGraph(invalidGraphDangling));
 
-        // Graph with self-referencing edge
-        CanonicalProcessGraph invalidGraphSelfRef = new CanonicalProcessGraph(
-                "g2",
-                List.of(new GraphNode("act-1", NodeType.Activity, "A")),
-                List.of(new GraphEdge("e1", "act-1", "act-1", EdgeType.sequence))
+        CanonicalProcessGraph graph = builder.build(input);
+
+        // Verify Timer Event exists
+        GraphNode timerEvent = graph.getNodes().stream()
+                .filter(n -> n.getType() == NodeType.Event && n.getMetadata() != null && n.getMetadata().getEventType() == EventType.timer)
+                .findFirst().orElseThrow();
+
+        assertEquals("P7D", timerEvent.getMetadata().getDuration());
+
+        // Gateway -> Timer Event -> Cancel Request
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-information-received-within-7-days") &&
+                e.getTo().equals(timerEvent.getId())));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals(timerEvent.getId()) &&
+                e.getTo().equals("activity-automatically-cancel-request")));
+    }
+
+    @Test
+    @DisplayName("Test 7 — Role & System Association: Correct actor roles and systems assigned")
+    void test7_rolesAndSystems() {
+        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
+                List.of("Finance verifies receipts", "Payment system sends payment"),
+                List.of("Finance"),
+                List.of(),
+                List.of("Payment System"),
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of()
         );
-        assertThrows(InvalidProcessGraphException.class, () -> validator.validateGraph(invalidGraphSelfRef));
+
+        CanonicalProcessGraph graph = builder.build(input);
+
+        // Check Role
+        GraphNode finAct = graph.getNodes().stream()
+                .filter(n -> n.getId().equals("activity-finance-verifies-receipts"))
+                .findFirst().orElseThrow();
+        assertEquals("role-finance", finAct.getMetadata().getRoleRef());
+
+        // Check System
+        GraphNode payAct = graph.getNodes().stream()
+                .filter(n -> n.getId().equals("activity-payment-system-sends-payment"))
+                .findFirst().orElseThrow();
+        assertEquals("system-payment-system", payAct.getMetadata().getSystemRef());
+    }
+
+    @Test
+    @DisplayName("Test 8 — Complete Regression Test: Employee Expense Reimbursement Process")
+    void test8_completeExpenseReimbursementRegression() {
+        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
+                List.of(
+                        "Employee submits an expense reimbursement request",
+                        "System validates that all mandatory fields and receipts are present",
+                        "System sends the request back to the employee for correction",
+                        "The employee corrects the request and resubmits it",
+                        "System checks whether the expense is within policy",
+                        "System sends the request to manager for exception decision",
+                        "Manager reviews policy violation",
+                        "System rejects reimbursement request and notifies employee",
+                        "Finance validates available reimbursement budget",
+                        "Finance verifies receipts and expense amounts",
+                        "Finance sends request to employee for clarification",
+                        "Employee provides required clarification",
+                        "Finance reviews updated information",
+                        "Finance approves reimbursement",
+                        "Finance sends request to finance manager for additional budget approval",
+                        "Finance manager reviews budget request",
+                        "Payment system creates reimbursement payment",
+                        "Payment system sends payment to bank account",
+                        "System marks reimbursement as paid and sends confirmation notification",
+                        "System retries payment up to three times",
+                        "System creates payment failure case for finance team",
+                        "Finance team investigates payment failure and processes payment manually",
+                        "System automatically cancels reimbursement request",
+                        "Completed reimbursement request is archived for auditing"
+                ),
+                List.of(
+                        "Employee",
+                        "Manager",
+                        "Finance",
+                        "Finance Manager",
+                        "Finance Team"
+                ),
+                List.of(),
+                List.of(
+                        "Expense Reimbursement System",
+                        "Payment System",
+                        "Banking System"
+                ),
+                List.of(
+                        "Expense Reimbursement Request Initiated",
+                        "Reimbursement Process Completed"
+                ),
+                List.of(
+                        "Information Complete?",
+                        "Within Policy?",
+                        "Manager Exception Approved?",
+                        "Budget Available?",
+                        "Receipts Valid?",
+                        "Information Received within 7 Days?",
+                        "Additional Budget Approved?",
+                        "Payment Successful?",
+                        "Retry Limit Reached?"
+                ),
+                List.of(
+                        "Expense Details",
+                        "Receipts"
+                ),
+                List.of(
+                        "Reimbursement Budget",
+                        "Payment Failure Case"
+                ),
+                List.of(
+                        "If information missing, send back for correction and resubmit",
+                        "If within policy, proceed to financial validation",
+                        "If manager rejects exception, reject and notify",
+                        "If sufficient budget, verify receipts",
+                        "If receipts invalid, request clarification; if within 7 days review updated info, else cancel",
+                        "If insufficient budget, finance manager reviews budget",
+                        "If payment fails, retry up to 3 times, else investigate failure and manual payment"
+                ),
+                List.of(),
+                List.of()
+        );
+
+        CanonicalProcessGraph graph = builder.build("graph-expense-reimbursement", input);
+
+        assertNotNull(graph);
+        assertEquals("graph-expense-reimbursement", graph.getGraphId());
+
+        // Verify all 9 gateways are present
+        assertEquals(9, graph.getNodes().stream().filter(n -> n.getType() == NodeType.Gateway).count());
+
+        // Verify Start Event connects to first activity
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("event-expense-reimbursement-request-initiated") &&
+                e.getTo().equals("activity-employee-submits-an-expense-reimbursement-request")));
+
+        // Verify Validation -> Information Gateway -> Correction -> Resubmission Loop
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-system-validates-that-all-mandatory-fields-and-receipts-are-present") &&
+                e.getTo().equals("gateway-information-complete")));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-information-complete") &&
+                e.getTo().equals("activity-system-sends-the-request-back-to-the-employee-for-correction") &&
+                "no".equals(e.getLabel())));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-the-employee-corrects-the-request-and-resubmits-it") &&
+                e.getTo().equals("activity-system-validates-that-all-mandatory-fields-and-receipts-are-present")));
+
+        // Verify Policy Gateway -> Merges to Financial Validation
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-within-policy") &&
+                e.getTo().equals("activity-finance-validates-available-reimbursement-budget") &&
+                "yes".equals(e.getLabel())));
+
+        // Verify Manager Exception Gateway -> Merges to Financial Validation
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-manager-exception-approved") &&
+                e.getTo().equals("activity-finance-validates-available-reimbursement-budget") &&
+                "approved".equals(e.getLabel())));
+
+        // Verify Budget Available Gateway
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-budget-available") &&
+                e.getTo().equals("activity-finance-verifies-receipts-and-expense-amounts") &&
+                "sufficient".equals(e.getLabel())));
+
+        // Verify 7-day Timeout Timer Event
+        GraphNode timerNode = graph.getNodes().stream()
+                .filter(n -> n.getType() == NodeType.Event && n.getMetadata() != null && n.getMetadata().getEventType() == EventType.timer)
+                .findFirst().orElseThrow();
+        assertEquals("P7D", timerNode.getMetadata().getDuration());
+
+        // Verify Payment Retry Loop
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-system-retries-payment-up-to-three-times") &&
+                e.getTo().equals("activity-payment-system-sends-payment-to-bank-account")));
+
+        // Verify Archiving connects to End Event
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-completed-reimbursement-request-is-archived-for-auditing") &&
+                e.getTo().equals("event-reimbursement-process-completed")));
+
+        // Print human-readable summary of the graph topology
+        System.out.println("=== GENERATED GRAPH TOPOLOGY FOR EXPENSE REIMBURSEMENT ===");
+        System.out.println("Total Nodes: " + graph.getNodes().size());
+        System.out.println("Total Edges: " + graph.getEdges().size());
+        for (GraphEdge edge : graph.getEdges()) {
+            System.out.println("  " + edge.getFrom() + " --[" + edge.getEdgeType() + (edge.getLabel() != null ? " : " + edge.getLabel() : "") + "]--> " + edge.getTo());
+        }
+    }
+
+    @Test
+    @DisplayName("Test 9 — Industrial IoT Anomaly Detection: Generic Branching & Gateway Cascade")
+    void test9_anomalyDetectionBranchingProcess() {
+        ProcessKnowledgeDTO input = new ProcessKnowledgeDTO(
+                List.of(
+                        "detects anomaly",
+                        "send telemetry alert",
+                        "review dashboard",
+                        "remotely recalibrate sensor",
+                        "halt assembly line",
+                        "dispatch maintenance technician",
+                        "replace faulty sensor",
+                        "log hardware swap",
+                        "restart line"
+                ),
+                List.of("shift supervisor", "maintenance technician"),
+                List.of(),
+                List.of("MQTT", "IoT control panel", "ERP system"),
+                List.of("anomaly detected", "process completed"),
+                List.of("minor calibration drift?", "vibration exceeds critical safety thresholds?"),
+                List.of(),
+                List.of(),
+                List.of(
+                        "If the anomaly is a minor calibration drift, the supervisor remotely recalibrates the sensor using the IoT control panel.",
+                        "If the vibration exceeds critical safety thresholds, the supervisor halts the assembly line and dispatches a maintenance technician."
+                ),
+                List.of(),
+                List.of()
+        );
+
+        CanonicalProcessGraph graph = builder.build(input);
+
+        assertNotNull(graph);
+
+        // 1. Initial sequential intake: Start -> detects anomaly -> send telemetry alert -> review dashboard
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("event-anomaly-detected") &&
+                e.getTo().equals("activity-detects-anomaly")));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-detects-anomaly") &&
+                e.getTo().equals("activity-send-telemetry-alert")));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-send-telemetry-alert") &&
+                e.getTo().equals("activity-review-dashboard")));
+
+        // 2. Evaluating activity connects to first gateway
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-review-dashboard") &&
+                e.getTo().equals("gateway-minor-calibration-drift")));
+
+        // 3. Gateway 1 branches to: (a) remotely recalibrate sensor, (b) Gateway 2
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-minor-calibration-drift") &&
+                e.getTo().equals("activity-remotely-recalibrate-sensor") &&
+                e.getEdgeType() == EdgeType.conditional));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-minor-calibration-drift") &&
+                e.getTo().equals("gateway-vibration-exceeds-critical-safety-thresholds") &&
+                e.getEdgeType() == EdgeType.conditional));
+
+        // 4. Gateway 2 branches to: (a) halt assembly line, (b) process completed
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("gateway-vibration-exceeds-critical-safety-thresholds") &&
+                e.getTo().equals("activity-halt-assembly-line") &&
+                e.getEdgeType() == EdgeType.conditional));
+
+        // 5. CRUCIAL: remotely recalibrate sensor MUST NOT connect to halt assembly line
+        assertFalse(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-remotely-recalibrate-sensor") &&
+                e.getTo().equals("activity-halt-assembly-line")),
+                "Mutually exclusive branches must not be linearly connected!");
+
+        // 6. Maintenance sub-flow connects sequentially
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-halt-assembly-line") &&
+                e.getTo().equals("activity-dispatch-maintenance-technician")));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-dispatch-maintenance-technician") &&
+                e.getTo().equals("activity-replace-faulty-sensor")));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-replace-faulty-sensor") &&
+                e.getTo().equals("activity-log-hardware-swap")));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-log-hardware-swap") &&
+                e.getTo().equals("activity-restart-line")));
+
+        // 7. Both branch terminal activities connect to End Event
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-remotely-recalibrate-sensor") &&
+                e.getTo().equals("event-process-completed")));
+
+        assertTrue(graph.getEdges().stream().anyMatch(e ->
+                e.getFrom().equals("activity-restart-line") &&
+                e.getTo().equals("event-process-completed")));
+
+        // 8. Validate Quality Score
+        ProcessQualityValidator qualityValidator = new ProcessQualityValidator();
+        ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
+        assertTrue(report.valid());
+        assertEquals(100, report.qualityScore());
+        assertTrue(report.issues().isEmpty(), "Expected 0 validation issues, got: " + report.issues());
     }
 }

@@ -268,7 +268,8 @@ class ProcessService {
     const nodes: any[] = [];
     const edges: any[] = [];
 
-    (knowledge.activities || []).forEach((act) => {
+    const acts = knowledge.activities || [];
+    acts.forEach((act) => {
       const slug = act.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       nodes.push({ id: `activity-${slug}`, type: 'Activity', label: act, metadata: {} });
     });
@@ -278,15 +279,126 @@ class ProcessService {
       nodes.push({ id: `role-${slug}`, type: 'Role', label: actor, metadata: {} });
     });
 
+    const gatewayNodes: any[] = [];
     (knowledge.gateways || []).forEach((gw) => {
       const slug = gw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-      nodes.push({ id: `gateway-${slug}`, type: 'Gateway', label: gw, metadata: { gatewayType: 'exclusive' } });
+      const gwNode = { id: `gateway-${slug}`, type: 'Gateway', label: gw, metadata: { gatewayType: 'exclusive' } };
+      nodes.push(gwNode);
+      gatewayNodes.push(gwNode);
     });
+
+    if (gatewayNodes.length > 0 && acts.length >= 2) {
+      let evalIdx = -1;
+      for (let i = 0; i < acts.length; i++) {
+        const l = acts[i].toLowerCase();
+        if (l.includes('review') || l.includes('check') || l.includes('inspect') || l.includes('detect') || l.includes('monitor')) {
+          evalIdx = i;
+          break;
+        }
+      }
+      if (evalIdx === -1 || evalIdx >= acts.length - 1) {
+        evalIdx = Math.max(0, Math.min(acts.length - 2, 1));
+      }
+
+      const evalSlug = acts[evalIdx].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const branch1Idx = evalIdx + 1;
+      const branch1Slug = acts[branch1Idx].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+      for (let i = 0; i < evalIdx; i++) {
+        const fromSlug = acts[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const toSlug = acts[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        edges.push({
+          id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
+          from: `activity-${fromSlug}`,
+          to: `activity-${toSlug}`,
+          edgeType: 'sequence',
+        });
+      }
+
+      edges.push({
+        id: `edge-activity-${evalSlug}-${gatewayNodes[0].id}-sequence`,
+        from: `activity-${evalSlug}`,
+        to: gatewayNodes[0].id,
+        edgeType: 'sequence',
+      });
+
+      edges.push({
+        id: `edge-${gatewayNodes[0].id}-activity-${branch1Slug}-conditional`,
+        from: gatewayNodes[0].id,
+        to: `activity-${branch1Slug}`,
+        edgeType: 'conditional',
+        label: 'yes',
+      });
+
+      if (gatewayNodes.length > 1 && branch1Idx + 1 < acts.length) {
+        const branch2Idx = branch1Idx + 1;
+        const branch2Slug = acts[branch2Idx].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+        edges.push({
+          id: `edge-${gatewayNodes[0].id}-${gatewayNodes[1].id}-conditional`,
+          from: gatewayNodes[0].id,
+          to: gatewayNodes[1].id,
+          edgeType: 'conditional',
+          label: 'no',
+        });
+
+        edges.push({
+          id: `edge-${gatewayNodes[1].id}-activity-${branch2Slug}-conditional`,
+          from: gatewayNodes[1].id,
+          to: `activity-${branch2Slug}`,
+          edgeType: 'conditional',
+          label: 'critical',
+        });
+
+        for (let i = branch2Idx; i < acts.length - 1; i++) {
+          const fromSlug = acts[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+          const toSlug = acts[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+          edges.push({
+            id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
+            from: `activity-${fromSlug}`,
+            to: `activity-${toSlug}`,
+            edgeType: 'sequence',
+          });
+        }
+      } else if (branch1Idx + 1 < acts.length) {
+        const branch2Idx = branch1Idx + 1;
+        const branch2Slug = acts[branch2Idx].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        edges.push({
+          id: `edge-${gatewayNodes[0].id}-activity-${branch2Slug}-conditional`,
+          from: gatewayNodes[0].id,
+          to: `activity-${branch2Slug}`,
+          edgeType: 'conditional',
+          label: 'no',
+        });
+
+        for (let i = branch2Idx; i < acts.length - 1; i++) {
+          const fromSlug = acts[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+          const toSlug = acts[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+          edges.push({
+            id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
+            from: `activity-${fromSlug}`,
+            to: `activity-${toSlug}`,
+            edgeType: 'sequence',
+          });
+        }
+      }
+    } else {
+      for (let i = 0; i < acts.length - 1; i++) {
+        const fromSlug = acts[i].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const toSlug = acts[i + 1].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        edges.push({
+          id: `edge-activity-${fromSlug}-activity-${toSlug}-sequence`,
+          from: `activity-${fromSlug}`,
+          to: `activity-${toSlug}`,
+          edgeType: 'sequence',
+        });
+      }
+    }
 
     return {
       graphId: 'graph-' + (knowledge.activities?.[0] || 'process').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       nodes,
-      edges
+      edges,
     };
   }
 }

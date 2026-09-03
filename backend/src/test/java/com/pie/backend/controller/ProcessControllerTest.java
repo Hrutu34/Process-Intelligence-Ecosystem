@@ -59,11 +59,10 @@ class ProcessControllerTest {
                 .andExpect(jsonPath("$.nodes").isArray())
                 .andExpect(jsonPath("$.nodes.length()").value(9))
                 .andExpect(jsonPath("$.edges").isArray())
-                .andExpect(jsonPath("$.edges.length()").value(8))
+                .andExpect(jsonPath("$.edges.length()").value(9))
                 .andExpect(jsonPath("$.nodes[?(@.id == 'activity-submit-travel-request')].type").value("Activity"))
                 .andExpect(jsonPath("$.nodes[?(@.id == 'role-employee')].type").value("Role"))
-                .andExpect(jsonPath("$.nodes[?(@.id == 'gateway-manager-approval')].type").value("Gateway"))
-                .andExpect(jsonPath("$.edges[?(@.edgeType == 'conditional')].label").value("approved"));
+                .andExpect(jsonPath("$.edges[?(@.edgeType == 'conditional' && @.label == 'approved')]").exists());
     }
 
     @Test

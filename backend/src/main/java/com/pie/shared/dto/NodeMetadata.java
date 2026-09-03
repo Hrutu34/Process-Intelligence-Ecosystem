@@ -17,16 +17,22 @@ public class NodeMetadata {
     private String systemRef;
     private GatewayType gatewayType;
     private EventType eventType;
+    private String duration;
     private Map<String, Object> attributes = new LinkedHashMap<>();
 
     public NodeMetadata() {
     }
 
     public NodeMetadata(String roleRef, String systemRef, GatewayType gatewayType, EventType eventType, Map<String, Object> attributes) {
+        this(roleRef, systemRef, gatewayType, eventType, null, attributes);
+    }
+
+    public NodeMetadata(String roleRef, String systemRef, GatewayType gatewayType, EventType eventType, String duration, Map<String, Object> attributes) {
         this.roleRef = roleRef;
         this.systemRef = systemRef;
         this.gatewayType = gatewayType;
         this.eventType = eventType;
+        this.duration = duration;
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }
@@ -64,17 +70,29 @@ public class NodeMetadata {
         this.eventType = eventType;
     }
 
+    public String getDuration() {
+        return duration;
+    }
+
+    public void setDuration(String duration) {
+        this.duration = duration;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getAttributes() {
-        return attributes != null ? Collections.unmodifiableMap(attributes) : Collections.emptyMap();
+        return Collections.unmodifiableMap(attributes);
     }
 
     @JsonAnySetter
     public void setAttribute(String key, Object value) {
-        if (this.attributes == null) {
-            this.attributes = new LinkedHashMap<>();
-        }
         this.attributes.put(key, value);
+    }
+
+    public void setAttributes(Map<String, Object> attributes) {
+        this.attributes.clear();
+        if (attributes != null) {
+            this.attributes.putAll(attributes);
+        }
     }
 
     public static Builder builder() {
@@ -86,6 +104,7 @@ public class NodeMetadata {
         private String systemRef;
         private GatewayType gatewayType;
         private EventType eventType;
+        private String duration;
         private final Map<String, Object> attributes = new LinkedHashMap<>();
 
         public Builder roleRef(String roleRef) {
@@ -103,18 +122,13 @@ public class NodeMetadata {
             return this;
         }
 
-        public Builder gatewayType(String gatewayType) {
-            this.gatewayType = gatewayType != null ? GatewayType.fromString(gatewayType) : null;
-            return this;
-        }
-
         public Builder eventType(EventType eventType) {
             this.eventType = eventType;
             return this;
         }
 
-        public Builder eventType(String eventType) {
-            this.eventType = eventType != null ? EventType.fromString(eventType) : null;
+        public Builder duration(String duration) {
+            this.duration = duration;
             return this;
         }
 
@@ -131,7 +145,7 @@ public class NodeMetadata {
         }
 
         public NodeMetadata build() {
-            return new NodeMetadata(roleRef, systemRef, gatewayType, eventType, attributes);
+            return new NodeMetadata(roleRef, systemRef, gatewayType, eventType, duration, attributes);
         }
     }
 
@@ -143,12 +157,13 @@ public class NodeMetadata {
                Objects.equals(systemRef, that.systemRef) &&
                gatewayType == that.gatewayType &&
                eventType == that.eventType &&
+               Objects.equals(duration, that.duration) &&
                Objects.equals(attributes, that.attributes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(roleRef, systemRef, gatewayType, eventType, attributes);
+        return Objects.hash(roleRef, systemRef, gatewayType, eventType, duration, attributes);
     }
 
     @Override
@@ -158,6 +173,7 @@ public class NodeMetadata {
                 ", systemRef='" + systemRef + '\'' +
                 ", gatewayType=" + gatewayType +
                 ", eventType=" + eventType +
+                ", duration='" + duration + '\'' +
                 ", attributes=" + attributes +
                 '}';
     }
