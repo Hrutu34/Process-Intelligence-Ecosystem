@@ -50,3 +50,17 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+staging-secrets.txt
+
+# Runtime PIDs & logs
+.pids/
+.logs/
+
+# Embedded H2 local database files
+backend/data/*.mv.db
+backend/data/*.trace.db
+backend/data/
+
+# Temporary storage & staging
+backend/storage/deleted_staging/
+backend/storage/documents/doc_*
