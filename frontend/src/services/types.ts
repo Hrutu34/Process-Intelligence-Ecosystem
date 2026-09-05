@@ -43,6 +43,7 @@ export interface ValidationIssue {
   affectedNodeId?: string;
   suggestedFix?: string;
   isApplied?: boolean;
+  confidence?: number | null;
 }
 
 export interface SourceTrace {

@@ -83,6 +83,7 @@ export interface ValidationIssueDTO {
   elementId?: string | null;
   issue: string;
   suggestion: string;
+  confidence?: number | null;
 }
 
 export interface ProcessQualityReportDTO {

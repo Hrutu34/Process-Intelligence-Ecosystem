@@ -177,6 +177,27 @@ class ProcessQualityValidatorTest {
                 assertTrue(report.qualityScore() < 100);
             }
 
+            @Test
+            @DisplayName("Detects multiple assigned role owners as a refinement warning")
+            void testSharedOwnership() {
+                ProcessGraphDTO graph = ProcessGraphDTO.builder()
+                        .graphId("graph-shared-owner")
+                        .addNodes(List.of(
+                                GraphNode.builder().id("activity-review").type(NodeType.Activity).label("Review Request").build(),
+                                GraphNode.builder().id("role-manager").type(NodeType.Role).label("Manager").build(),
+                                GraphNode.builder().id("role-finance").type(NodeType.Role).label("Finance").build()
+                        ))
+                        .addEdges(List.of(
+                                GraphEdge.builder().id("r1").from("role-manager").to("activity-review").edgeType(EdgeType.association).build(),
+                                GraphEdge.builder().id("r2").from("role-finance").to("activity-review").edgeType(EdgeType.association).build()
+                        ))
+                        .build();
+
+                ProcessQualityReportDTO report = validator.validateQuality(graph);
+
+                assertTrue(report.issues().stream().anyMatch(issue -> "SHARED_OWNERSHIP_RULE".equals(issue.ruleId())));
+            }
+
     @Test
     @DisplayName("TASK-014: Detects single branch decision gateway")
     void testSingleBranchGateway() {

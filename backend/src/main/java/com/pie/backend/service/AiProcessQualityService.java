@@ -51,7 +51,8 @@ public class AiProcessQualityService {
                     "LOW",
                     null,
                     finding,
-                    "Review this semantic observation against the source process documents."
+                        "Review this semantic observation against the source process documents.",
+                        0.70
             )));
             List<String> recommendations = new ArrayList<>(deterministicReport.recommendations());
             review.recommendations().stream().limit(3).forEach(recommendations::add);

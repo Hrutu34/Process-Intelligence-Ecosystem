@@ -10,6 +10,38 @@ interface Props {
 
 const qualityReportCache = new Map<string, ProcessQualityReportDTO>();
 
+interface MetricCardProps {
+  label: string;
+  value: string | number;
+  sublabel: string;
+  progress: number;
+  tone: 'aqua' | 'yellow' | 'red';
+  visual?: 'ring' | 'bar';
+}
+
+const MetricCard: React.FC<MetricCardProps> = ({
+  label,
+  value,
+  sublabel,
+  progress,
+  tone,
+  visual = 'ring',
+}) => {
+  const boundedProgress = Math.max(0, Math.min(100, progress));
+  return (
+    <div className="pi-stat-card">
+      <span className="pi-stat-label">{label}</span>
+      <div className="pi-stat-main">
+        <div className={`pi-metric-visual ${visual} tone-${tone}`} style={{ '--metric-progress': `${boundedProgress}%` } as React.CSSProperties}>
+          {visual === 'ring' ? <span>{value}</span> : <span className="pi-metric-bar" />}
+        </div>
+        <strong className={`pi-stat-value text-${tone}`}>{value}</strong>
+      </div>
+      <span className="pi-stat-sub">{sublabel}</span>
+    </div>
+  );
+};
+
 export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceedToBpmn }) => {
   const knowledgeKey = JSON.stringify(knowledge);
   const [report, setReport] = useState<ProcessQualityReportDTO | null>(
@@ -64,7 +96,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         mascot="◉"
         steps={[
           { title: 'Building Graph', desc: 'Agent 02: Building the process graph...', weight: 1800 },
-          { title: 'ValidatingRules', desc: 'Agent 02: Checking boundaries, gateways & dead ends...', weight: 3000 },
+          { title: 'Validating Rules', desc: 'Agent 02: Checking boundaries, gateways & dead ends...', weight: 3000 },
           { title: 'Analyzing Semantics', desc: 'Agent 02: Reviewing process quality and evidence...', weight: 5000 },
           { title: 'Generating Report', desc: 'Agent 02: Preparing findings and recommendations...', weight: 2200 },
         ]}
@@ -93,6 +125,11 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
 
   const highIssues = issues.filter((i) => i.severity.toUpperCase() === 'HIGH');
   const mediumIssues = issues.filter((i) => i.severity.toUpperCase() === 'MEDIUM');
+  const activitiesCount = knowledge.activities?.length || 0;
+  const actorsCount = knowledge.actors?.length || 0;
+  const gatewaysCount = knowledge.gateways?.length || 0;
+  const maxEntityCount = Math.max(activitiesCount, actorsCount, gatewaysCount, 1);
+  const totalIssues = issues.length || 1;
 
   return (
     <div className="pi-container">
@@ -121,35 +158,13 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
 
       {/* KPI Stats Bar */}
       <div className="pi-stats-grid">
-        <div className="pi-stat-card score-card">
-          <span className="pi-stat-label">Model Quality Score</span>
-          <div className="pi-stat-value">
-            <span className={`score-number ${report.qualityScore >= 80 ? 'good' : report.qualityScore >= 50 ? 'warn' : 'bad'}`}>
-              {report.qualityScore}%
-            </span>
-          </div>
-          <span className="pi-stat-sub">
-            {report.valid ? '✓ Passed structural integrity checks' : '⚠️ Quality issues require attention'}
-          </span>
-        </div>
-
-        <div className="pi-stat-card">
-          <span className="pi-stat-label">High Severity Gaps</span>
-          <div className="pi-stat-value text-red">{highIssues.length}</div>
-          <span className="pi-stat-sub">Broken paths, missing start/end</span>
-        </div>
-
-        <div className="pi-stat-card">
-          <span className="pi-stat-label">Medium Severity</span>
-          <div className="pi-stat-value text-yellow">{mediumIssues.length}</div>
-          <span className="pi-stat-sub">Ambiguous gateways, missing conditions</span>
-        </div>
-
-        <div className="pi-stat-card">
-          <span className="pi-stat-label">Recommendations</span>
-          <div className="pi-stat-value text-aqua">{report.recommendations?.length || 0}</div>
-          <span className="pi-stat-sub">BPMN modeling suggestions</span>
-        </div>
+        <MetricCard label="Activities" value={activitiesCount} progress={activitiesCount / maxEntityCount * 100} tone="aqua" sublabel="Extracted process actions" />
+        <MetricCard label="Actors" value={actorsCount} progress={actorsCount / maxEntityCount * 100} tone="aqua" sublabel="People and departments" />
+        <MetricCard label="Gateways" value={gatewaysCount} progress={gatewaysCount / maxEntityCount * 100} tone="yellow" sublabel="Decision points detected" />
+        <MetricCard label="Model Quality" value={`${report.qualityScore}%`} progress={report.qualityScore} tone={report.qualityScore >= 80 ? 'aqua' : report.qualityScore >= 50 ? 'yellow' : 'red'} sublabel={report.valid ? 'Structural checks passed' : 'Quality issues require attention'} />
+        <MetricCard label="High Severity" value={highIssues.length} progress={highIssues.length / totalIssues * 100} tone="red" visual="bar" sublabel="Broken paths and boundaries" />
+        <MetricCard label="Medium Severity" value={mediumIssues.length} progress={mediumIssues.length / totalIssues * 100} tone="yellow" visual="bar" sublabel="Ambiguous or incomplete logic" />
+        <MetricCard label="Recommendations" value={report.recommendations?.length || 0} progress={(report.recommendations?.length || 0) / Math.max(issues.length, 1) * 100} tone="aqua" visual="bar" sublabel="Actionable refinement ideas" />
       </div>
 
       {/* Filter Tabs */}
@@ -204,6 +219,9 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
               <h4 className="pi-issue-title">{issue.issue}</h4>
               <p className="pi-issue-suggestion">
                 <strong>💡 Suggestion:</strong> {issue.suggestion}
+                {issue.confidence != null && (
+                  <span className="pi-confidence"> Confidence {Math.round(issue.confidence * 100)}%</span>
+                )}
               </p>
             </div>
           ))}

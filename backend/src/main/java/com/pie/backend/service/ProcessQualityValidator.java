@@ -60,6 +60,7 @@ public class ProcessQualityValidator {
         // 5. Validate graph evidence beyond synthetic start/end nodes
         validateFlowCoverage(nodes, edges, issues, recommendations);
         validateActivityOwnership(nodes, issues, recommendations);
+        validateSharedOwnership(nodes, edges, issues, recommendations);
 
         int qualityScore = calculateQualityScore(nodes, edges, issues);
         int highCount = (int) issues.stream().filter(i -> "HIGH".equalsIgnoreCase(i.severity())).count();
@@ -172,6 +173,36 @@ public class ProcessQualityValidator {
     private boolean isProcessFlow(GraphEdge edge) {
         return edge.getEdgeType() == EdgeType.sequence || edge.getEdgeType() == EdgeType.conditional;
     }
+
+        private void validateSharedOwnership(List<GraphNode> nodes, List<GraphEdge> edges,
+                         List<ValidationIssueDTO> issues, List<String> recommendations) {
+        Set<String> roleIds = nodes.stream()
+            .filter(node -> node.getType() == NodeType.Role)
+            .map(GraphNode::getId)
+            .collect(Collectors.toSet());
+        List<String> sharedActivities = nodes.stream()
+            .filter(node -> node.getType() == NodeType.Activity)
+            .filter(activity -> edges.stream()
+                .filter(edge -> edge.getEdgeType() == EdgeType.association
+                    && edge.getTo().equals(activity.getId())
+                    && roleIds.contains(edge.getFrom()))
+                .map(GraphEdge::getFrom)
+                .distinct()
+                .count() > 1)
+            .map(GraphNode::getLabel)
+            .toList();
+
+        if (!sharedActivities.isEmpty()) {
+            issues.add(new ValidationIssueDTO(
+                "SHARED_OWNERSHIP_RULE",
+                "LOW",
+                null,
+                sharedActivities.size() + " activity(ies) have multiple assigned roles: " + String.join("; ", sharedActivities.stream().limit(5).toList()),
+                "Confirm the accountable owner and distinguish supporting roles where responsibility is shared."
+            ));
+            recommendations.add("Clarify accountable ownership for " + sharedActivities.size() + " shared-responsibility activity(ies).");
+        }
+        }
 
     /** Flags activity labels that are near matches, not only exact duplicates. */
     public void validateDuplicates(List<GraphNode> nodes,
