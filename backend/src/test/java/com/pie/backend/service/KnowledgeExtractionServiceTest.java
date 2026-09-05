@@ -54,6 +54,22 @@ public class KnowledgeExtractionServiceTest {
         assertEquals(List.of("Output O"), res.outputs());
         assertEquals(List.of("Rule R"), res.businessRules());
         assertEquals(List.of("Risk R"), res.risks());
-        assertEquals(List.of("Conflict between doc1 and doc2"), res.conflicts());
+        assertTrue(res.conflicts().isEmpty());
     }
+
+      @Test
+      void extractKnowledge_keepsConflictsForExplicitCombinedDocuments() {
+        ChatClient.Builder builder = mock(ChatClient.Builder.class);
+        ChatClient chatClient = mock(ChatClient.class, RETURNS_DEEP_STUBS);
+        when(builder.build()).thenReturn(chatClient);
+        when(chatClient.prompt().system(anyString()).user(anyString()).call().content())
+            .thenReturn("{\"activities\":[\"Activity A\"],\"conflicts\":[\"Doc 1 differs from Doc 2\"]}");
+
+        KnowledgeExtractionService service = new KnowledgeExtractionService(builder, new ProcessKnowledgeNormalizer());
+        ProcessKnowledgeDTO result = service.extractKnowledge(
+            "--- BEGIN DOCUMENT 1: first.txt ---\nFirst\n--- END DOCUMENT 1 ---\n"
+                + "--- BEGIN DOCUMENT 2: second.txt ---\nSecond\n--- END DOCUMENT 2 ---");
+
+        assertEquals(List.of("Doc 1 differs from Doc 2"), result.conflicts());
+      }
 }

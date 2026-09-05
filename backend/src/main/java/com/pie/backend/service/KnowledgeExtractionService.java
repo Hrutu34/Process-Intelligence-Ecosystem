@@ -47,7 +47,10 @@ public class KnowledgeExtractionService {
                     .content();
 
             // Validate, repair, normalize, and generate standardized DTO
-            return normalizer.parseAndNormalize(rawResponse);
+                boolean multipleDocuments = documentContent != null
+                        && documentContent.contains("--- BEGIN DOCUMENT 1")
+                        && documentContent.contains("--- BEGIN DOCUMENT 2");
+                return normalizer.parseAndNormalize(rawResponse, multipleDocuments);
 
         } catch (Exception e) {
             log.error("Knowledge extraction process failed: {}", e.getMessage());

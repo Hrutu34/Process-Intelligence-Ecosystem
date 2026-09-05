@@ -1,12 +1,14 @@
 package com.pie.backend.controller;
 
 import com.pie.backend.service.DocumentIngestionService;
+import com.pie.backend.service.AiProcessQualityService;
 import com.pie.backend.service.ProcessGraphBuilder;
 import com.pie.backend.service.ProcessQualityValidator;
 import com.pie.shared.dto.ProcessGraphDTO;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
 import com.pie.shared.dto.ProcessQualityReportDTO;
 import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,14 +23,25 @@ public class ProcessController {
     private final DocumentIngestionService ingestionService;
     private final ProcessGraphBuilder graphBuilder;
     private final ProcessQualityValidator qualityValidator;
+    private final AiProcessQualityService aiQualityService;
 
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator) {
+        this(ingestionService, graphBuilder, qualityValidator, null);
+    }
+
+    @Autowired
+    public ProcessController(
+            DocumentIngestionService ingestionService,
+            ProcessGraphBuilder graphBuilder,
+            ProcessQualityValidator qualityValidator,
+            AiProcessQualityService aiQualityService) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
         this.qualityValidator = qualityValidator;
+        this.aiQualityService = aiQualityService;
     }
 
     @PostMapping("/extract-text")
@@ -57,7 +70,11 @@ public class ProcessController {
     @PostMapping("/validate-knowledge")
     public ResponseEntity<ProcessQualityReportDTO> validateKnowledge(@RequestBody ProcessKnowledgeDTO knowledge) {
         ProcessGraphDTO graph = graphBuilder.build(knowledge);
-        return ResponseEntity.ok(qualityValidator.validateQuality(graph));
+        ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
+        if (aiQualityService != null) {
+            report = aiQualityService.enhance(knowledge, graph, report);
+        }
+        return ResponseEntity.ok(report);
     }
 
     public record TextPayload(String content) {

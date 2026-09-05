@@ -18,6 +18,10 @@ public class ProcessKnowledgeNormalizer {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ProcessKnowledgeDTO parseAndNormalize(String rawLlmResponse) {
+        return parseAndNormalize(rawLlmResponse, false);
+    }
+
+    public ProcessKnowledgeDTO parseAndNormalize(String rawLlmResponse, boolean allowCrossDocumentConflicts) {
         if (rawLlmResponse == null || rawLlmResponse.isBlank()) {
             throw new IllegalArgumentException("LLM response cannot be null or blank");
         }
@@ -38,7 +42,7 @@ public class ProcessKnowledgeNormalizer {
                     normalizeList(root, "outputs", false),
                     normalizeList(root, "businessRules", false),
                     normalizeList(root, "risks", false),
-                    normalizeList(root, "conflicts", false)
+                        allowCrossDocumentConflicts ? normalizeList(root, "conflicts", false) : List.of()
             );
         } catch (IllegalArgumentException e) {
             // Re-throw argument exceptions from repairJson if no JSON found

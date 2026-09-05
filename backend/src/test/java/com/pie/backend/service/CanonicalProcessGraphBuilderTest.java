@@ -493,8 +493,9 @@ class CanonicalProcessGraphBuilderTest {
         // 8. Validate Quality Score
         ProcessQualityValidator qualityValidator = new ProcessQualityValidator();
         ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
-        assertTrue(report.valid());
-        assertEquals(100, report.qualityScore());
-        assertTrue(report.issues().isEmpty(), "Expected 0 validation issues, got: " + report.issues());
+        assertTrue(report.qualityScore() < 100);
+        assertFalse(report.issues().isEmpty(), "Expected quality issues for incomplete ownership/flow evidence");
+        assertTrue(report.issues().stream().anyMatch(issue ->
+                "ACTIVITY_OWNER_RULE".equals(issue.ruleId()) || "FLOW_COVERAGE_RULE".equals(issue.ruleId())));
     }
 }

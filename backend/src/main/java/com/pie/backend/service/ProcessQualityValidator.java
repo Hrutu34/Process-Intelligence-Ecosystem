@@ -57,19 +57,120 @@ public class ProcessQualityValidator {
         // 4. Detect semantically redundant activities (TASK-016)
         validateDuplicates(nodes, issues, recommendations);
 
-        // Calculate Quality Score
-        int highCount = (int) issues.stream().filter(i -> "HIGH".equalsIgnoreCase(i.severity())).count();
-        int medCount = (int) issues.stream().filter(i -> "MEDIUM".equalsIgnoreCase(i.severity())).count();
-        int lowCount = (int) issues.stream().filter(i -> "LOW".equalsIgnoreCase(i.severity()) || "WARNING".equalsIgnoreCase(i.severity())).count();
+        // 5. Validate graph evidence beyond synthetic start/end nodes
+        validateFlowCoverage(nodes, edges, issues, recommendations);
+        validateActivityOwnership(nodes, issues, recommendations);
 
-        int penalty = (highCount * 25) + (medCount * 10) + (lowCount * 5);
-        int qualityScore = Math.max(0, Math.min(100, 100 - penalty));
+        int qualityScore = calculateQualityScore(nodes, edges, issues);
+        int highCount = (int) issues.stream().filter(i -> "HIGH".equalsIgnoreCase(i.severity())).count();
         boolean isValid = highCount == 0;
 
         log.info("Quality validation completed for [{}]: score={}, issues={}, recommendations={}",
                 graph.getGraphId(), qualityScore, issues.size(), recommendations.size());
 
         return new ProcessQualityReportDTO(isValid, qualityScore, issues, recommendations);
+    }
+
+        private int calculateQualityScore(List<GraphNode> nodes, List<GraphEdge> edges,
+                          List<ValidationIssueDTO> issues) {
+        // Hard failures affect the score directly; extraction uncertainty is weighted by coverage.
+        int structuralPenalty = (int) issues.stream()
+            .filter(issue -> "HIGH".equalsIgnoreCase(issue.severity()))
+            .count() * 25;
+        int semanticPenalty = (int) issues.stream()
+            .filter(issue -> "MEDIUM".equalsIgnoreCase(issue.severity()))
+            .count() * 10;
+
+        List<GraphNode> processNodes = nodes.stream()
+            .filter(node -> node.getType() == NodeType.Activity
+                || node.getType() == NodeType.Gateway
+                || node.getType() == NodeType.Event)
+            .toList();
+        Set<String> flowNodeIds = edges.stream()
+            .filter(this::isProcessFlow)
+            .flatMap(edge -> java.util.stream.Stream.of(edge.getFrom(), edge.getTo()))
+            .collect(Collectors.toSet());
+        int flowPenalty = scaledCoveragePenalty(processNodes.size(),
+            processNodes.stream().filter(node -> flowNodeIds.contains(node.getId())).count(), 15);
+
+        List<GraphNode> activities = nodes.stream()
+            .filter(node -> node.getType() == NodeType.Activity)
+            .toList();
+        boolean hasOwners = nodes.stream().anyMatch(node -> node.getType() == NodeType.Role || node.getType() == NodeType.System);
+        long ownedActivities = activities.stream().filter(this::hasOwner).count();
+        int ownershipPenalty = hasOwners ? scaledCoveragePenalty(activities.size(), ownedActivities, 10) : 0;
+
+        return Math.max(0, Math.min(100,
+            100 - structuralPenalty - semanticPenalty - flowPenalty - ownershipPenalty));
+        }
+
+        private int scaledCoveragePenalty(int total, long covered, int maximumPenalty) {
+        if (total == 0 || covered >= total) return 0;
+        return (int) Math.ceil((total - covered) * maximumPenalty / (double) total);
+        }
+
+        private boolean hasOwner(GraphNode activity) {
+        NodeMetadata metadata = activity.getMetadata();
+        return metadata != null
+            && ((metadata.getRoleRef() != null && !metadata.getRoleRef().isBlank())
+            || (metadata.getSystemRef() != null && !metadata.getSystemRef().isBlank()));
+        }
+
+    private void validateFlowCoverage(List<GraphNode> nodes, List<GraphEdge> edges,
+                                      List<ValidationIssueDTO> issues, List<String> recommendations) {
+        Set<String> flowNodeIds = edges.stream()
+                .filter(this::isProcessFlow)
+                .flatMap(edge -> java.util.stream.Stream.of(edge.getFrom(), edge.getTo()))
+                .collect(Collectors.toSet());
+
+        List<GraphNode> disconnected = nodes.stream()
+            .filter(node -> node.getType() == NodeType.Activity || node.getType() == NodeType.Gateway || node.getType() == NodeType.Event)
+            .filter(node -> !flowNodeIds.contains(node.getId()))
+            .toList();
+
+        if (!disconnected.isEmpty()) {
+            String labels = disconnected.stream().map(GraphNode::getLabel).limit(5).collect(Collectors.joining("; "));
+            String suffix = disconnected.size() > 5 ? " and " + (disconnected.size() - 5) + " more" : "";
+            issues.add(new ValidationIssueDTO(
+                "FLOW_COVERAGE_RULE",
+                "LOW",
+                null,
+                disconnected.size() + " process element(s) lack explicit flow connections: " + labels + suffix,
+                "Review disconnected elements; this is an evidence warning and may reflect incomplete model extraction."
+            ));
+            recommendations.add("Review " + disconnected.size() + " process element(s) without explicit sequence or conditional flow.");
+        }
+    }
+
+    private void validateActivityOwnership(List<GraphNode> nodes,
+                                           List<ValidationIssueDTO> issues,
+                                           List<String> recommendations) {
+        boolean hasOwners = nodes.stream().anyMatch(node -> node.getType() == NodeType.Role || node.getType() == NodeType.System);
+        if (!hasOwners) return;
+
+        List<GraphNode> unowned = new ArrayList<>();
+        for (GraphNode activity : nodes.stream().filter(node -> node.getType() == NodeType.Activity).toList()) {
+            if (!hasOwner(activity)) {
+            unowned.add(activity);
+            }
+        }
+
+        if (!unowned.isEmpty()) {
+            String labels = unowned.stream().map(GraphNode::getLabel).limit(5).collect(Collectors.joining("; "));
+            String suffix = unowned.size() > 5 ? " and " + (unowned.size() - 5) + " more" : "";
+            issues.add(new ValidationIssueDTO(
+                "ACTIVITY_OWNER_RULE",
+                "LOW",
+                null,
+                unowned.size() + " activity(ies) have no explicit owner or system: " + labels + suffix,
+                "Assign roles or systems where known; extracted text may not contain ownership for every activity."
+            ));
+            recommendations.add("Review ownership for " + unowned.size() + " activity(ies); treat missing ownership as a refinement opportunity.");
+        }
+    }
+
+    private boolean isProcessFlow(GraphEdge edge) {
+        return edge.getEdgeType() == EdgeType.sequence || edge.getEdgeType() == EdgeType.conditional;
     }
 
     /** Flags activity labels that are near matches, not only exact duplicates. */
@@ -114,7 +215,7 @@ public class ProcessQualityValidator {
 
         int maxLength = Math.max(first.length(), second.length());
         double similarity = maxLength == 0 ? 1 : 1.0 - (double) levenshteinDistance(first, second) / maxLength;
-        return overlap >= 0.66 || similarity >= 0.82;
+        return overlap == 1.0 || similarity >= 0.90;
     }
 
     private String normalizeActivityLabel(String label) {

@@ -117,6 +117,66 @@ class ProcessQualityValidatorTest {
                 assertFalse(recommendations.isEmpty());
         }
 
+        @Test
+        @DisplayName("TASK-016: Does not flag distinct procurement stages sharing a noun")
+        void testDistinctProcurementActivitiesAreNotDuplicates() {
+                List<GraphNode> nodes = List.of(
+                                GraphNode.builder().id("activity-request").type(NodeType.Activity).label("Create Asset Purchase Request").build(),
+                                GraphNode.builder().id("activity-order").type(NodeType.Activity).label("Create Purchase Order").build(),
+                                GraphNode.builder().id("activity-close").type(NodeType.Activity).label("Close purchase order").build()
+                );
+                List<ValidationIssueDTO> issues = new ArrayList<>();
+                validator.validateDuplicates(nodes, issues, new ArrayList<>());
+
+                assertTrue(issues.isEmpty());
+        }
+
+            @Test
+            @DisplayName("Detects disconnected process elements instead of treating the graph as stable")
+            void testDisconnectedProcessElement() {
+                ProcessGraphDTO graph = ProcessGraphDTO.builder()
+                        .graphId("graph-disconnected")
+                        .addNodes(List.of(
+                                GraphNode.builder().id("event-start").type(NodeType.Event).label("Request Received").metadata(NodeMetadata.builder().eventType(EventType.start).build()).build(),
+                                GraphNode.builder().id("activity-submit").type(NodeType.Activity).label("Submit Request").build(),
+                                GraphNode.builder().id("activity-unconnected").type(NodeType.Activity).label("Review Request").build(),
+                                GraphNode.builder().id("event-end").type(NodeType.Event).label("Completed").metadata(NodeMetadata.builder().eventType(EventType.end).build()).build()
+                        ))
+                        .addEdges(List.of(
+                                GraphEdge.builder().id("e1").from("event-start").to("activity-submit").edgeType(EdgeType.sequence).build(),
+                                GraphEdge.builder().id("e2").from("activity-submit").to("event-end").edgeType(EdgeType.sequence).build()
+                        ))
+                        .build();
+
+                ProcessQualityReportDTO report = validator.validateQuality(graph);
+
+                assertTrue(report.issues().stream().anyMatch(issue -> "FLOW_COVERAGE_RULE".equals(issue.ruleId())));
+                assertTrue(report.qualityScore() < 100);
+            }
+
+            @Test
+            @DisplayName("Detects unowned activities when roles or systems are present")
+            void testUnownedActivity() {
+                ProcessGraphDTO graph = ProcessGraphDTO.builder()
+                        .graphId("graph-unowned-activity")
+                        .addNodes(List.of(
+                                GraphNode.builder().id("event-start").type(NodeType.Event).label("Start").metadata(NodeMetadata.builder().eventType(EventType.start).build()).build(),
+                                GraphNode.builder().id("activity-submit").type(NodeType.Activity).label("Submit Request").metadata(NodeMetadata.builder().build()).build(),
+                                GraphNode.builder().id("role-employee").type(NodeType.Role).label("Employee").metadata(NodeMetadata.builder().build()).build(),
+                                GraphNode.builder().id("event-end").type(NodeType.Event).label("End").metadata(NodeMetadata.builder().eventType(EventType.end).build()).build()
+                        ))
+                        .addEdges(List.of(
+                                GraphEdge.builder().id("e1").from("event-start").to("activity-submit").edgeType(EdgeType.sequence).build(),
+                                GraphEdge.builder().id("e2").from("activity-submit").to("event-end").edgeType(EdgeType.sequence).build()
+                        ))
+                        .build();
+
+                ProcessQualityReportDTO report = validator.validateQuality(graph);
+
+                assertTrue(report.issues().stream().anyMatch(issue -> "ACTIVITY_OWNER_RULE".equals(issue.ruleId())));
+                assertTrue(report.qualityScore() < 100);
+            }
+
     @Test
     @DisplayName("TASK-014: Detects single branch decision gateway")
     void testSingleBranchGateway() {
