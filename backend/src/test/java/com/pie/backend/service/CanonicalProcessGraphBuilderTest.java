@@ -1,6 +1,5 @@
 package com.pie.backend.service;
 
-import com.pie.backend.exception.InvalidProcessGraphException;
 import com.pie.shared.dto.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

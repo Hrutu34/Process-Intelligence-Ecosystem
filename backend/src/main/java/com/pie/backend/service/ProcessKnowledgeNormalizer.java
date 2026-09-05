@@ -65,13 +65,58 @@ public class ProcessKnowledgeNormalizer {
         trimmed = trimmed.trim();
 
         int firstBrace = trimmed.indexOf('{');
-        int lastBrace = trimmed.lastIndexOf('}');
-
-        if (firstBrace == -1 || lastBrace == -1 || firstBrace >= lastBrace) {
+        if (firstBrace == -1) {
             throw new IllegalArgumentException("No valid JSON object bounds found in output");
         }
 
-        return trimmed.substring(firstBrace, lastBrace + 1);
+        String candidate = trimmed.substring(firstBrace);
+        Deque<Character> openDelimiters = new ArrayDeque<>();
+        boolean inString = false;
+        boolean escaped = false;
+        int end = candidate.length();
+
+        for (int i = 0; i < candidate.length(); i++) {
+            char current = candidate.charAt(i);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (current == '\\') {
+                    escaped = true;
+                } else if (current == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (current == '"') {
+                inString = true;
+            } else if (current == '{' || current == '[') {
+                openDelimiters.push(current);
+            } else if (current == '}' || current == ']') {
+                if (openDelimiters.isEmpty() || !matches(openDelimiters.peek(), current)) {
+                    throw new IllegalArgumentException("Malformed JSON delimiters in output");
+                }
+                openDelimiters.pop();
+                if (openDelimiters.isEmpty()) {
+                    end = i + 1;
+                    break;
+                }
+            }
+        }
+
+        if (inString) {
+            throw new IllegalArgumentException("Incomplete JSON string in output");
+        }
+
+        String json = candidate.substring(0, end).trim();
+        while (!openDelimiters.isEmpty()) {
+            json += openDelimiters.pop() == '[' ? "]" : "}";
+        }
+        return json;
+    }
+
+    private boolean matches(char opening, char closing) {
+        return (opening == '{' && closing == '}') || (opening == '[' && closing == ']');
     }
 
     private List<String> normalizeList(JsonNode rootNode, String fieldName, boolean deduplicate) {

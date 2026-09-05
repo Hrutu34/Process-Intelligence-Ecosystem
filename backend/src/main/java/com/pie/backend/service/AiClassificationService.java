@@ -57,24 +57,47 @@ public class AiClassificationService implements ClassificationService {
                 return new ClassificationResultDTO("Unknown", 0);
             }
 
-            // Strip markdown formatting if present
-            String cleanJson = rawResponse.trim();
-            if (cleanJson.startsWith("```json")) {
-                cleanJson = cleanJson.substring(7);
-            } else if (cleanJson.startsWith("```")) {
-                cleanJson = cleanJson.substring(3);
-            }
-            if (cleanJson.endsWith("```")) {
-                cleanJson = cleanJson.substring(0, cleanJson.length() - 3);
-            }
-            cleanJson = cleanJson.trim();
-
-            return objectMapper.readValue(cleanJson, ClassificationResultDTO.class);
+            return objectMapper.readValue(extractJsonObject(rawResponse), ClassificationResultDTO.class);
 
         } catch (Exception e) {
             log.error("Failed to classify document: {}", e.getMessage());
             // Fallback gracefully so ingestion is not aborted
             return new ClassificationResultDTO("Unknown", 0);
         }
+    }
+
+    private String extractJsonObject(String response) {
+        String trimmed = response.trim();
+        int start = trimmed.indexOf('{');
+        if (start < 0) {
+            throw new IllegalArgumentException("Classification response contains no JSON object");
+        }
+
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+        for (int i = start; i < trimmed.length(); i++) {
+            char current = trimmed.charAt(i);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (current == '\\') {
+                    escaped = true;
+                } else if (current == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (current == '"') {
+                inString = true;
+            } else if (current == '{') {
+                depth++;
+            } else if (current == '}' && --depth == 0) {
+                return trimmed.substring(start, i + 1);
+            }
+        }
+
+        throw new IllegalArgumentException("Classification response contains an incomplete JSON object");
     }
 }

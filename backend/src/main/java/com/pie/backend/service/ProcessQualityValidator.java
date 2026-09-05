@@ -287,10 +287,6 @@ public class ProcessQualityValidator {
                     .filter(e -> e.getFrom().equals(gw.getId()) && (e.getEdgeType() == EdgeType.sequence || e.getEdgeType() == EdgeType.conditional))
                     .toList();
 
-            List<GraphEdge> incoming = edges.stream()
-                    .filter(e -> e.getTo().equals(gw.getId()) && (e.getEdgeType() == EdgeType.sequence || e.getEdgeType() == EdgeType.conditional))
-                    .toList();
-
             // Rule 14.1: Single Branch Decision
             if (outgoing.size() == 1) {
                 issues.add(new ValidationIssueDTO(
