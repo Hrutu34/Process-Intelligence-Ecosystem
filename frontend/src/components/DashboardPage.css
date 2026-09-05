@@ -1,0 +1,234 @@
+/* DashboardPage.css */
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.dashboard-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.dashboard-greeting h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+
+.dashboard-greeting p {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Stats Row */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.stat-card {
+  padding: 22px 20px;
+  background: linear-gradient(150deg, #092149, #051533);
+  border: 1px solid rgba(116, 183, 220, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-card-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--white);
+}
+
+.stat-card-value.highlight-aqua {
+  color: var(--aqua);
+}
+
+.stat-card-value.highlight-electric {
+  color: var(--electric);
+}
+
+.stat-card-subtitle {
+  font-size: 12px;
+  color: var(--soft-white);
+}
+
+/* Dashboard Main Grid: Processes (Left) & Activity / Quick Actions (Right) */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 28px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel-card {
+  padding: 28px;
+  background: linear-gradient(160deg, rgba(9, 33, 73, 0.8), rgba(4, 18, 45, 0.95));
+  border: 1px solid rgba(116, 183, 220, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.panel-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-card-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+/* Processes Table */
+.processes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.processes-table th {
+  text-align: left;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(116, 183, 220, 0.2);
+  text-transform: uppercase;
+}
+
+.processes-table td {
+  padding: 14px;
+  border-bottom: 1px solid rgba(116, 183, 220, 0.08);
+  color: var(--soft-white);
+}
+
+.processes-table tr:hover td {
+  background: rgba(57, 245, 208, 0.04);
+}
+
+.process-name-cell strong {
+  color: var(--white);
+  display: block;
+  font-size: 14px;
+}
+
+.process-name-cell span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.quality-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.quality-badge.high {
+  background: rgba(57, 245, 208, 0.12);
+  color: var(--aqua);
+  border: 1px solid rgba(57, 245, 208, 0.3);
+}
+
+.quality-badge.medium {
+  background: rgba(255, 204, 0, 0.12);
+  color: #ffe57f;
+  border: 1px solid rgba(255, 204, 0, 0.3);
+}
+
+.status-badge-table {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge-table.validated {
+  background: rgba(57, 245, 208, 0.15);
+  color: var(--aqua);
+}
+
+.status-badge-table.needs-review {
+  background: rgba(255, 71, 87, 0.15);
+  color: #ff6b81;
+}
+
+/* Quick Actions List */
+.quick-actions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quick-action-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(16, 50, 99, 0.4);
+  border: 1px solid rgba(116, 183, 220, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-action-item:hover {
+  background: rgba(57, 245, 208, 0.1);
+  border-color: var(--aqua);
+  transform: translateX(4px);
+}
+
+.quick-action-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quick-action-icon {
+  font-size: 20px;
+}
+
+.quick-action-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--white);
+}
+
+.quick-action-desc {
+  font-size: 12px;
+  color: var(--muted);
+}

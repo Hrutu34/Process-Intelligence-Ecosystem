@@ -11,7 +11,7 @@ import java.util.Map;
 @RestController
 public class HealthController {
 
-    @GetMapping("/")
+    @GetMapping("/api/v1/Up")
     public ResponseEntity<?> health(
             @RequestHeader(value = "Accept", defaultValue = "application/json") String accept) {
         if (accept.contains("text/html")) {
@@ -23,8 +23,7 @@ public class HealthController {
                 "status", "UP",
                 "message", "Process Intelligence Ecosystem - Backend Service is running",
                 "version", "0.0.1-SNAPSHOT",
-                "timestamp", System.currentTimeMillis()
-        ));
+                "timestamp", System.currentTimeMillis()));
     }
 
     @GetMapping("/api/v1/health")
@@ -32,8 +31,7 @@ public class HealthController {
         return ResponseEntity.ok(Map.of(
                 "status", "UP",
                 "service", "Process Intelligence Backend",
-                "timestamp", System.currentTimeMillis()
-        ));
+                "timestamp", System.currentTimeMillis()));
     }
 
     private String generateHealthHtml() {

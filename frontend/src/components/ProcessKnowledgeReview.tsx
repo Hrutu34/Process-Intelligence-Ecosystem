@@ -4,6 +4,7 @@ import './ProcessKnowledgeReview.css';
 
 interface Props {
   data: ProcessKnowledgeDTO;
+  onProceedToIntelligence?: () => void;
   onProceedToBpmn?: () => void;
   onReset: () => void;
 }
@@ -34,6 +35,7 @@ const SECTIONS: SectionConfig[] = [
 
 export const ProcessKnowledgeReview: React.FC<Props> = ({
   data,
+  onProceedToIntelligence,
   onProceedToBpmn,
   onReset,
 }) => {
@@ -67,7 +69,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
             <span className="status-dot" />
             EXTRACTION VALIDATED
             <span className="status-separator">/</span>
-            {totalEntities} ENTITIES
+            {totalEntities} ENTITIES DETECTED
           </div>
           <h3>Normalized Process Knowledge</h3>
           <p>Review the extracted blueprint before starting BPMN 2.0 generation.</p>
@@ -83,6 +85,16 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
           <button type="button" className="btn-ghost" onClick={onReset}>
             ↺ New Upload
           </button>
+          {onProceedToIntelligence && (
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ color: '#fbd437', borderColor: 'rgba(251, 212, 55, 0.4)' }}
+              onClick={onProceedToIntelligence}
+            >
+              ◉ ANALYZE GAPS (AGENT 02)
+            </button>
+          )}
           <button
             type="button"
             className="yellow-button"
@@ -108,7 +120,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
       <div className="review-grid">
         {SECTIONS.map((section) => {
           const items = (data[section.key] as string[]) || [];
-          const isCollapsed = !!collapsedSections[section.key];
+          const isCollapsed = !collapsedSections[section.key];
           const isCritical = section.critical && items.length > 0;
 
           return (
