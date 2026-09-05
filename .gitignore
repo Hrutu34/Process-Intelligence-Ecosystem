@@ -50,3 +50,4 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+staging-secrets.txt
