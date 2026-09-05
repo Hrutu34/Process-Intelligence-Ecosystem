@@ -29,7 +29,7 @@ public class ProcessQualityValidator {
             "rejected", "reject", "no", "invalid", "failed", "fail", "denied", "deny", "escalate", "false"
     );
 
-    public ProcessQualityReportDTO validateQuality(CanonicalProcessGraph graph) {
+    public ProcessQualityReportDTO validateQuality(ProcessGraphDTO graph) {
         if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty()) {
             return new ProcessQualityReportDTO(
                     false,
@@ -54,6 +54,9 @@ public class ProcessQualityValidator {
         // 3. Validate Decision Gateways (TASK-014)
         validateGateways(nodes, edges, issues, recommendations);
 
+        // 4. Detect semantically redundant activities (TASK-016)
+        validateDuplicates(nodes, issues, recommendations);
+
         // Calculate Quality Score
         int highCount = (int) issues.stream().filter(i -> "HIGH".equalsIgnoreCase(i.severity())).count();
         int medCount = (int) issues.stream().filter(i -> "MEDIUM".equalsIgnoreCase(i.severity())).count();
@@ -67,6 +70,78 @@ public class ProcessQualityValidator {
                 graph.getGraphId(), qualityScore, issues.size(), recommendations.size());
 
         return new ProcessQualityReportDTO(isValid, qualityScore, issues, recommendations);
+    }
+
+    /** Flags activity labels that are near matches, not only exact duplicates. */
+    public void validateDuplicates(List<GraphNode> nodes,
+                                   List<ValidationIssueDTO> issues,
+                                   List<String> recommendations) {
+        List<GraphNode> activities = nodes.stream()
+                .filter(node -> node.getType() == NodeType.Activity)
+                .toList();
+
+        for (int i = 0; i < activities.size(); i++) {
+            for (int j = i + 1; j < activities.size(); j++) {
+                GraphNode first = activities.get(i);
+                GraphNode second = activities.get(j);
+                if (!isSemanticallyEquivalent(first.getLabel(), second.getLabel())) {
+                    continue;
+                }
+
+                issues.add(new ValidationIssueDTO(
+                        "DUPLICATE_ACTIVITY_RULE",
+                        "MEDIUM",
+                        second.getId(),
+                        "Redundant activities detected: '" + first.getLabel() + "' and '" + second.getLabel() + "'",
+                        "Merge the overlapping activities or clarify how their responsibilities differ."
+                ));
+                recommendations.add("Review similar steps '" + first.getLabel() + "' and '" + second.getLabel() + "' to remove redundant work.");
+            }
+        }
+    }
+
+    private boolean isSemanticallyEquivalent(String firstLabel, String secondLabel) {
+        String first = normalizeActivityLabel(firstLabel);
+        String second = normalizeActivityLabel(secondLabel);
+        if (first.equals(second)) return true;
+
+        Set<String> firstTokens = new HashSet<>(List.of(first.split(" ")));
+        Set<String> secondTokens = new HashSet<>(List.of(second.split(" ")));
+        Set<String> intersection = new HashSet<>(firstTokens);
+        intersection.retainAll(secondTokens);
+        int shorterSize = Math.min(firstTokens.size(), secondTokens.size());
+        double overlap = shorterSize == 0 ? 0 : (double) intersection.size() / shorterSize;
+
+        int maxLength = Math.max(first.length(), second.length());
+        double similarity = maxLength == 0 ? 1 : 1.0 - (double) levenshteinDistance(first, second) / maxLength;
+        return overlap >= 0.66 || similarity >= 0.82;
+    }
+
+    private String normalizeActivityLabel(String label) {
+        return Arrays.stream(label.toLowerCase(Locale.ROOT)
+                        .replaceAll("[^a-z0-9 ]", " ")
+                        .trim()
+                        .split("\\s+"))
+                .filter(token -> !Set.of("the", "a", "an", "to", "of", "and").contains(token))
+                .collect(Collectors.joining(" "));
+    }
+
+    private int levenshteinDistance(String first, String second) {
+        int[] previous = new int[second.length() + 1];
+        int[] current = new int[second.length() + 1];
+        for (int j = 0; j <= second.length(); j++) previous[j] = j;
+
+        for (int i = 1; i <= first.length(); i++) {
+            current[0] = i;
+            for (int j = 1; j <= second.length(); j++) {
+                int substitution = previous[j - 1] + (first.charAt(i - 1) == second.charAt(j - 1) ? 0 : 1);
+                current[j] = Math.min(Math.min(current[j - 1] + 1, previous[j] + 1), substitution);
+            }
+            int[] swap = previous;
+            previous = current;
+            current = swap;
+        }
+        return previous[second.length()];
     }
 
     /**

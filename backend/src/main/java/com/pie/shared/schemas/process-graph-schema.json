@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "CanonicalProcessGraph",
+  "title": "ProcessGraphDTO",
   "type": "object",
   "properties": {
     "graphId": { "type": "string" },

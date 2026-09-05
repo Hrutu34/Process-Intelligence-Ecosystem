@@ -22,7 +22,7 @@ class ProcessQualityValidatorTest {
     @Test
     @DisplayName("TASK-012: Detects missing start event and assigns HIGH severity")
     void testMissingStartEvent() {
-        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+        ProcessGraphDTO graph = ProcessGraphDTO.builder()
                 .graphId("graph-missing-start")
                 .addNodes(List.of(
                         GraphNode.builder().id("activity-1").type(NodeType.Activity).label("Perform Task").build(),
@@ -43,7 +43,7 @@ class ProcessQualityValidatorTest {
     @Test
     @DisplayName("TASK-012: Detects invalid initiation sequence when process starts with approval without prior trigger")
     void testInvalidInitiationSequence() {
-        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+        ProcessGraphDTO graph = ProcessGraphDTO.builder()
                 .graphId("graph-approval-first")
                 .addNodes(List.of(
                         GraphNode.builder().id("activity-approve").type(NodeType.Activity).label("Manager approves request").build()
@@ -61,7 +61,7 @@ class ProcessQualityValidatorTest {
     @Test
     @DisplayName("TASK-013: Detects missing end event and assigns HIGH severity")
     void testMissingEndEvent() {
-        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+        ProcessGraphDTO graph = ProcessGraphDTO.builder()
                 .graphId("graph-missing-end")
                 .addNodes(List.of(
                         GraphNode.builder().id("event-start").type(NodeType.Event).label("Start").metadata(NodeMetadata.builder().eventType(EventType.start).build()).build(),
@@ -82,7 +82,7 @@ class ProcessQualityValidatorTest {
     @Test
     @DisplayName("TASK-013: Detects abrupt termination when activity has no outgoing flow to End Event")
     void testAbruptTerminationActivity() {
-        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+        ProcessGraphDTO graph = ProcessGraphDTO.builder()
                 .graphId("graph-abrupt-end")
                 .addNodes(List.of(
                         GraphNode.builder().id("event-start").type(NodeType.Event).label("Start").metadata(NodeMetadata.builder().eventType(EventType.start).build()).build(),
@@ -101,10 +101,26 @@ class ProcessQualityValidatorTest {
                 "END_EVENT_RULE".equals(i.ruleId()) && i.issue().contains("Process ends abruptly without closure")));
     }
 
+        @Test
+        @DisplayName("TASK-016: Detects semantically overlapping activity labels")
+        void testSemanticDuplicateActivities() {
+                List<GraphNode> nodes = List.of(
+                                GraphNode.builder().id("activity-review").type(NodeType.Activity).label("Review Application").build(),
+                                GraphNode.builder().id("activity-review-submitted").type(NodeType.Activity).label("Review Submitted Application").build()
+                );
+                List<ValidationIssueDTO> issues = new ArrayList<>();
+                List<String> recommendations = new ArrayList<>();
+
+                validator.validateDuplicates(nodes, issues, recommendations);
+
+                assertTrue(issues.stream().anyMatch(issue -> "DUPLICATE_ACTIVITY_RULE".equals(issue.ruleId())));
+                assertFalse(recommendations.isEmpty());
+        }
+
     @Test
     @DisplayName("TASK-014: Detects single branch decision gateway")
     void testSingleBranchGateway() {
-        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+        ProcessGraphDTO graph = ProcessGraphDTO.builder()
                 .graphId("graph-single-branch")
                 .addNodes(List.of(
                         GraphNode.builder().id("gateway-1").type(NodeType.Gateway).label("Check Budget").build(),
@@ -128,7 +144,7 @@ class ProcessQualityValidatorTest {
     @Test
     @DisplayName("TASK-014: Detects missing condition on gateway branches")
     void testMissingGatewayCondition() {
-        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+        ProcessGraphDTO graph = ProcessGraphDTO.builder()
                 .graphId("graph-no-conditions")
                 .addNodes(List.of(
                         GraphNode.builder().id("gateway-1").type(NodeType.Gateway).label("Evaluate").build(),
@@ -152,7 +168,7 @@ class ProcessQualityValidatorTest {
     @Test
     @DisplayName("TASK-014: Detects dead-end branch from a gateway")
     void testDeadEndBranchFromGateway() {
-        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+        ProcessGraphDTO graph = ProcessGraphDTO.builder()
                 .graphId("graph-dead-end")
                 .addNodes(List.of(
                         GraphNode.builder().id("gateway-1").type(NodeType.Gateway).label("Quality OK?").build(),

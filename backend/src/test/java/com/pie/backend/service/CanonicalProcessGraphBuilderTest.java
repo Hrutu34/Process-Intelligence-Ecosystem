@@ -12,13 +12,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CanonicalProcessGraphBuilderTest {
 
-    private CanonicalProcessGraphBuilder builder;
+        private ProcessGraphBuilder builder;
     private ProcessGraphValidator validator;
 
     @BeforeEach
     void setUp() {
         validator = new ProcessGraphValidator();
-        builder = new CanonicalProcessGraphBuilder(validator);
+        builder = new ProcessGraphBuilder(validator);
     }
 
     @Test
@@ -31,7 +31,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build(input);
+        ProcessGraphDTO graph = builder.build(input);
 
         assertNotNull(graph);
         assertEquals(6, graph.getNodes().size()); // 3 activities + 3 roles
@@ -61,7 +61,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of(), List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build(input);
+        ProcessGraphDTO graph = builder.build(input);
 
         // Sequence: Review Request -> Manager Approval Gateway
         assertTrue(graph.getEdges().stream().anyMatch(e ->
@@ -90,7 +90,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of(), List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build(input);
+        ProcessGraphDTO graph = builder.build(input);
 
         // Rule 1: Check Policy -> Within Policy Gateway
         assertTrue(graph.getEdges().stream().anyMatch(e ->
@@ -126,7 +126,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of(), List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build(input);
+        ProcessGraphDTO graph = builder.build(input);
 
         // Validate Request -> Gateway
         assertTrue(graph.getEdges().stream().anyMatch(e ->
@@ -161,7 +161,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of(), List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build(input);
+        ProcessGraphDTO graph = builder.build(input);
 
         // Send Payment -> Payment Successful Gateway
         assertTrue(graph.getEdges().stream().anyMatch(e ->
@@ -196,7 +196,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of(), List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build(input);
+        ProcessGraphDTO graph = builder.build(input);
 
         // Verify Timer Event exists
         GraphNode timerEvent = graph.getNodes().stream()
@@ -226,7 +226,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build(input);
+        ProcessGraphDTO graph = builder.build(input);
 
         // Check Role
         GraphNode finAct = graph.getNodes().stream()
@@ -320,7 +320,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build("graph-expense-reimbursement", input);
+        ProcessGraphDTO graph = builder.build("graph-expense-reimbursement", input);
 
         assertNotNull(graph);
         assertEquals("graph-expense-reimbursement", graph.getGraphId());
@@ -420,7 +420,7 @@ class CanonicalProcessGraphBuilderTest {
                 List.of()
         );
 
-        CanonicalProcessGraph graph = builder.build(input);
+        ProcessGraphDTO graph = builder.build(input);
 
         assertNotNull(graph);
 

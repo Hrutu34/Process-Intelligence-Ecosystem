@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type {
   ProcessKnowledgeDTO,
-  CanonicalProcessGraph,
+  ProcessGraphDTO,
   GraphNode,
   GraphEdge
 } from '../../../backend/src/main/java/com/pie/shared/types/dto';
@@ -17,14 +17,14 @@ interface Props {
 type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
 
 export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn, defaultView = 'visual' }) => {
-  const [graph, setGraph] = useState<CanonicalProcessGraph | null>(null);
+  const [graph, setGraph] = useState<ProcessGraphDTO | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Fetch or construct CanonicalProcessGraph from backend API
+  // Fetch or construct ProcessGraphDTO from backend API
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -38,7 +38,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         return res.json();
       })
-      .then((data: CanonicalProcessGraph) => {
+      .then((data: ProcessGraphDTO) => {
         if (isMounted) {
           setGraph(data);
           setLoading(false);
@@ -98,8 +98,6 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
   const gatewayNodes = graph.nodes.filter((n) => n.type === 'Gateway');
   const eventNodes = graph.nodes.filter((n) => n.type === 'Event');
   const sequenceEdges = graph.edges.filter((e) => e.edgeType === 'sequence');
-  const conditionalEdges = graph.edges.filter((e) => e.edgeType === 'conditional');
-  const associationEdges = graph.edges.filter((e) => e.edgeType === 'association');
 
   const selectedNode = graph.nodes.find((n) => n.id === selectedNodeId) || null;
 
@@ -469,7 +467,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
 };
 
 // Local fallback builder if backend call is delayed
-function buildLocalFallbackGraph(k: ProcessKnowledgeDTO): CanonicalProcessGraph {
+function buildLocalFallbackGraph(k: ProcessKnowledgeDTO): ProcessGraphDTO {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
 

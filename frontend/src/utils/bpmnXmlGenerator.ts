@@ -1,8 +1,7 @@
 import type {
-  CanonicalProcessGraph,
+  ProcessGraphDTO,
   GraphNode,
-  GraphEdge,
-} from '../../../../backend/src/main/java/com/pie/shared/types/dto';
+} from '../../../backend/src/main/java/com/pie/shared/types/dto';
 
 interface ElementPosition {
   x: number;
@@ -44,7 +43,7 @@ function escapeXml(unsafe: string): string {
   });
 }
 
-export function canonicalGraphToBpmnXml(graph: CanonicalProcessGraph): string {
+export function canonicalGraphToBpmnXml(graph: ProcessGraphDTO): string {
   const rawGraphId = graph.graphId || 'canonical_process';
   const processId = 'Process_' + sanitizeId(rawGraphId);
   const processName = rawGraphId.replace(/^graph-/, '').replace(/[-_]/g, ' ');
@@ -138,7 +137,7 @@ export function canonicalGraphToBpmnXml(graph: CanonicalProcessGraph): string {
   edges
     .filter((e) => e.edgeType === 'sequence' || e.edgeType === 'conditional')
     .forEach((e) => {
-      addFlow(e.from, e.to, e.id, e.label);
+      addFlow(e.from, e.to, e.id, e.label ?? undefined);
     });
 
   // Fallback: If Start Event has no outgoing flow, connect to first activity
@@ -307,7 +306,7 @@ export function canonicalGraphToBpmnXml(graph: CanonicalProcessGraph): string {
   intermediateEvents.forEach((ev) => {
     const evId = sanitizeId(ev.id);
     if (ev.metadata?.eventType === 'timer') {
-      const dur = ev.metadata?.duration || 'P7D';
+      const dur = typeof ev.metadata?.duration === 'string' ? ev.metadata.duration : 'P7D';
       xml += `    <bpmn:intermediateCatchEvent id="${evId}" name="${escapeXml(ev.label || 'Timer')}">\n`;
       xml += `      <bpmn:timerEventDefinition id="${evId}_timerDef">\n`;
       xml += `        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">${escapeXml(dur)}</bpmn:timeDuration>\n`;
@@ -319,7 +318,8 @@ export function canonicalGraphToBpmnXml(graph: CanonicalProcessGraph): string {
   });
 
 function getTaskTagName(act: GraphNode): string {
-  const metaType = act.metadata?.taskType?.toLowerCase();
+  const taskType = act.metadata?.taskType;
+  const metaType = typeof taskType === 'string' ? taskType.toLowerCase() : undefined;
   if (metaType === 'service' || metaType === 'servicetask') return 'bpmn:serviceTask';
   if (metaType === 'manual' || metaType === 'manualtask') return 'bpmn:manualTask';
   if (metaType === 'script' || metaType === 'scripttask') return 'bpmn:scriptTask';

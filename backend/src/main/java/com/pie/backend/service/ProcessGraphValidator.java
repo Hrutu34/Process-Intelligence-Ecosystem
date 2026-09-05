@@ -38,9 +38,9 @@ public class ProcessGraphValidator {
         }
     }
 
-    public void validateGraph(CanonicalProcessGraph graph) {
+    public void validateGraph(ProcessGraphDTO graph) {
         if (graph == null) {
-            throw new InvalidProcessGraphException("CanonicalProcessGraph cannot be null");
+            throw new InvalidProcessGraphException("ProcessGraphDTO cannot be null");
         }
 
         if (graph.getGraphId() == null || graph.getGraphId().isBlank()) {
@@ -117,7 +117,7 @@ public class ProcessGraphValidator {
             }
         }
 
-        log.debug("Validated CanonicalProcessGraph [{}]: {} nodes, {} edges",
+        log.debug("Validated ProcessGraphDTO [{}]: {} nodes, {} edges",
                 graph.getGraphId(), nodes.size(), edges != null ? edges.size() : 0);
     }
 }

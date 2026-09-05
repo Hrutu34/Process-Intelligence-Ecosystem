@@ -1,11 +1,10 @@
 package com.pie.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pie.backend.service.CanonicalProcessGraphBuilder;
+import com.pie.backend.service.ProcessGraphBuilder;
 import com.pie.backend.service.DocumentIngestionService;
 import com.pie.backend.service.ProcessGraphValidator;
 import com.pie.backend.service.ProcessQualityValidator;
-import com.pie.shared.dto.CanonicalProcessGraph;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +29,7 @@ class ProcessControllerTest {
     void setUp() {
         DocumentIngestionService ingestionService = mock(DocumentIngestionService.class);
         ProcessGraphValidator validator = new ProcessGraphValidator();
-        CanonicalProcessGraphBuilder graphBuilder = new CanonicalProcessGraphBuilder(validator);
+        ProcessGraphBuilder graphBuilder = new ProcessGraphBuilder(validator);
         ProcessQualityValidator qualityValidator = new ProcessQualityValidator();
 
         ProcessController controller = new ProcessController(ingestionService, graphBuilder, qualityValidator);
@@ -39,7 +38,7 @@ class ProcessControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/process/graph returns CanonicalProcessGraph with correct structure")
+    @DisplayName("POST /api/v1/process/graph returns ProcessGraphDTO with correct structure")
     void testBuildGraphEndpoint() throws Exception {
         ProcessKnowledgeDTO payload = new ProcessKnowledgeDTO(
                 List.of("Submit Travel Request", "Review Request", "Validate Budget", "Book Travel"),

@@ -1,11 +1,11 @@
 import type {
   ProcessKnowledgeDTO,
-  CanonicalProcessGraph,
+  ProcessGraphDTO,
   GraphNode,
   GraphEdge
 } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 
-export type { ProcessKnowledgeDTO, CanonicalProcessGraph, GraphNode, GraphEdge };
+export type { ProcessKnowledgeDTO, ProcessGraphDTO, GraphNode, GraphEdge };
 
 export interface UserSession {
   id: string;
@@ -67,7 +67,7 @@ export interface ProcessEntity {
   currentVersion: string;
   versions: ProcessVersion[];
   knowledge: ProcessKnowledgeDTO;
-  graph?: CanonicalProcessGraph;
+  graph?: ProcessGraphDTO;
   bpmnXml?: string;
   insights: ProcessInsight[];
   validationIssues: ValidationIssue[];

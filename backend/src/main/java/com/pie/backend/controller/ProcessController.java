@@ -3,7 +3,7 @@ package com.pie.backend.controller;
 import com.pie.backend.service.DocumentIngestionService;
 import com.pie.backend.service.ProcessGraphBuilder;
 import com.pie.backend.service.ProcessQualityValidator;
-import com.pie.shared.dto.CanonicalProcessGraph;
+import com.pie.shared.dto.ProcessGraphDTO;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
 import com.pie.shared.dto.ProcessQualityReportDTO;
 import org.springframework.http.MediaType;
@@ -45,18 +45,18 @@ public class ProcessController {
     }
 
     @PostMapping("/graph")
-    public ResponseEntity<CanonicalProcessGraph> buildGraph(@RequestBody ProcessKnowledgeDTO knowledge) {
+    public ResponseEntity<ProcessGraphDTO> buildGraph(@RequestBody ProcessKnowledgeDTO knowledge) {
         return ResponseEntity.ok(graphBuilder.build(knowledge));
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<ProcessQualityReportDTO> validateGraph(@RequestBody CanonicalProcessGraph graph) {
+    public ResponseEntity<ProcessQualityReportDTO> validateGraph(@RequestBody ProcessGraphDTO graph) {
         return ResponseEntity.ok(qualityValidator.validateQuality(graph));
     }
 
     @PostMapping("/validate-knowledge")
     public ResponseEntity<ProcessQualityReportDTO> validateKnowledge(@RequestBody ProcessKnowledgeDTO knowledge) {
-        CanonicalProcessGraph graph = graphBuilder.build(knowledge);
+        ProcessGraphDTO graph = graphBuilder.build(knowledge);
         return ResponseEntity.ok(qualityValidator.validateQuality(graph));
     }
 

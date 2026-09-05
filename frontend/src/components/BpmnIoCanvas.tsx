@@ -3,12 +3,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import BpmnNavigatedViewer from 'bpmn-js/dist/bpmn-navigated-viewer.production.min.js';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
-import type { CanonicalProcessGraph } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import type { ProcessGraphDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import { canonicalGraphToBpmnXml } from '../utils/bpmnXmlGenerator';
 import './BpmnIoCanvas.css';
 
 interface Props {
-  graph: CanonicalProcessGraph;
+  graph: ProcessGraphDTO;
 }
 
 export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {

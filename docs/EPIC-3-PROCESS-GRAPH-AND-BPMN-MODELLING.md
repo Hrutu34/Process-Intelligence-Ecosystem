@@ -41,7 +41,7 @@ When analyzing business procedures (e.g., "The Quality Engineer inspects the eng
 
 1. **Extraction Level (`ProcessKnowledgeDTO`)**:
    - Captured as entity strings in `actors: string[]` and `roles: string[]`.
-2. **Canonical Graph Level (`CanonicalProcessGraph`)**:
+2. **Process Graph Level (`ProcessGraphDTO`)**:
    - **Role Nodes (`NodeType.Role`)**: Explicit graph nodes created for each unique actor/role (e.g., `role-quality-engineer`).
    - **Association Edges (`EdgeType.Association`)**: Directed connections linking a role node to its respective activity node (`role-quality-engineer` $\rightarrow$ `activity-inspect-engine`).
    - **Node Metadata (`NodeMetadata.roleRef`)**: Each activity node carries a direct reference to its primary performer.
@@ -63,12 +63,12 @@ flowchart TD
     end
 
     subgraph BackendEngine ["Epic 3 Backend (Spring Boot)"]
-        Builder[CanonicalProcessGraphBuilder]
+        Builder[ProcessGraphBuilder]
         Validator[ProcessGraphValidator]
         Controller[ProcessController /api/v1/process/{id}/graph]
         
         PK --> Builder
-        Builder -->|Constructs Nodes & Edges| Graph[CanonicalProcessGraph]
+        Builder -->|Constructs Nodes & Edges| Graph[ProcessGraphDTO]
         Graph --> Validator
         Validator -->|Validates Start/End, Cycles, Connectivity| Controller
     end
@@ -93,9 +93,9 @@ flowchart TD
 
 | File / Component | Purpose |
 | :--- | :--- |
-| [`CanonicalProcessGraphBuilder.java`](file:///d:/vwits%20hackathon/Process-Intelligence-Ecosystem/backend/src/main/java/com/pie/backend/service/CanonicalProcessGraphBuilder.java) | Converts normalized knowledge entities into a directed graph of Activities, Gateways, Events, Roles, and Systems. |
+| [`ProcessGraphBuilder.java`](file:///d:/vwits%20hackathon/Process-Intelligence-Ecosystem/backend/src/main/java/com/pie/backend/service/ProcessGraphBuilder.java) | Converts normalized knowledge entities into a directed graph of Activities, Gateways, Events, Roles, and Systems. |
 | [`ProcessGraphValidator.java`](file:///d:/vwits%20hackathon/Process-Intelligence-Ecosystem/backend/src/main/java/com/pie/backend/service/ProcessGraphValidator.java) | Validates start/end existence, identifies unreachable nodes, cycles, and dangling branches. |
-| [`CanonicalProcessGraph.java`](file:///d:/vwits%20hackathon/Process-Intelligence-Ecosystem/backend/src/main/java/com/pie/shared/dto/CanonicalProcessGraph.java) | Core DTO containing graph ID, process name, node list, edge list, and metadata. |
+| [`ProcessGraphDTO.java`](file:///d:/vwits%20hackathon/Process-Intelligence-Ecosystem/backend/src/main/java/com/pie/shared/dto/ProcessGraphDTO.java) | Core DTO containing graph ID, node list, edge list, metadata, and edge confidence. |
 | [`GraphNode.java`](file:///d:/vwits%20hackathon/Process-Intelligence-Ecosystem/backend/src/main/java/com/pie/shared/dto/GraphNode.java) & [`GraphEdge.java`](file:///d:/vwits%20hackathon/Process-Intelligence-Ecosystem/backend/src/main/java/com/pie/shared/dto/GraphEdge.java) | Node schema (Activity, Gateway, Event, Role, System) and edge schema (Sequence, Conditional, Association, Message). |
 | [`ProcessController.java`](file:///d:/vwits%20hackathon/Process-Intelligence-Ecosystem/backend/src/main/java/com/pie/backend/controller/ProcessController.java) | Exposes `GET /api/v1/process/{id}/graph` to build and serve canonical graphs. |
 
@@ -144,7 +144,7 @@ flowchart TD
 1. **Run Backend Tests:**
    ```bash
    cd backend
-   ./mvnw test -Dtest=CanonicalProcessGraphBuilderTest,ProcessControllerTest
+  ./mvnw test -Dtest=CanonicalProcessGraphBuilderTest,ProcessControllerTest
    ```
 2. **Start Development Servers:**
    ```bash

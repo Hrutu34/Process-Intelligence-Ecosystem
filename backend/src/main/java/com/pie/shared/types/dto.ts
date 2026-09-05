@@ -39,7 +39,7 @@ export type EdgeType =
 
 export type GatewayType = 'exclusive' | 'parallel' | 'inclusive';
 
-export type EventType = 'start' | 'intermediate' | 'end';
+export type EventType = 'start' | 'intermediate' | 'end' | 'timer';
 
 export interface NodeMetadata {
   roleRef?: string;
@@ -62,29 +62,13 @@ export interface GraphEdge {
   to: string;
   edgeType: EdgeType;
   label?: string | null;
-}
-
-export interface CanonicalProcessGraph {
-  graphId: string;
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-}
-
-export interface ProcessNode {
-  id: string;
-  type: string;
-  label: string;
-}
-
-export interface ProcessEdge {
-  fromId: string;
-  toId: string;
-  condition?: string;
+  confidence?: number | null;
 }
 
 export interface ProcessGraphDTO {
-  nodes: ProcessNode[];
-  edges: ProcessEdge[];
+  graphId: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
 }
 
 export interface ValidationResultDTO {

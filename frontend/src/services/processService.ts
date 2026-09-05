@@ -1,9 +1,8 @@
 import type {
   ProcessEntity,
   ProcessKnowledgeDTO,
-  CanonicalProcessGraph,
+  ProcessGraphDTO,
   ProcessVersion,
-  ValidationIssue
 } from './types';
 import { INITIAL_PROCESSES } from './mockData';
 import { documentService } from './documentService';
@@ -134,7 +133,7 @@ class ProcessService {
   }
 
   // Live Backend Canonical Process Graph Generation
-  public async fetchCanonicalGraph(knowledge: ProcessKnowledgeDTO): Promise<CanonicalProcessGraph> {
+  public async fetchCanonicalGraph(knowledge: ProcessKnowledgeDTO): Promise<ProcessGraphDTO> {
     try {
       const response = await fetch(`${BACKEND_URL}/api/v1/process/graph`, {
         method: 'POST',
@@ -264,7 +263,7 @@ class ProcessService {
     };
   }
 
-  private buildFallbackGraph(knowledge: ProcessKnowledgeDTO): CanonicalProcessGraph {
+  private buildFallbackGraph(knowledge: ProcessKnowledgeDTO): ProcessGraphDTO {
     const nodes: any[] = [];
     const edges: any[] = [];
 
