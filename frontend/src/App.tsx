@@ -63,6 +63,12 @@ function App() {
     setIsExtracting(false);
   };
 
+  const tabStatus = (tab: AgentTab) => (
+    <span className={activeTab === tab ? 'tab-badge' : 'tab-pending-badge'}>
+      {activeTab === tab ? 'Active' : 'Ready'}
+    </span>
+  );
+
   return (
     <div className="app">
       <div className="noise" />
@@ -85,7 +91,7 @@ function App() {
           </a>
 
           <div className="nav-center">
-            <span>PROCESS INTELLIGENCE</span>
+            <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
             <span className="nav-line" />
             <span>v0.1</span>
           </div>
@@ -130,7 +136,7 @@ function App() {
                   onClick={() => setActiveTab("01_KNOWLEDGE")}
                 >
                   <span>🧠 01 Knowledge Extraction</span>
-                  <span className="tab-badge">Active</span>
+                  {tabStatus("01_KNOWLEDGE")}
                 </button>
 
                 <button
@@ -139,7 +145,7 @@ function App() {
                   onClick={() => setActiveTab("02_INTELLIGENCE")}
                 >
                   <span>◉ 02 Process Intelligence</span>
-                  <span className="tab-pending-badge">Ready</span>
+                  {tabStatus("02_INTELLIGENCE")}
                 </button>
 
                 <button
@@ -148,7 +154,7 @@ function App() {
                   onClick={() => setActiveTab("03_BPMN")}
                 >
                   <span>⌘ 03 BPMN Modelling</span>
-                  <span className="tab-pending-badge">Ready</span>
+                  {tabStatus("03_BPMN")}
                 </button>
 
                 <button
@@ -157,7 +163,7 @@ function App() {
                   onClick={() => setActiveTab("04_REVIEW")}
                 >
                   <span>✦ 04 Process Review</span>
-                  <span className="tab-pending-badge">Ready</span>
+                  {tabStatus("04_REVIEW")}
                 </button>
               </div>
 
@@ -166,7 +172,6 @@ function App() {
                 <ProcessKnowledgeReview
                   data={extractedData}
                   onProceedToIntelligence={() => setActiveTab("02_INTELLIGENCE")}
-                  onProceedToBpmn={() => setActiveTab("03_BPMN")}
                   onReset={handleReset}
                 />
               )}

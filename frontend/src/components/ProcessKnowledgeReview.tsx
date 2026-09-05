@@ -5,7 +5,6 @@ import './ProcessKnowledgeReview.css';
 interface Props {
   data: ProcessKnowledgeDTO;
   onProceedToIntelligence?: () => void;
-  onProceedToBpmn?: () => void;
   onReset: () => void;
 }
 
@@ -36,7 +35,6 @@ const SECTIONS: SectionConfig[] = [
 export const ProcessKnowledgeReview: React.FC<Props> = ({
   data,
   onProceedToIntelligence,
-  onProceedToBpmn,
   onReset,
 }) => {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -88,20 +86,12 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
           {onProceedToIntelligence && (
             <button
               type="button"
-              className="btn-ghost"
-              style={{ color: '#fbd437', borderColor: 'rgba(251, 212, 55, 0.4)' }}
+              className="yellow-button"
               onClick={onProceedToIntelligence}
             >
-              ◉ ANALYZE GAPS (AGENT 02)
+              PROCEED TO SEMANTICS <span>↗</span>
             </button>
           )}
-          <button
-            type="button"
-            className="yellow-button"
-            onClick={onProceedToBpmn || (() => alert('Proceeding to Agent 03: BPMN Modelling...'))}
-          >
-            PROCEED TO BPMN <span>↗</span>
-          </button>
         </div>
       </div>
 
@@ -120,7 +110,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
       <div className="review-grid">
         {SECTIONS.map((section) => {
           const items = (data[section.key] as string[]) || [];
-          const isCollapsed = !collapsedSections[section.key];
+          const isCollapsed = Boolean(collapsedSections[section.key]);
           const isCritical = section.critical && items.length > 0;
 
           return (

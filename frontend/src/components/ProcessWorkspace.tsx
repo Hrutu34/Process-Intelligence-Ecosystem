@@ -320,7 +320,7 @@ export const ProcessWorkspace: React.FC<Props> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <ProcessKnowledgeReview
             data={process.knowledge}
-            onProceedToBpmn={() => setActiveTab('bpmn')}
+            onProceedToIntelligence={() => setActiveTab('validation')}
             onReset={() => {}}
           />
 

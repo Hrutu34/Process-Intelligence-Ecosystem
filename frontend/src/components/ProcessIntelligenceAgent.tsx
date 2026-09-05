@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { ProcessKnowledgeDTO, ProcessQualityReportDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import { AgentLoadingScreen } from './AgentLoadingScreen';
 import './ProcessIntelligenceAgent.css';
 
 interface Props {
@@ -7,13 +8,27 @@ interface Props {
   onProceedToBpmn: () => void;
 }
 
+const qualityReportCache = new Map<string, ProcessQualityReportDTO>();
+
 export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceedToBpmn }) => {
-  const [report, setReport] = useState<ProcessQualityReportDTO | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const knowledgeKey = JSON.stringify(knowledge);
+  const [report, setReport] = useState<ProcessQualityReportDTO | null>(
+    () => qualityReportCache.get(knowledgeKey) || null,
+  );
+  const [loading, setLoading] = useState<boolean>(() => !qualityReportCache.has(knowledgeKey));
   const [error, setError] = useState<string | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>('ALL');
 
-  const fetchQualityReport = () => {
+  const fetchQualityReport = (forceRefresh = false) => {
+    if (!forceRefresh) {
+      const cachedReport = qualityReportCache.get(knowledgeKey);
+      if (cachedReport) {
+        setReport(cachedReport);
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
 
@@ -27,6 +42,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         return res.json();
       })
       .then((data: ProcessQualityReportDTO) => {
+        qualityReportCache.set(knowledgeKey, data);
         setReport(data);
         setLoading(false);
       })
@@ -39,19 +55,20 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
 
   useEffect(() => {
     fetchQualityReport();
-  }, [knowledge]);
+  }, [knowledgeKey]);
 
   if (loading) {
     return (
-      <div className="pi-container">
-        <div className="pi-loading-card">
-          <div className="pi-spinner" />
-          <h3>Agent 02: Analyzing Process Quality & Gaps...</h3>
-          <p>
-            Running BPMN 2.0 validation rules (Start Events, End Conditions, Gateway Correctness, Dead-Ends).
-          </p>
-        </div>
-      </div>
+      <AgentLoadingScreen
+        title="Process Intelligence Agent in Progress"
+        mascot="◉"
+        steps={[
+          { title: 'Building Graph', desc: 'Agent 02: Building the process graph...', weight: 1800 },
+          { title: 'ValidatingRules', desc: 'Agent 02: Checking boundaries, gateways & dead ends...', weight: 3000 },
+          { title: 'Analyzing Semantics', desc: 'Agent 02: Reviewing process quality and evidence...', weight: 5000 },
+          { title: 'Generating Report', desc: 'Agent 02: Preparing findings and recommendations...', weight: 2200 },
+        ]}
+      />
     );
   }
 
@@ -61,7 +78,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         <div className="pi-error-card">
           <h3>⚠️ Process Intelligence Analysis Unavailable</h3>
           <p>{error || 'Could not retrieve validation report.'}</p>
-          <button type="button" className="btn-ghost" onClick={fetchQualityReport}>
+          <button type="button" className="btn-ghost" onClick={() => fetchQualityReport(true)}>
             ↺ Retry Analysis
           </button>
         </div>
@@ -93,7 +110,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         </div>
 
         <div className="pi-header-actions">
-          <button type="button" className="btn-ghost" onClick={fetchQualityReport}>
+          <button type="button" className="btn-ghost" onClick={() => fetchQualityReport(true)}>
             ↺ Re-run Rules
           </button>
           <button type="button" className="yellow-button" onClick={onProceedToBpmn}>

@@ -6,6 +6,7 @@ import type {
   GraphEdge
 } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import { BpmnIoCanvas } from './BpmnIoCanvas';
+import { AgentLoadingScreen } from './AgentLoadingScreen';
 import './ProcessGraphViewer.css';
 
 interface Props {
@@ -16,9 +17,14 @@ interface Props {
 
 type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
 
+const processGraphCache = new Map<string, ProcessGraphDTO>();
+
 export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn, defaultView = 'visual' }) => {
-  const [graph, setGraph] = useState<ProcessGraphDTO | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const knowledgeKey = JSON.stringify(knowledge);
+  const [graph, setGraph] = useState<ProcessGraphDTO | null>(
+    () => processGraphCache.get(knowledgeKey) || null,
+  );
+  const [loading, setLoading] = useState<boolean>(() => !processGraphCache.has(knowledgeKey));
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
@@ -26,6 +32,16 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
 
   // Fetch or construct ProcessGraphDTO from backend API
   useEffect(() => {
+    const cachedGraph = processGraphCache.get(knowledgeKey);
+    if (cachedGraph) {
+      setGraph(cachedGraph);
+      setLoading(false);
+      if (cachedGraph.nodes.length > 0) {
+        setSelectedNodeId(cachedGraph.nodes[0].id);
+      }
+      return;
+    }
+
     let isMounted = true;
     setLoading(true);
 
@@ -40,6 +56,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
       })
       .then((data: ProcessGraphDTO) => {
         if (isMounted) {
+          processGraphCache.set(knowledgeKey, data);
           setGraph(data);
           setLoading(false);
           if (data.nodes && data.nodes.length > 0) {
@@ -52,6 +69,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
         // Fallback local canonical construction for immediate preview
         const fallback = buildLocalFallbackGraph(knowledge);
         if (isMounted) {
+          processGraphCache.set(knowledgeKey, fallback);
           setGraph(fallback);
           setLoading(false);
           if (fallback.nodes.length > 0) {
@@ -63,7 +81,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
     return () => {
       isMounted = false;
     };
-  }, [knowledge]);
+  }, [knowledgeKey]);
 
   const handleCopyJson = () => {
     if (!graph) return;
@@ -74,14 +92,16 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
 
   if (loading) {
     return (
-      <div className="graph-viewer-container">
-        <div className="graph-header-bar">
-          <div className="graph-title-group">
-            <h3>⚡ Generating Canonical Process Graph...</h3>
-            <p>Constructing deterministic nodes, gateways, sequence edges, and role associations.</p>
-          </div>
-        </div>
-      </div>
+      <AgentLoadingScreen
+        title="BPMN Modelling Agent in Progress"
+        mascot="⌘"
+        steps={[
+          { title: 'Nodes', desc: 'Agent 03: Creating activities, events & gateways...', weight: 1800 },
+          { title: 'Flows', desc: 'Agent 03: Connecting sequence and conditional paths...', weight: 3000 },
+          { title: 'Owners', desc: 'Agent 03: Linking roles, systems & data artifacts...', weight: 2600 },
+          { title: 'Model', desc: 'Agent 03: Preparing the editable BPMN view...', weight: 2200 },
+        ]}
+      />
     );
   }
 
