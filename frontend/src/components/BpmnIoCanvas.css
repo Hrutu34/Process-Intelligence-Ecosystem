@@ -12,6 +12,31 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
 
+.bpmn-fullscreen {
+  position: fixed;
+  inset: 16px;
+  z-index: 100;
+  border-radius: 12px;
+}
+
+.bpmn-file-button {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.bpmn-file-button input {
+  display: none;
+}
+
+.bpmn-render-error {
+  padding: 12px 16px;
+  background: #3b1818;
+  color: #ff8888;
+  font-size: 13px;
+  border-bottom: 1px solid #752a2a;
+}
+
 .bpmn-io-toolbar {
   display: flex;
   justify-content: space-between;
@@ -50,6 +75,12 @@
   height: 520px;
   background: radial-gradient(circle at 50% 50%, rgba(10, 35, 75, 0.6), #020a1a);
   position: relative;
+}
+
+.bpmn-fullscreen .bpmn-canvas-area {
+  flex: 1;
+  height: auto;
+  min-height: 0;
 }
 
 /* bpmn-js diagram styling overrides for dark theme */

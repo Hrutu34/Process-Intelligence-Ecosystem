@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 // @ts-expect-error bpmn-js bundle import
-import BpmnNavigatedViewer from 'bpmn-js/dist/bpmn-navigated-viewer.production.min.js';
+import BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import type { ProcessGraphDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
@@ -14,107 +14,46 @@ interface Props {
 export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
-  const [copied, setCopied] = useState<boolean>(false);
-  const [xmlString, setXmlString] = useState<string>('');
+  const [copied, setCopied] = useState(false);
+  const [xmlString, setXmlString] = useState('');
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
-    if (!containerRef.current || !graph) return;
-
+    if (!containerRef.current) return;
     let isMounted = true;
-    let viewerInstance: any = null;
-
-    try {
-      // Clear container DOM
-      containerRef.current.innerHTML = '';
-
-      // Initialize NavigatedViewer without deprecated keyboard.bindTo
-      viewerInstance = new BpmnNavigatedViewer({
-        container: containerRef.current,
+    const modeler = new BpmnModeler({ container: containerRef.current });
+    viewerRef.current = modeler;
+    const xml = canonicalGraphToBpmnXml(graph);
+    setXmlString(xml);
+    modeler.importXML(xml).then(() => {
+      const commandStack = modeler.get('commandStack');
+      commandStack?.on('changed', async () => {
+        const saved = await modeler.saveXML({ format: true });
+        if (isMounted && saved.xml) setXmlString(saved.xml);
       });
-      viewerRef.current = viewerInstance;
-
-      const xml = canonicalGraphToBpmnXml(graph);
-      setXmlString(xml);
+      modeler.get('canvas').zoom('fit-viewport', 'auto');
       setRenderError(null);
-
-      viewerInstance
-        .importXML(xml)
-        .then(() => {
-          if (!isMounted) return;
-          try {
-            const canvas = viewerInstance.get('canvas');
-            if (canvas) {
-              canvas.zoom('fit-viewport', 'auto');
-            }
-          } catch (zoomErr) {
-            console.warn('Canvas zoom adjustment warning:', zoomErr);
-          }
-        })
-        .catch((err: any) => {
-          if (!isMounted) return;
-          console.error('Failed to render BPMN XML with bpmn-js:', err);
-          setRenderError(err.message || 'BPMN diagram rendering failed');
-        });
-    } catch (initErr: any) {
-      if (isMounted) {
-        console.error('Viewer initialization error:', initErr);
-        setRenderError(initErr.message || 'Failed to initialize BPMN viewer');
-      }
-    }
-
+    }).catch((error: Error) => {
+      if (isMounted) setRenderError(error.message || 'BPMN diagram rendering failed');
+    });
     return () => {
       isMounted = false;
-      if (viewerInstance) {
-        try {
-          viewerInstance.destroy();
-        } catch (e) {
-          // Ignore destroy errors during component unmount
-        }
-      }
+      modeler.destroy();
       viewerRef.current = null;
     };
   }, [graph]);
 
-  const handleZoomIn = () => {
-    if (viewerRef.current) {
-      try {
-        viewerRef.current.get('zoomScroll').stepZoom(1);
-      } catch (e) {
-        console.warn('Zoom error', e);
-      }
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (viewerRef.current) {
-      try {
-        viewerRef.current.get('zoomScroll').stepZoom(-1);
-      } catch (e) {
-        console.warn('Zoom error', e);
-      }
-    }
-  };
-
-  const handleResetZoom = () => {
-    if (viewerRef.current) {
-      try {
-        viewerRef.current.get('canvas').zoom('fit-viewport', 'auto');
-      } catch (e) {
-        console.warn('Reset zoom error', e);
-      }
-    }
-  };
+  const handleZoomIn = () => viewerRef.current?.get('zoomScroll').stepZoom(1);
+  const handleZoomOut = () => viewerRef.current?.get('zoomScroll').stepZoom(-1);
+  const handleResetZoom = () => viewerRef.current?.get('canvas').zoom('fit-viewport', 'auto');
 
   const handleDownloadXml = () => {
-    const blob = new Blob([xmlString], { type: 'application/xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${graph.graphId || 'process'}.bpmn20.xml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const url = URL.createObjectURL(new Blob([xmlString], { type: 'application/xml' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${graph.graphId || 'process'}.bpmn20.xml`;
+    link.click();
     URL.revokeObjectURL(url);
   };
 
@@ -124,41 +63,47 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleImportXml = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !viewerRef.current) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const importedXml = typeof reader.result === 'string' ? reader.result : '';
+      if (!importedXml.includes('<bpmn:definitions') && !importedXml.includes('<definitions')) {
+        setRenderError('Invalid BPMN XML: definitions element not found.');
+        return;
+      }
+      viewerRef.current.importXML(importedXml).then(async () => {
+        const saved = await viewerRef.current.saveXML({ format: true });
+        setXmlString(saved.xml || importedXml);
+        viewerRef.current.get('canvas').zoom('fit-viewport', 'auto');
+        setRenderError(null);
+      }).catch((error: Error) => setRenderError(error.message || 'BPMN XML import failed'));
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
   return (
-    <div className="bpmn-io-wrapper">
+    <div className={`bpmn-io-wrapper ${isFullscreen ? 'bpmn-fullscreen' : ''}`}>
       <div className="bpmn-io-toolbar">
         <div className="bpmn-io-info">
-          <span className="bpmn-badge">bpmn.io / BPMN 2.0 Engine</span>
-          <span style={{ color: 'var(--soft-white)', fontSize: 13 }}>
-            Standard BPMN 2.0 Vector Diagram (Pan & Zoomable)
-          </span>
+          <span className="bpmn-badge">bpmn.io / BPMN 2.0 Modeler</span>
+          <span style={{ color: 'var(--soft-white)', fontSize: 13 }}>Editable BPMN diagram</span>
         </div>
-
         <div className="bpmn-io-actions">
-          <button type="button" className="btn-ghost" onClick={handleZoomIn} title="Zoom In">
-            🔍 +
+          <button type="button" className="btn-ghost" onClick={handleZoomIn}>Zoom +</button>
+          <button type="button" className="btn-ghost" onClick={handleZoomOut}>Zoom -</button>
+          <button type="button" className="btn-ghost" onClick={handleResetZoom}>Fit View</button>
+          <label className="btn-ghost bpmn-file-button">Import BPMN<input type="file" accept=".bpmn,.xml,application/xml,text/xml" onChange={handleImportXml} /></label>
+          <button type="button" className="btn-ghost" onClick={() => setIsFullscreen((current) => !current)}>
+            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
-          <button type="button" className="btn-ghost" onClick={handleZoomOut} title="Zoom Out">
-            🔍 −
-          </button>
-          <button type="button" className="btn-ghost" onClick={handleResetZoom}>
-            Fit View
-          </button>
-          <button type="button" className="btn-ghost" onClick={handleCopyXml}>
-            {copied ? '✓ Copied XML' : '📋 Copy XML'}
-          </button>
-          <button type="button" className="yellow-button" onClick={handleDownloadXml}>
-            DOWNLOAD .BPMN <span>↓</span>
-          </button>
+          <button type="button" className="btn-ghost" onClick={handleCopyXml}>{copied ? 'Copied XML' : 'Copy XML'}</button>
+          <button type="button" className="yellow-button" onClick={handleDownloadXml}>DOWNLOAD .BPMN <span>↓</span></button>
         </div>
       </div>
-
-      {renderError && (
-        <div style={{ padding: '12px 16px', background: '#3b1818', color: '#ff8888', fontSize: 13, borderBottom: '1px solid #752a2a' }}>
-          ⚠️ Render Notice: {renderError}
-        </div>
-      )}
-
+      {renderError && <div className="bpmn-render-error">BPMN notice: {renderError}</div>}
       <div ref={containerRef} className="bpmn-canvas-area" />
     </div>
   );

@@ -2,6 +2,8 @@ package com.pie.backend.controller;
 
 import com.pie.backend.service.DocumentIngestionService;
 import com.pie.backend.service.AiProcessQualityService;
+import com.pie.backend.service.BpmnDomainModelMapper;
+import com.pie.backend.service.BpmnXmlGenerationService;
 import com.pie.backend.service.ProcessGraphBuilder;
 import com.pie.backend.service.ProcessQualityValidator;
 import com.pie.shared.dto.ProcessGraphDTO;
@@ -24,12 +26,14 @@ public class ProcessController {
     private final ProcessGraphBuilder graphBuilder;
     private final ProcessQualityValidator qualityValidator;
     private final AiProcessQualityService aiQualityService;
+    private final BpmnDomainModelMapper bpmnMapper;
+    private final BpmnXmlGenerationService bpmnXmlService;
 
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator) {
-        this(ingestionService, graphBuilder, qualityValidator, null);
+        this(ingestionService, graphBuilder, qualityValidator, null, null, null);
     }
 
     @Autowired
@@ -37,11 +41,15 @@ public class ProcessController {
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator,
-            AiProcessQualityService aiQualityService) {
+            AiProcessQualityService aiQualityService,
+            BpmnDomainModelMapper bpmnMapper,
+            BpmnXmlGenerationService bpmnXmlService) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
         this.qualityValidator = qualityValidator;
         this.aiQualityService = aiQualityService;
+        this.bpmnMapper = bpmnMapper;
+        this.bpmnXmlService = bpmnXmlService;
     }
 
     @PostMapping("/extract-text")
@@ -60,6 +68,14 @@ public class ProcessController {
     @PostMapping("/graph")
     public ResponseEntity<ProcessGraphDTO> buildGraph(@RequestBody ProcessKnowledgeDTO knowledge) {
         return ResponseEntity.ok(graphBuilder.build(knowledge));
+    }
+
+    @PostMapping(value = "/bpmn", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> buildBpmn(@RequestBody ProcessGraphDTO graph) {
+        if (bpmnMapper == null || bpmnXmlService == null) {
+            return ResponseEntity.internalServerError().build();
+        }
+        return ResponseEntity.ok(bpmnXmlService.generate(bpmnMapper.map(graph)));
     }
 
     @PostMapping("/validate")
