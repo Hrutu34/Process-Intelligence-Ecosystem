@@ -3,6 +3,9 @@ import './AgentLoadingScreen.css';
 
 interface Props {
   fileCount?: number;
+  title?: string;
+  mascot?: string;
+  steps?: StepItem[];
 }
 
 interface StepItem {
@@ -19,7 +22,12 @@ const BASE_STEPS: StepItem[] = [
   { title: 'Normalization', desc: 'Pruning duplicates, validating JSON & sealing DTO graph...', weight: 4000 },
 ];
 
-export const AgentLoadingScreen: React.FC<Props> = ({ fileCount = 1 }) => {
+export const AgentLoadingScreen: React.FC<Props> = ({
+  fileCount = 1,
+  title = 'Knowledge Extraction Agent in Progress',
+  mascot = '🧠',
+  steps = BASE_STEPS,
+}) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   // Scale step timeouts dynamically based on file count
@@ -27,20 +35,20 @@ export const AgentLoadingScreen: React.FC<Props> = ({ fileCount = 1 }) => {
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
-    if (currentStepIndex < BASE_STEPS.length - 1) {
-      const duration = BASE_STEPS[currentStepIndex].weight * multiplier;
+    if (currentStepIndex < steps.length - 1) {
+      const duration = steps[currentStepIndex].weight * multiplier;
       timer = setTimeout(() => {
         setCurrentStepIndex((prev) => prev + 1);
       }, duration);
     }
     return () => clearTimeout(timer);
-  }, [currentStepIndex, multiplier]);
+  }, [currentStepIndex, multiplier, steps]);
 
   return (
     <div className="agent-loading-card">
       <div className="loading-orbit">
         <div className="inner-pulse" />
-        <span className="agent-mascot">🧠</span>
+        <span className="agent-mascot">{mascot}</span>
       </div>
 
       <div className="loading-header">
@@ -50,14 +58,14 @@ export const AgentLoadingScreen: React.FC<Props> = ({ fileCount = 1 }) => {
           <span className="status-separator">/</span>
           LOCAL LLM PIPELINE
         </div>
-        <h3>Knowledge Extraction Agent in Progress</h3>
-        <p className="active-step-text">{BASE_STEPS[currentStepIndex].desc}</p>
+        <h3>{title}</h3>
+        <p className="active-step-text">{steps[currentStepIndex].desc}</p>
       </div>
 
       {/* Connected Track with Validation Ticks */}
       <div className="stepper-container">
         <div className="stepper-track">
-          {BASE_STEPS.map((step, idx) => {
+          {steps.map((step, idx) => {
             const isCompleted = idx < currentStepIndex;
             const isActive = idx === currentStepIndex;
 
@@ -70,7 +78,7 @@ export const AgentLoadingScreen: React.FC<Props> = ({ fileCount = 1 }) => {
                   <span className="step-label">{step.title}</span>
                 </div>
 
-                {idx < BASE_STEPS.length - 1 && (
+                {idx < steps.length - 1 && (
                   <div className={`step-line ${idx < currentStepIndex ? 'filled' : ''}`} />
                 )}
               </React.Fragment>

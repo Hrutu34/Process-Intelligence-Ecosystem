@@ -4,7 +4,7 @@ import './ProcessKnowledgeReview.css';
 
 interface Props {
   data: ProcessKnowledgeDTO;
-  onProceedToBpmn?: () => void;
+  onProceedToIntelligence?: () => void;
   onReset: () => void;
 }
 
@@ -34,7 +34,7 @@ const SECTIONS: SectionConfig[] = [
 
 export const ProcessKnowledgeReview: React.FC<Props> = ({
   data,
-  onProceedToBpmn,
+  onProceedToIntelligence,
   onReset,
 }) => {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -67,7 +67,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
             <span className="status-dot" />
             EXTRACTION VALIDATED
             <span className="status-separator">/</span>
-            {totalEntities} ENTITIES
+            {totalEntities} ENTITIES DETECTED
           </div>
           <h3>Normalized Process Knowledge</h3>
           <p>Review the extracted blueprint before starting BPMN 2.0 generation.</p>
@@ -83,13 +83,15 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
           <button type="button" className="btn-ghost" onClick={onReset}>
             ↺ New Upload
           </button>
-          <button
-            type="button"
-            className="yellow-button"
-            onClick={onProceedToBpmn || (() => alert('Proceeding to Agent 03: BPMN Modelling...'))}
-          >
-            PROCEED TO BPMN <span>↗</span>
-          </button>
+          {onProceedToIntelligence && (
+            <button
+              type="button"
+              className="yellow-button"
+              onClick={onProceedToIntelligence}
+            >
+              PROCEED TO SEMANTICS <span>↗</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -108,7 +110,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
       <div className="review-grid">
         {SECTIONS.map((section) => {
           const items = (data[section.key] as string[]) || [];
-          const isCollapsed = !!collapsedSections[section.key];
+          const isCollapsed = Boolean(collapsedSections[section.key]);
           const isCritical = section.critical && items.length > 0;
 
           return (

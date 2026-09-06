@@ -60,6 +60,16 @@ public class ProcessKnowledgeNormalizerTest {
     }
 
     @Test
+    void parseAndNormalize_repairsMissingRootClosingBrace() {
+        String truncatedJson = "{\"activities\":[\"Task 1\"],\"actors\":[\"Actor 1\"]";
+
+        ProcessKnowledgeDTO dto = normalizer.parseAndNormalize(truncatedJson);
+
+        assertEquals(List.of("Task 1"), dto.activities());
+        assertEquals(List.of("Actor 1"), dto.actors());
+    }
+
+    @Test
     void parseAndNormalize_throwsExceptionOnInvalidJson() {
         String nonJson = "Error: Model unavailable or empty output";
         assertThrows(IllegalArgumentException.class, () -> normalizer.parseAndNormalize(nonJson));

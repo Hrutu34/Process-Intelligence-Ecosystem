@@ -1,0 +1,87 @@
+/* BpmnIoCanvas.css */
+
+.bpmn-io-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  background: #020a1a;
+  border: 1px solid rgba(57, 245, 208, 0.25);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.bpmn-io-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(7, 26, 61, 0.9);
+  border-bottom: 1px solid rgba(116, 183, 220, 0.15);
+}
+
+.bpmn-io-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bpmn-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--aqua);
+  background: rgba(57, 245, 208, 0.12);
+  border: 1px solid rgba(57, 245, 208, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.bpmn-io-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bpmn-canvas-area {
+  width: 100%;
+  height: 520px;
+  background: radial-gradient(circle at 50% 50%, rgba(10, 35, 75, 0.6), #020a1a);
+  position: relative;
+}
+
+/* bpmn-js diagram styling overrides for dark theme */
+.bpmn-canvas-area .djs-container {
+  background: transparent !important;
+}
+
+.bpmn-canvas-area .djs-shape .djs-visual rect,
+.bpmn-canvas-area .djs-shape .djs-visual polygon {
+  stroke: var(--aqua) !important;
+  stroke-width: 1.8px !important;
+  fill: #061c3d !important;
+}
+
+.bpmn-canvas-area .djs-shape .djs-visual circle {
+  stroke: var(--electric) !important;
+  stroke-width: 2px !important;
+  fill: #061c3d !important;
+}
+
+.bpmn-canvas-area .djs-connection .djs-visual path {
+  stroke: #74b7dc !important;
+  stroke-width: 2px !important;
+}
+
+.bpmn-canvas-area text {
+  fill: #f4f8f4 !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 12px !important;
+}
+
+.bpmn-canvas-area .bjs-powered-by {
+  opacity: 0.5;
+  filter: invert(1);
+}

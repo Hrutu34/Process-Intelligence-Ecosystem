@@ -33,4 +33,32 @@ public class AiClassificationServiceTest {
         assertEquals("Standard Operating Procedure", result.category());
         assertEquals(95, result.confidence());
     }
+
+      @Test
+      void classifyDocument_extractsJsonAfterModelPreface() {
+        ChatClient.Builder builder = mock(ChatClient.Builder.class);
+        ChatClient chatClient = mock(ChatClient.class, RETURNS_DEEP_STUBS);
+        when(builder.build()).thenReturn(chatClient);
+        when(chatClient.prompt().system(anyString()).user(anyString()).call().content())
+            .thenReturn("Here is the classification:\n{\"category\":\"Policy Document\",\"confidence\":86}");
+
+        ClassificationResultDTO result = new AiClassificationService(builder).classifyDocument("Policy text");
+
+        assertEquals("Policy Document", result.category());
+        assertEquals(86, result.confidence());
+      }
+
+      @Test
+      void classifyDocument_extractsJsonFromMarkdownFence() {
+        ChatClient.Builder builder = mock(ChatClient.Builder.class);
+        ChatClient chatClient = mock(ChatClient.class, RETURNS_DEEP_STUBS);
+        when(builder.build()).thenReturn(chatClient);
+        when(chatClient.prompt().system(anyString()).user(anyString()).call().content())
+            .thenReturn("```json\n{\"category\":\"Meeting Notes\",\"confidence\":72}\n```");
+
+        ClassificationResultDTO result = new AiClassificationService(builder).classifyDocument("Meeting notes");
+
+        assertEquals("Meeting Notes", result.category());
+        assertEquals(72, result.confidence());
+      }
 }

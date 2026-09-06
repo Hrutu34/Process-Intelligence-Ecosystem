@@ -1,6 +1,8 @@
 import "./App.css";
 import ProcessEntry from "./components/ProcessEntry";
 import { ProcessKnowledgeReview } from "./components/ProcessKnowledgeReview";
+import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent";
+import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import { useRef, useState } from "react";
@@ -61,6 +63,12 @@ function App() {
     setIsExtracting(false);
   };
 
+  const tabStatus = (tab: AgentTab) => (
+    <span className={activeTab === tab ? 'tab-badge' : 'tab-pending-badge'}>
+      {activeTab === tab ? 'Active' : 'Ready'}
+    </span>
+  );
+
   return (
     <div className="app">
       <div className="noise" />
@@ -83,7 +91,7 @@ function App() {
           </a>
 
           <div className="nav-center">
-            <span>PROCESS INTELLIGENCE</span>
+            <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
             <span className="nav-line" />
             <span>v0.1</span>
           </div>
@@ -128,7 +136,7 @@ function App() {
                   onClick={() => setActiveTab("01_KNOWLEDGE")}
                 >
                   <span>🧠 01 Knowledge Extraction</span>
-                  <span className="tab-badge">Active</span>
+                  {tabStatus("01_KNOWLEDGE")}
                 </button>
 
                 <button
@@ -137,7 +145,7 @@ function App() {
                   onClick={() => setActiveTab("02_INTELLIGENCE")}
                 >
                   <span>◉ 02 Process Intelligence</span>
-                  <span className="tab-pending-badge">Ready</span>
+                  {tabStatus("02_INTELLIGENCE")}
                 </button>
 
                 <button
@@ -146,7 +154,7 @@ function App() {
                   onClick={() => setActiveTab("03_BPMN")}
                 >
                   <span>⌘ 03 BPMN Modelling</span>
-                  <span className="tab-pending-badge">Ready</span>
+                  {tabStatus("03_BPMN")}
                 </button>
 
                 <button
@@ -155,7 +163,7 @@ function App() {
                   onClick={() => setActiveTab("04_REVIEW")}
                 >
                   <span>✦ 04 Process Review</span>
-                  <span className="tab-pending-badge">Ready</span>
+                  {tabStatus("04_REVIEW")}
                 </button>
               </div>
 
@@ -163,36 +171,24 @@ function App() {
               {activeTab === "01_KNOWLEDGE" && (
                 <ProcessKnowledgeReview
                   data={extractedData}
-                  onProceedToBpmn={() => setActiveTab("03_BPMN")}
+                  onProceedToIntelligence={() => setActiveTab("02_INTELLIGENCE")}
                   onReset={handleReset}
                 />
               )}
 
               {activeTab === "02_INTELLIGENCE" && (
-                <div className="agent-placeholder-card">
-                  <span className="agent-icon">◉</span>
-                  <h3>Agent 02: Process Intelligence Agent</h3>
-                  <p>
-                    Analyzes the {extractedData.activities?.length || 0} activities and {extractedData.conflicts?.length || 0} conflicts
-                    for compliance gaps, unassigned roles, and operational dead-ends.
-                  </p>
-                  <button className="yellow-button" type="button" onClick={() => alert("Agent 02 ready to run!")}>
-                    ANALYZE PROCESS GAPS <span>↗</span>
-                  </button>
-                </div>
+                <ProcessIntelligenceAgent
+                  knowledge={extractedData}
+                  onProceedToBpmn={() => setActiveTab("03_BPMN")}
+                />
               )}
 
               {activeTab === "03_BPMN" && (
-                <div className="agent-placeholder-card">
-                  <span className="agent-icon">⌘</span>
-                  <h3>Agent 03: BPMN 2.0 Modelling Agent</h3>
-                  <p>
-                    Transforms validated knowledge and sequence flows into clean, standard BPMN 2.0 XML and interactive diagrams.
-                  </p>
-                  <button className="yellow-button" type="button" onClick={() => alert("Agent 03 ready to run!")}>
-                    GENERATE BPMN 2.0 DIAGRAM <span>↗</span>
-                  </button>
-                </div>
+                <ProcessGraphViewer
+                  knowledge={extractedData}
+                  defaultView="bpmn"
+                  onProceedToBpmn={() => setActiveTab("04_REVIEW")}
+                />
               )}
 
               {activeTab === "04_REVIEW" && (
@@ -249,6 +245,7 @@ function App() {
                     <ProcessEntry
                       onStart={handleStartExtraction}
                       onSuccess={handleExtractionSuccess}
+                      onError={() => setIsExtracting(false)}
                     />
                   )}
                 </div>
