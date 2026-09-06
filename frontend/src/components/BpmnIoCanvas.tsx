@@ -14,10 +14,12 @@ interface Props {
 export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [copied, setCopied] = useState(false);
   const [xmlString, setXmlString] = useState('');
   const [renderError, setRenderError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -46,7 +48,11 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
 
   const handleZoomIn = () => viewerRef.current?.get('zoomScroll').stepZoom(1);
   const handleZoomOut = () => viewerRef.current?.get('zoomScroll').stepZoom(-1);
-  const handleResetZoom = () => viewerRef.current?.get('canvas').zoom('fit-viewport', 'auto');
+
+  const handleConfirmImport = () => {
+    setShowImportConfirm(false);
+    fileInputRef.current?.click();
+  };
 
   const handleDownloadXml = () => {
     const url = URL.createObjectURL(new Blob([xmlString], { type: 'application/xml' }));
@@ -92,9 +98,20 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
           <span style={{ color: 'var(--soft-white)', fontSize: 13 }}>Editable BPMN diagram</span>
         </div>
         <div className="bpmn-io-actions">
-          <button type="button" className="btn-ghost" onClick={handleZoomIn}>Zoom +</button>
-          <button type="button" className="btn-ghost" onClick={handleZoomOut}>Zoom -</button>
-          <button type="button" className="btn-ghost" onClick={handleResetZoom}>Fit View</button>
+          <button type="button" className="btn-ghost bpmn-zoom-button" onClick={handleZoomIn} title="Zoom in" aria-label="Zoom in">
+            <span className="bpmn-zoom-sign">+</span>
+            <svg className="bpmn-zoom-glyph" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.2" y2="16.2" />
+            </svg>
+          </button>
+          <button type="button" className="btn-ghost bpmn-zoom-button" onClick={handleZoomOut} title="Zoom out" aria-label="Zoom out">
+            <span className="bpmn-zoom-sign">-</span>
+            <svg className="bpmn-zoom-glyph" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.2" y2="16.2" />
+            </svg>
+          </button>
           <button type="button" className="btn-ghost bpmn-fullscreen-button" onClick={() => setIsFullscreen((current) => !current)} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
@@ -105,12 +122,36 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
       {renderError && <div className="bpmn-render-error">BPMN notice: {renderError}</div>}
       <div ref={containerRef} className="bpmn-canvas-area" />
       <div className="bpmn-bottom-actions">
-        <label className="btn-ghost bpmn-file-button">
+        <button type="button" className="btn-ghost bpmn-file-button" onClick={() => setShowImportConfirm(true)}>
           Import BPMN XML
-          <input type="file" accept=".bpmn,.xml,application/xml,text/xml" onChange={handleImportXml} />
-        </label>
-        <span className="bpmn-import-note">Import replaces the current diagram.</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".bpmn,.xml,application/xml,text/xml"
+          onChange={handleImportXml}
+          style={{ display: 'none' }}
+        />
       </div>
+      {showImportConfirm && (
+        <div className="bpmn-confirm-overlay" onClick={() => setShowImportConfirm(false)}>
+          <div className="bpmn-confirm-card" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <h3>Import BPMN XML?</h3>
+            <p>
+              Importing a BPMN file will <strong>override the currently generated diagram</strong>.
+              This action cannot be undone and the generated diagram will not be recoverable.
+            </p>
+            <div className="bpmn-confirm-actions">
+              <button type="button" className="btn-ghost" onClick={() => setShowImportConfirm(false)}>
+                No, Cancel
+              </button>
+              <button type="button" className="yellow-button" onClick={handleConfirmImport}>
+                Yes, Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -34,13 +34,74 @@
   background: rgba(7, 26, 61, 0.72);
 }
 
-.bpmn-import-note {
-  color: var(--muted);
-  font-size: 12px;
+.bpmn-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 10, 26, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 24px;
 }
 
-.bpmn-file-button input {
-  display: none;
+.bpmn-confirm-card {
+  width: 100%;
+  max-width: 480px;
+  background: linear-gradient(160deg, #092149, #051533);
+  border: 1px solid rgba(57, 245, 208, 0.3);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bpmn-confirm-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.bpmn-confirm-card p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.bpmn-confirm-card p strong {
+  color: var(--white);
+}
+
+.bpmn-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Zoom controls: + / - signs with a magnifier glyph */
+.bpmn-zoom-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bpmn-zoom-sign {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bpmn-zoom-glyph {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
 }
 
 .bpmn-render-error {
@@ -113,6 +174,13 @@
   stroke: var(--electric) !important;
   stroke-width: 2px !important;
   fill: #061c3d !important;
+}
+
+/* Gateway inner markers (exclusive X, parallel +) — keep them visible on the dark theme.
+   bpmn-js renders them as a <path> directly after the diamond <polygon>, in black by default. */
+.bpmn-canvas-area .djs-shape .djs-visual polygon + path {
+  stroke: var(--electric) !important;
+  fill: var(--electric) !important;
 }
 
 .bpmn-canvas-area .djs-connection .djs-visual path {
