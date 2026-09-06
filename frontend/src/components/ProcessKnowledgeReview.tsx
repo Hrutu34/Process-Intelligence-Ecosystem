@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import type { ProcessKnowledgeDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import type { ProcessKnowledgeDTO, ProcessDocumentDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import './ProcessKnowledgeReview.css';
 
 interface Props {
   data: ProcessKnowledgeDTO;
+  documents?: ProcessDocumentDTO[]; // ADDED: To receive the classified docs
   onProceedToIntelligence?: () => void;
   onReset: () => void;
 }
@@ -34,6 +35,7 @@ const SECTIONS: SectionConfig[] = [
 
 export const ProcessKnowledgeReview: React.FC<Props> = ({
   data,
+  documents = [], // Default to empty array if not passed
   onProceedToIntelligence,
   onReset,
 }) => {
@@ -49,6 +51,12 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
       nextState[s.key] = collapse;
     });
     setCollapsedSections(nextState);
+  };
+
+  const getConfColor = (conf: number) => {
+    if (conf >= 85) return 'high';
+    if (conf >= 60) return 'med';
+    return 'low';
   };
 
   const totalEntities = SECTIONS.reduce((acc, curr) => {
@@ -94,6 +102,44 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
           )}
         </div>
       </div>
+
+      {/* NEW: Document Classification Table */}
+      {documents && documents.length > 0 && (
+        <div className="classification-table-container">
+          <div className="classification-header">
+            <span>📄</span>
+            <h3>Agent 01: Classified Documents</h3>
+          </div>
+          <table className="class-table">
+            <thead>
+              <tr>
+                <th>Document File</th>
+                <th>AI Classification Category</th>
+                <th>Confidence Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {documents.map((doc, idx) => (
+                <tr key={doc.documentId || idx}>
+                  <td className="doc-name">{doc.name || `Document ${idx + 1}`}</td>
+                  <td><span className="cat-badge">{doc.category || 'Process Description'}</span></td>
+                  <td>
+                    <div className="conf-bar-bg">
+                      <div 
+                        className={`conf-bar-fill ${getConfColor(doc.confidence || 90)}`} 
+                        style={{ width: `${doc.confidence || 90}%` }} 
+                      />
+                    </div>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: '11px', color: 'var(--white)' }}>
+                      {doc.confidence || 90}%
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Conflict Alert Banner (if conflicts exist) */}
       {conflictCount > 0 && (

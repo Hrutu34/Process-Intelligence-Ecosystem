@@ -3,6 +3,8 @@ export interface ProcessDocumentDTO {
   name: string;
   content: string;
   sourceType: string;
+  category?: string;
+  confidence?: number;
 }
 
 export interface ProcessKnowledgeDTO {

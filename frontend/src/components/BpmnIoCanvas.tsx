@@ -4,7 +4,6 @@ import BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import type { ProcessGraphDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
-import { canonicalGraphToBpmnXml } from '../utils/bpmnXmlGenerator';
 import './BpmnIoCanvas.css';
 
 interface Props {
@@ -20,25 +19,56 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
   const [renderError, setRenderError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!containerRef.current) return;
     let isMounted = true;
+    
+    // Initialize Modeler
     const modeler = new BpmnModeler({ container: containerRef.current });
     viewerRef.current = modeler;
-    const xml = canonicalGraphToBpmnXml(graph);
-    setXmlString(xml);
-    modeler.importXML(xml).then(() => {
-      const eventBus = modeler.get('eventBus');
-      eventBus?.on('commandStack.changed', async () => {
-        const saved = await modeler.saveXML({ format: true });
-        if (isMounted && saved.xml) setXmlString(saved.xml);
-      });
-      modeler.get('canvas').zoom('fit-viewport', 'auto');
-      setRenderError(null);
-    }).catch((error: Error) => {
-      if (isMounted) setRenderError(error.message || 'BPMN diagram rendering failed');
-    });
+
+    const loadDiagramFromBackend = async () => {
+      try {
+        setIsLoading(true);
+        setRenderError(null);
+
+        // Fetch XML natively from the Java Backend Engine
+        const response = await fetch('http://localhost:8080/api/v1/process/bpmn/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(graph)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Backend Error ${response.status}: Failed to generate BPMN XML`);
+        }
+
+        const xml = await response.text();
+        if (!isMounted) return;
+
+        setXmlString(xml);
+
+        // Import generated XML into the canvas
+        await modeler.importXML(xml);
+        
+        const eventBus = modeler.get('eventBus');
+        eventBus?.on('commandStack.changed', async () => {
+          const saved = await modeler.saveXML({ format: true });
+          if (isMounted && saved.xml) setXmlString(saved.xml);
+        });
+        
+        modeler.get('canvas').zoom('fit-viewport', 'auto');
+      } catch (error: any) {
+        if (isMounted) setRenderError(error.message || 'BPMN diagram retrieval or rendering failed');
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    loadDiagramFromBackend();
+
     return () => {
       isMounted = false;
       modeler.destroy();
@@ -100,27 +130,28 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
         <div className="bpmn-io-actions">
           <button type="button" className="btn-ghost bpmn-zoom-button" onClick={handleZoomIn} title="Zoom in" aria-label="Zoom in">
             <span className="bpmn-zoom-sign">+</span>
-            <svg className="bpmn-zoom-glyph" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.2" y2="16.2" />
-            </svg>
           </button>
           <button type="button" className="btn-ghost bpmn-zoom-button" onClick={handleZoomOut} title="Zoom out" aria-label="Zoom out">
             <span className="bpmn-zoom-sign">-</span>
-            <svg className="bpmn-zoom-glyph" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.2" y2="16.2" />
-            </svg>
           </button>
-          <button type="button" className="btn-ghost bpmn-fullscreen-button" onClick={() => setIsFullscreen((current) => !current)} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
+          <button type="button" className="btn-ghost bpmn-fullscreen-button" onClick={() => setIsFullscreen((current) => !current)}>
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
           <button type="button" className="btn-ghost" onClick={handleCopyXml}>{copied ? 'Copied XML' : 'Copy XML'}</button>
-          <button type="button" className="yellow-button" onClick={handleDownloadXml}>DOWNLOAD .BPMN <span>↓</span></button>
+          <button type="button" className="yellow-button" onClick={handleDownloadXml} disabled={isLoading || !!renderError}>DOWNLOAD .BPMN <span>↓</span></button>
         </div>
       </div>
+      
+      {isLoading && (
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--aqua)', fontFamily: 'var(--mono)' }}>
+          Contacting backend generator...
+        </div>
+      )}
+      
       {renderError && <div className="bpmn-render-error">BPMN notice: {renderError}</div>}
-      <div ref={containerRef} className="bpmn-canvas-area" />
+      
+      <div ref={containerRef} className="bpmn-canvas-area" style={{ opacity: isLoading ? 0.3 : 1 }} />
+      
       <div className="bpmn-bottom-actions">
         <button type="button" className="btn-ghost bpmn-file-button" onClick={() => setShowImportConfirm(true)}>
           Import BPMN XML
@@ -133,6 +164,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
           style={{ display: 'none' }}
         />
       </div>
+      
       {showImportConfirm && (
         <div className="bpmn-confirm-overlay" onClick={() => setShowImportConfirm(false)}>
           <div className="bpmn-confirm-card" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>

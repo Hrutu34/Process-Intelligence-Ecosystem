@@ -15,6 +15,7 @@ import java.util.Objects;
 public class NodeMetadata {
     private String roleRef;
     private String systemRef;
+    private String taskType;
     private GatewayType gatewayType;
     private EventType eventType;
     private String duration;
@@ -24,12 +25,13 @@ public class NodeMetadata {
     }
 
     public NodeMetadata(String roleRef, String systemRef, GatewayType gatewayType, EventType eventType, Map<String, Object> attributes) {
-        this(roleRef, systemRef, gatewayType, eventType, null, attributes);
+        this(roleRef, systemRef, null, gatewayType, eventType, null, attributes);
     }
 
-    public NodeMetadata(String roleRef, String systemRef, GatewayType gatewayType, EventType eventType, String duration, Map<String, Object> attributes) {
+    public NodeMetadata(String roleRef, String systemRef, String taskType, GatewayType gatewayType, EventType eventType, String duration, Map<String, Object> attributes) {
         this.roleRef = roleRef;
         this.systemRef = systemRef;
+        this.taskType = taskType;
         this.gatewayType = gatewayType;
         this.eventType = eventType;
         this.duration = duration;
@@ -52,6 +54,14 @@ public class NodeMetadata {
 
     public void setSystemRef(String systemRef) {
         this.systemRef = systemRef;
+    }
+
+    public String getTaskType() {
+        return taskType;
+    }
+
+    public void setTaskType(String taskType) {
+        this.taskType = taskType;
     }
 
     public GatewayType getGatewayType() {
@@ -102,6 +112,7 @@ public class NodeMetadata {
     public static class Builder {
         private String roleRef;
         private String systemRef;
+        private String taskType;
         private GatewayType gatewayType;
         private EventType eventType;
         private String duration;
@@ -114,6 +125,11 @@ public class NodeMetadata {
 
         public Builder systemRef(String systemRef) {
             this.systemRef = systemRef;
+            return this;
+        }
+
+        public Builder taskType(String taskType) {
+            this.taskType = taskType;
             return this;
         }
 
@@ -145,7 +161,7 @@ public class NodeMetadata {
         }
 
         public NodeMetadata build() {
-            return new NodeMetadata(roleRef, systemRef, gatewayType, eventType, duration, attributes);
+            return new NodeMetadata(roleRef, systemRef, taskType, gatewayType, eventType, duration, attributes);
         }
     }
 
@@ -155,6 +171,7 @@ public class NodeMetadata {
         if (!(o instanceof NodeMetadata that)) return false;
         return Objects.equals(roleRef, that.roleRef) &&
                Objects.equals(systemRef, that.systemRef) &&
+               Objects.equals(taskType, that.taskType) &&
                gatewayType == that.gatewayType &&
                eventType == that.eventType &&
                Objects.equals(duration, that.duration) &&
@@ -163,7 +180,7 @@ public class NodeMetadata {
 
     @Override
     public int hashCode() {
-        return Objects.hash(roleRef, systemRef, gatewayType, eventType, duration, attributes);
+        return Objects.hash(roleRef, systemRef, taskType, gatewayType, eventType, duration, attributes);
     }
 
     @Override
@@ -171,6 +188,7 @@ public class NodeMetadata {
         return "NodeMetadata{" +
                 "roleRef='" + roleRef + '\'' +
                 ", systemRef='" + systemRef + '\'' +
+                ", taskType='" + taskType + '\'' +
                 ", gatewayType=" + gatewayType +
                 ", eventType=" + eventType +
                 ", duration='" + duration + '\'' +

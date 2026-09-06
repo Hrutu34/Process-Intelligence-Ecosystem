@@ -31,10 +31,10 @@ public class BpmnDomainModelMapper {
         for (GraphNode node : graph.getNodes()) {
             if (node.getType() == NodeType.Activity) {
                 tasks.add(new BpmnProcessModel.Task(
-                        node.getId(), node.getLabel(), inferTaskType(node.getLabel(), node), ownerId(node)));
+                        node.getId(), node.getLabel(), mapTaskType(node), ownerId(node)));
             } else if (node.getType() == NodeType.Gateway) {
                 gateways.add(new BpmnProcessModel.Gateway(
-                        node.getId(), node.getLabel(), inferGatewayType(node)));
+                        node.getId(), node.getLabel(), mapGatewayType(node)));
             } else if (node.getType() == NodeType.Event) {
                 mapEvent(node, starts, ends, intermediate);
             } else if (node.getType() == NodeType.Role || node.getType() == NodeType.System) {
@@ -81,25 +81,25 @@ public class BpmnDomainModelMapper {
         }
     }
 
-    private BpmnProcessModel.TaskType inferTaskType(String label, GraphNode node) {
-        String value = label.toLowerCase(Locale.ROOT);
-        Object explicit = node.getMetadata() == null ? null : node.getMetadata().getAttributes().get("taskType");
-        if (explicit != null) {
-            try {
-                return BpmnProcessModel.TaskType.valueOf(explicit.toString().toUpperCase(Locale.ROOT).replace('-', '_'));
-            } catch (IllegalArgumentException ignored) {
-                // Unknown metadata falls through to the stable lexical mapping.
-            }
+    // AI-driven Task Type Mapping
+    private BpmnProcessModel.TaskType mapTaskType(GraphNode node) {
+        if (node.getMetadata() == null || node.getMetadata().getTaskType() == null) {
+            return BpmnProcessModel.TaskType.USER;
         }
-        if (value.contains("send") || value.contains("notify") || value.contains("forward")) return BpmnProcessModel.TaskType.SEND;
-        if (value.contains("validate") || value.contains("calculate") || value.contains("process") || value.contains("system")) return BpmnProcessModel.TaskType.SERVICE;
-        if (value.contains("script") || value.contains("run ")) return BpmnProcessModel.TaskType.SCRIPT;
-        if (value.contains("install") || value.contains("replace") || value.contains("repair")) return BpmnProcessModel.TaskType.MANUAL;
-        if (value.contains("receive") || value.contains("wait for")) return BpmnProcessModel.TaskType.RECEIVE;
-        return BpmnProcessModel.TaskType.USER;
+
+        String aiType = node.getMetadata().getTaskType().toUpperCase(Locale.ROOT);
+        return switch (aiType) {
+            case "SERVICE_TASK" -> BpmnProcessModel.TaskType.SERVICE;
+            case "MANUAL_TASK" -> BpmnProcessModel.TaskType.MANUAL;
+            case "SEND_TASK" -> BpmnProcessModel.TaskType.SEND;
+            case "RECEIVE_TASK" -> BpmnProcessModel.TaskType.RECEIVE;
+            case "SCRIPT_TASK" -> BpmnProcessModel.TaskType.SCRIPT;
+            default -> BpmnProcessModel.TaskType.USER;
+        };
     }
 
-    private BpmnProcessModel.GatewayType inferGatewayType(GraphNode node) {
+    // AI-driven Gateway Type Mapping
+    private BpmnProcessModel.GatewayType mapGatewayType(GraphNode node) {
         if (node.getMetadata() != null && node.getMetadata().getGatewayType() != null) {
             return switch (node.getMetadata().getGatewayType()) {
                 case parallel -> BpmnProcessModel.GatewayType.PARALLEL;

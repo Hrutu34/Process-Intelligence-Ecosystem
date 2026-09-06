@@ -70,11 +70,13 @@ public class ProcessController {
         return ResponseEntity.ok(graphBuilder.build(knowledge));
     }
 
-    @PostMapping(value = "/bpmn", produces = MediaType.APPLICATION_XML_VALUE)
+    // MATCHES FRONTEND FETCH CALL: /api/v1/process/bpmn/generate
+    @PostMapping(value = "/bpmn/generate", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> buildBpmn(@RequestBody ProcessGraphDTO graph) {
         if (bpmnMapper == null || bpmnXmlService == null) {
             return ResponseEntity.internalServerError().build();
         }
+        // Maps the graph to the domain model, then generates the XML
         return ResponseEntity.ok(bpmnXmlService.generate(bpmnMapper.map(graph)));
     }
 
