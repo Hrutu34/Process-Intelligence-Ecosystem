@@ -18,6 +18,7 @@ interface MetricCardProps {
   progress: number;
   tone: 'aqua' | 'yellow' | 'red';
   visual?: 'ring' | 'bar';
+  index?: number;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({
@@ -27,10 +28,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
   progress,
   tone,
   visual = 'ring',
+  index = 0,
 }) => {
   const boundedProgress = Math.max(0, Math.min(100, progress));
   return (
-    <div className="pi-stat-card">
+    <div className="pi-stat-card" style={{ animationDelay: `${index * 0.08}s` }}>
       <span className="pi-stat-label">{label}</span>
       <div className="pi-stat-main">
         <div className={`pi-metric-visual ${visual} tone-${tone}`} style={{ '--metric-progress': `${boundedProgress}%` } as React.CSSProperties}>
@@ -133,6 +135,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
 
   const highIssues = issues.filter((i) => i.severity.toUpperCase() === 'HIGH');
   const mediumIssues = issues.filter((i) => i.severity.toUpperCase() === 'MEDIUM');
+  
   const activitiesCount = knowledge.activities?.length || 0;
   const actorsCount = knowledge.actors?.length || 0;
   const gatewaysCount = knowledge.gateways?.length || 0;
@@ -166,13 +169,13 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
 
       {/* KPI Stats Bar */}
       <div className="pi-stats-grid">
-        <MetricCard label="Activities" value={activitiesCount} progress={activitiesCount / maxEntityCount * 100} tone="aqua" sublabel="Extracted process actions" />
-        <MetricCard label="Actors" value={actorsCount} progress={actorsCount / maxEntityCount * 100} tone="aqua" sublabel="People and departments" />
-        <MetricCard label="Gateways" value={gatewaysCount} progress={gatewaysCount / maxEntityCount * 100} tone="yellow" sublabel="Decision points detected" />
-        <MetricCard label="Model Quality" value={`${report.qualityScore}%`} progress={report.qualityScore} tone={report.qualityScore >= 80 ? 'aqua' : report.qualityScore >= 50 ? 'yellow' : 'red'} sublabel={report.valid ? 'Structural checks passed' : 'Quality issues require attention'} />
-        <MetricCard label="High Severity" value={highIssues.length} progress={highIssues.length / totalIssues * 100} tone="red" visual="bar" sublabel="Broken paths and boundaries" />
-        <MetricCard label="Medium Severity" value={mediumIssues.length} progress={mediumIssues.length / totalIssues * 100} tone="yellow" visual="bar" sublabel="Ambiguous or incomplete logic" />
-        <MetricCard label="Recommendations" value={report.recommendations?.length || 0} progress={(report.recommendations?.length || 0) / Math.max(issues.length, 1) * 100} tone="aqua" visual="bar" sublabel="Actionable refinement ideas" />
+        <MetricCard index={0} label="Activities" value={activitiesCount} progress={activitiesCount / maxEntityCount * 100} tone="aqua" sublabel="Extracted process actions" />
+        <MetricCard index={1} label="Actors" value={actorsCount} progress={actorsCount / maxEntityCount * 100} tone="aqua" sublabel="People and departments" />
+        <MetricCard index={2} label="Gateways" value={gatewaysCount} progress={gatewaysCount / maxEntityCount * 100} tone="yellow" sublabel="Decision points detected" />
+        <MetricCard index={3} label="Model Quality" value={`${report.qualityScore}%`} progress={report.qualityScore} tone={report.qualityScore >= 80 ? 'aqua' : report.qualityScore >= 50 ? 'yellow' : 'red'} sublabel={report.valid ? 'Structural checks passed' : 'Quality issues require attention'} />
+        <MetricCard index={4} label="High Severity" value={highIssues.length} progress={highIssues.length / totalIssues * 100} tone="red" visual="bar" sublabel="Broken paths and boundaries" />
+        <MetricCard index={5} label="Medium Severity" value={mediumIssues.length} progress={mediumIssues.length / totalIssues * 100} tone="yellow" visual="bar" sublabel="Ambiguous or incomplete logic" />
+        <MetricCard index={6} label="Recommendations" value={report.recommendations?.length || 0} progress={(report.recommendations?.length || 0) / Math.max(issues.length, 1) * 100} tone="aqua" visual="bar" sublabel="Actionable refinement ideas" />
       </div>
 
       {/* Filter Tabs */}
@@ -213,7 +216,11 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
       ) : (
         <div className="pi-issues-grid">
           {filteredIssues.map((issue, idx) => (
-            <div className={`pi-issue-card severity-${issue.severity.toLowerCase()}`} key={idx}>
+            <div 
+              className={`pi-issue-card severity-${issue.severity.toLowerCase()}`} 
+              key={idx}
+              style={{ animationDelay: `${0.1 + idx * 0.08}s` }}
+            >
               <div className="pi-issue-top">
                 <span className={`pi-severity-badge ${issue.severity.toLowerCase()}`}>
                   {issue.severity}
@@ -245,7 +252,9 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
           </div>
           <ul className="pi-rec-list">
             {report.recommendations.map((rec, i) => (
-              <li key={i}>{rec}</li>
+              <li key={i} style={{ animationDelay: `${0.2 + i * 0.08}s` }}>
+                {rec}
+              </li>
             ))}
           </ul>
         </div>
