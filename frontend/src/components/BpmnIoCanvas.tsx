@@ -27,8 +27,8 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
     const xml = canonicalGraphToBpmnXml(graph);
     setXmlString(xml);
     modeler.importXML(xml).then(() => {
-      const commandStack = modeler.get('commandStack');
-      commandStack?.on('changed', async () => {
+      const eventBus = modeler.get('eventBus');
+      eventBus?.on('commandStack.changed', async () => {
         const saved = await modeler.saveXML({ format: true });
         if (isMounted && saved.xml) setXmlString(saved.xml);
       });
@@ -95,8 +95,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
           <button type="button" className="btn-ghost" onClick={handleZoomIn}>Zoom +</button>
           <button type="button" className="btn-ghost" onClick={handleZoomOut}>Zoom -</button>
           <button type="button" className="btn-ghost" onClick={handleResetZoom}>Fit View</button>
-          <label className="btn-ghost bpmn-file-button">Import BPMN<input type="file" accept=".bpmn,.xml,application/xml,text/xml" onChange={handleImportXml} /></label>
-          <button type="button" className="btn-ghost" onClick={() => setIsFullscreen((current) => !current)}>
+          <button type="button" className="btn-ghost bpmn-fullscreen-button" onClick={() => setIsFullscreen((current) => !current)} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
           <button type="button" className="btn-ghost" onClick={handleCopyXml}>{copied ? 'Copied XML' : 'Copy XML'}</button>
@@ -105,6 +104,13 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
       </div>
       {renderError && <div className="bpmn-render-error">BPMN notice: {renderError}</div>}
       <div ref={containerRef} className="bpmn-canvas-area" />
+      <div className="bpmn-bottom-actions">
+        <label className="btn-ghost bpmn-file-button">
+          Import BPMN XML
+          <input type="file" accept=".bpmn,.xml,application/xml,text/xml" onChange={handleImportXml} />
+        </label>
+        <span className="bpmn-import-note">Import replaces the current diagram.</span>
+      </div>
     </div>
   );
 };

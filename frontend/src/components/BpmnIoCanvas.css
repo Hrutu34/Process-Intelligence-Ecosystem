@@ -25,6 +25,20 @@
   cursor: pointer;
 }
 
+.bpmn-bottom-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px 14px;
+  border-top: 1px solid rgba(116, 183, 220, 0.15);
+  background: rgba(7, 26, 61, 0.72);
+}
+
+.bpmn-import-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .bpmn-file-button input {
   display: none;
 }
@@ -115,4 +129,29 @@
 .bpmn-canvas-area .bjs-powered-by {
   opacity: 0.5;
   filter: invert(1);
+}
+
+/* Keep bpmn-js editing tools legible inside the P.I.E. visual system. */
+.bpmn-canvas-area .djs-palette,
+.bpmn-canvas-area .djs-context-pad .entry {
+  background: rgba(7, 26, 61, 0.96) !important;
+  border: 1px solid rgba(57, 245, 208, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+.bpmn-canvas-area .djs-palette .entry,
+.bpmn-canvas-area .djs-context-pad .entry {
+  color: var(--aqua) !important;
+}
+
+.bpmn-canvas-area .djs-palette .entry:hover,
+.bpmn-canvas-area .djs-context-pad .entry:hover {
+  background: rgba(57, 245, 208, 0.16) !important;
+  color: var(--electric) !important;
+}
+
+.bpmn-canvas-area .djs-palette .entry:before,
+.bpmn-canvas-area .djs-context-pad .entry:before {
+  color: inherit !important;
+  opacity: 1 !important;
 }

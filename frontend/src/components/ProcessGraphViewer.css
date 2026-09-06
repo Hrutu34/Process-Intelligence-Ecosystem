@@ -302,16 +302,31 @@
   display: flex;
   align-items: center;
   color: var(--aqua);
-  font-size: 18px;
+  font-size: 0;
   font-weight: 700;
+  width: 48px;
+  height: 12px;
+  position: relative;
 }
 
 .flow-arrow-line::before {
   content: "";
   display: block;
-  width: 32px;
+  width: 40px;
   height: 2px;
   background: linear-gradient(90deg, rgba(57, 245, 208, 0.4), var(--aqua));
+}
+
+.flow-arrow-line::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 2px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid var(--aqua);
+  border-right: 2px solid var(--aqua);
+  transform: rotate(45deg);
 }
 
 .flow-condition-tag {

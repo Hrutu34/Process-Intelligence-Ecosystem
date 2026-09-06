@@ -401,7 +401,7 @@ function getTaskTagName(act: GraphNode): string {
   });
 
   // Edges (Waypoints) - orthogonal stepped routing for clean branch presentation
-  flows.forEach((flow) => {
+  flows.forEach((flow, flowIndex) => {
     const fromPos = positions.get(flow.from);
     const toPos = positions.get(flow.to);
     if (fromPos && toPos) {
@@ -420,7 +420,8 @@ function getTaskTagName(act: GraphNode): string {
         xml += `        <di:waypoint x="${endX}" y="${toCenterY}" />\n`;
       } else if (toPos.x <= fromPos.x) {
         // Loop back route: curves underneath nodes
-        const loopBottomY = Math.round(Math.max(fromPos.y + fromPos.height, toPos.y + toPos.height) + 35);
+        const loopChannel = (flowIndex % 5) * 18;
+        const loopBottomY = Math.round(Math.max(fromPos.y + fromPos.height, toPos.y + toPos.height) + 35 + loopChannel);
         xml += `        <di:waypoint x="${fromCenterX}" y="${Math.round(fromPos.y + fromPos.height)}" />\n`;
         xml += `        <di:waypoint x="${fromCenterX}" y="${loopBottomY}" />\n`;
         xml += `        <di:waypoint x="${toCenterX}" y="${loopBottomY}" />\n`;
@@ -429,7 +430,8 @@ function getTaskTagName(act: GraphNode): string {
         // Forward branch / convergence stepped connector
         const startX = Math.round(fromPos.x + fromPos.width);
         const endX = Math.round(toPos.x);
-        const midX = Math.round(startX + Math.max(25, (endX - startX) / 2));
+        const channelOffset = ((flowIndex % 5) - 2) * 14;
+        const midX = Math.round(startX + Math.max(25, (endX - startX) / 2) + channelOffset);
         xml += `        <di:waypoint x="${startX}" y="${fromCenterY}" />\n`;
         xml += `        <di:waypoint x="${midX}" y="${fromCenterY}" />\n`;
         xml += `        <di:waypoint x="${midX}" y="${toCenterY}" />\n`;

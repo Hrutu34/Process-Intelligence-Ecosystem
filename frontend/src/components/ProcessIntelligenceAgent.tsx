@@ -9,6 +9,7 @@ interface Props {
 }
 
 const qualityReportCache = new Map<string, ProcessQualityReportDTO>();
+const qualityRequestCache = new Map<string, Promise<ProcessQualityReportDTO>>();
 
 interface MetricCardProps {
   label: string;
@@ -64,21 +65,28 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
     setLoading(true);
     setError(null);
 
-    fetch('http://localhost:8080/api/v1/process/validate-knowledge', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(knowledge),
-    })
-      .then((res) => {
+    let request = qualityRequestCache.get(knowledgeKey);
+    if (!request || forceRefresh) {
+      if (forceRefresh) qualityRequestCache.delete(knowledgeKey);
+      request = fetch('http://localhost:8080/api/v1/process/validate-knowledge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(knowledge),
+      }).then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}: Validation request failed`);
         return res.json();
-      })
-      .then((data: ProcessQualityReportDTO) => {
+      });
+      qualityRequestCache.set(knowledgeKey, request);
+    }
+
+    request
+      .then((data) => {
         qualityReportCache.set(knowledgeKey, data);
         setReport(data);
         setLoading(false);
       })
       .catch((err) => {
+        qualityRequestCache.delete(knowledgeKey);
         console.error('Process validation failed:', err);
         setError(err.message || 'Failed to analyze process gaps');
         setLoading(false);

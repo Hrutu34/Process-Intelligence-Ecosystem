@@ -18,6 +18,7 @@ interface Props {
 type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
 
 const processGraphCache = new Map<string, ProcessGraphDTO>();
+const processGraphRequestCache = new Map<string, Promise<ProcessGraphDTO>>();
 
 export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn, defaultView = 'visual' }) => {
   const knowledgeKey = JSON.stringify(knowledge);
@@ -45,15 +46,20 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
     let isMounted = true;
     setLoading(true);
 
-    fetch('http://localhost:8080/api/v1/process/graph', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(knowledge),
-    })
-      .then((res) => {
+    let request = processGraphRequestCache.get(knowledgeKey);
+    if (!request) {
+      request = fetch('http://localhost:8080/api/v1/process/graph', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(knowledge),
+      }).then((res) => {
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         return res.json();
-      })
+      });
+      processGraphRequestCache.set(knowledgeKey, request);
+    }
+
+    request
       .then((data: ProcessGraphDTO) => {
         if (isMounted) {
           processGraphCache.set(knowledgeKey, data);
@@ -65,6 +71,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
         }
       })
       .catch((err) => {
+        processGraphRequestCache.delete(knowledgeKey);
         console.warn('Backend /graph fetch failed, constructing local fallback:', err);
         // Fallback local canonical construction for immediate preview
         const fallback = buildLocalFallbackGraph(knowledge);
