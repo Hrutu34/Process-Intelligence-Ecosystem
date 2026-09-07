@@ -229,21 +229,32 @@ public class ProcessGraphBuilder {
 
         for (int i = 0; i < rawEvents.size(); i++) {
             String label = rawEvents.get(i);
+            EventType eventType = EventType.intermediate; // Default fallback
+
+            // EXTRACT AI SEMANTIC TAG (e.g., "Wait 1 business day [TIMER]")
+            if (label.matches(".*\\[[A-Z_]+\\]$")) {
+                int bracketIdx = label.lastIndexOf('[');
+                String tag = label.substring(bracketIdx + 1, label.length() - 1).toUpperCase();
+                label = label.substring(0, bracketIdx).trim();
+                
+                if (tag.equals("START")) eventType = EventType.start;
+                else if (tag.equals("END")) eventType = EventType.end;
+                else if (tag.equals("TIMER")) eventType = EventType.timer;
+                else if (tag.equals("MESSAGE")) eventType = EventType.intermediate; // No message enum yet
+            }
+
             String id = "event-" + slugify(label);
             String lower = label.toLowerCase(Locale.ROOT);
 
-            EventType eventType;
             String duration = null;
 
-            if (lower.contains("timer") || lower.contains("timeout") || lower.contains("day") || lower.contains("hour")) {
-                eventType = EventType.timer;
+            if (eventType == EventType.timer || lower.contains("timer") || lower.contains("timeout") || lower.contains("day") || lower.contains("hour")) {
+                if (eventType == EventType.intermediate) eventType = EventType.timer;
                 duration = extractDurationIso(label);
-            } else if (i == 0 && (lower.contains("start") || lower.contains("trigger") || lower.contains("initiat") || rawEvents.size() > 1)) {
+            } else if (eventType == EventType.intermediate && i == 0 && (lower.contains("start") || lower.contains("trigger") || lower.contains("initiat") || rawEvents.size() > 1)) {
                 eventType = EventType.start;
-            } else if (lower.contains("end") || lower.contains("complet") || lower.contains("finish") || lower.contains("archived") || i == rawEvents.size() - 1) {
+            } else if (eventType == EventType.intermediate && (lower.contains("end") || lower.contains("complet") || lower.contains("finish") || lower.contains("archived") || i == rawEvents.size() - 1)) {
                 eventType = EventType.end;
-            } else {
-                eventType = EventType.intermediate;
             }
 
             if (!nodeRegistry.containsKey(id)) {

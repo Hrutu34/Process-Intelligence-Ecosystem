@@ -4,6 +4,7 @@ import com.pie.shared.bpmn.BpmnProcessModel;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class BpmnXmlGenerationService {
@@ -17,9 +18,30 @@ public class BpmnXmlGenerationService {
                 .append("xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" ")
                 .append("xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" ")
                 .append("xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" ")
-                .append("id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n")
-                .append("  <bpmn:process id=\"").append(escape(model.id())).append("\" name=\"")
+                .append("id=\"Definitions_1\" targetNamespace=\"http://bpmn.io/schema/bpmn\">\n");
+
+        boolean hasParticipants = model.participants() != null && !model.participants().isEmpty();
+
+        if (hasParticipants) {
+            xml.append("  <bpmn:collaboration id=\"Collaboration_1\">\n");
+            xml.append("    <bpmn:participant id=\"Participant_Process\" name=\"Process Execution\" processRef=\"").append(escape(model.id())).append("\" />\n");
+            xml.append("  </bpmn:collaboration>\n");
+        }
+
+        xml.append("  <bpmn:process id=\"").append(escape(model.id())).append("\" name=\"")
                 .append(escape(model.name())).append("\" isExecutable=\"true\">\n");
+
+        if (hasParticipants && model.lanes() != null && !model.lanes().isEmpty()) {
+            xml.append("    <bpmn:laneSet id=\"LaneSet_1\">\n");
+            for (BpmnProcessModel.Lane lane : model.lanes()) {
+                xml.append("      <bpmn:lane id=\"Lane_").append(escape(lane.id())).append("\" name=\"").append(escape(lane.name())).append("\">\n");
+                for (String flowNodeId : lane.flowNodeIds()) {
+                    xml.append("        <bpmn:flowNodeRef>").append(escape(flowNodeId)).append("</bpmn:flowNodeRef>\n");
+                }
+                xml.append("      </bpmn:lane>\n");
+            }
+            xml.append("    </bpmn:laneSet>\n");
+        }
 
         for (BpmnProcessModel.StartEvent event : model.startEvents()) {
             xml.append("    <bpmn:startEvent id=\"").append(escape(event.id())).append("\" name=\"").append(escape(event.name())).append("\" />\n");
@@ -55,9 +77,33 @@ public class BpmnXmlGenerationService {
 
         // Generate BPMNDI Diagram using Branch-Aware Topological Engine
         xml.append("  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n")
-           .append("    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"").append(escape(model.id())).append("\">\n");
+           .append("    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"")
+           .append(hasParticipants ? "Collaboration_1" : escape(model.id())).append("\">\n");
 
         Map<String, Bounds> boundsMap = calculateTopologicalLayout(model);
+        
+        // Render Lane Shapes
+        if (hasParticipants && model.lanes() != null && !model.lanes().isEmpty()) {
+            List<BpmnProcessModel.Lane> activeLanes = model.lanes().stream()
+                .filter(l -> l.flowNodeIds() != null && !l.flowNodeIds().isEmpty())
+                .collect(Collectors.toList());
+
+            int maxNodeX = boundsMap.values().stream().mapToInt(b -> b.x() + b.width()).max().orElse(180);
+            int laneWidth = Math.max(1200, maxNodeX + 200);
+            int totalHeight = activeLanes.size() * 200;
+
+            xml.append("      <bpmndi:BPMNShape id=\"Participant_Process_di\" bpmnElement=\"Participant_Process\" isHorizontal=\"true\">\n")
+               .append("        <dc:Bounds x=\"50\" y=\"100\" width=\"").append(laneWidth).append("\" height=\"").append(totalHeight).append("\" />\n")
+               .append("      </bpmndi:BPMNShape>\n");
+
+            int laneY = 100;
+            for (BpmnProcessModel.Lane lane : activeLanes) {
+                xml.append("      <bpmndi:BPMNShape id=\"Lane_").append(escape(lane.id())).append("_di\" bpmnElement=\"Lane_").append(escape(lane.id())).append("\" isHorizontal=\"true\">\n")
+                   .append("        <dc:Bounds x=\"80\" y=\"").append(laneY).append("\" width=\"").append(laneWidth - 30).append("\" height=\"200\" />\n")
+                   .append("      </bpmndi:BPMNShape>\n");
+                laneY += 200;
+            }
+        }
 
         for (Map.Entry<String, Bounds> entry : boundsMap.entrySet()) {
             Bounds b = entry.getValue();
@@ -87,7 +133,8 @@ public class BpmnXmlGenerationService {
             xml.append("      <bpmndi:BPMNEdge id=\"").append(escape(flow.id())).append("_di\" bpmnElement=\"").append(escape(flow.id())).append("\">\n");
 
             if (startX < endX) { // Forward routing
-                int midX = startX + (endX - startX) / 2 + (outIdx * 15);
+                // Route vertical drop safely in the empty gap immediately after the source node
+                int midX = startX + 40 + (outIdx * 15);
                 xml.append("        <di:waypoint x=\"").append(startX).append("\" y=\"").append(startY).append("\" />\n");
                 if (Math.abs(startY - endY) > 5) {
                     xml.append("        <di:waypoint x=\"").append(midX).append("\" y=\"").append(startY).append("\" />\n");
@@ -148,14 +195,19 @@ public class BpmnXmlGenerationService {
         }
 
         int iter = 0;
+        Set<String> processedEdges = new HashSet<>();
         while (!queue.isEmpty() && iter < allIds.size() * 3) {
             iter++;
             String current = queue.poll();
             int currentDepth = depthMap.getOrDefault(current, 0);
             for (String next : outgoingMap.getOrDefault(current, List.of())) {
-                if (currentDepth + 1 > depthMap.getOrDefault(next, -1)) {
-                    depthMap.put(next, currentDepth + 1);
-                    queue.add(next);
+                String edgeKey = current + "->" + next;
+                if (!processedEdges.contains(edgeKey)) {
+                    processedEdges.add(edgeKey);
+                    if (currentDepth + 1 > depthMap.getOrDefault(next, -1)) {
+                        depthMap.put(next, currentDepth + 1);
+                        queue.add(next);
+                    }
                 }
             }
         }
@@ -195,21 +247,37 @@ public class BpmnXmlGenerationService {
         // Force all End Events to re-center
         model.endEvents().forEach(e -> trackMap.put(e.id(), 0));
 
+        Map<String, Integer> laneYMap = new HashMap<>();
+        Map<String, String> nodeLaneMap = new HashMap<>();
+        if (model.lanes() != null) {
+            int laneY = 100;
+            for (BpmnProcessModel.Lane lane : model.lanes()) {
+                if (lane.flowNodeIds() == null || lane.flowNodeIds().isEmpty()) continue;
+                for (String nodeId : lane.flowNodeIds()) {
+                    nodeLaneMap.put(nodeId, lane.id());
+                }
+                laneYMap.put(lane.id(), laneY);
+                laneY += 200;
+            }
+        }
+
         // 3. Resolve Collisions and Assign Physical Bounds
         Set<String> occupiedSlots = new HashSet<>();
         int startX = 180;
-        int centerY = 260;
-        int colSpacing = 240;
-        int rowSpacing = 160;
+        int centerY = 160;
+        int colSpacing = 220; // Compact industry-standard spacing
 
         for (String id : allIds) {
             int d = depthMap.getOrDefault(id, 0);
             int t = trackMap.getOrDefault(id, 0);
+            
+            String laneId = nodeLaneMap.get(id);
+            int baseCenterY = laneId != null ? laneYMap.get(laneId) + 60 : centerY;
 
-            while (occupiedSlots.contains(d + "_" + t)) {
+            while (occupiedSlots.contains(d + "_" + laneId + "_" + t)) {
                 t++;
             }
-            occupiedSlots.add(d + "_" + t);
+            occupiedSlots.add(d + "_" + laneId + "_" + t);
 
             int width = 140, height = 80;
             int yOffset = 0;
@@ -222,7 +290,7 @@ public class BpmnXmlGenerationService {
                 width = 50; height = 50; yOffset = 15;
             }
 
-            boundsMap.put(id, new Bounds(startX + (d * colSpacing), (centerY + (t * rowSpacing)) + yOffset, width, height));
+            boundsMap.put(id, new Bounds(startX + (d * colSpacing), baseCenterY + (t * 60) + yOffset, width, height));
         }
 
         return boundsMap;
