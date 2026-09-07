@@ -4,5 +4,7 @@ public record ProcessDocumentDTO(
     String documentId,
     String name,
     String content,
-    String sourceType
+    String sourceType,
+    String category,
+    Integer confidence
 ) {}

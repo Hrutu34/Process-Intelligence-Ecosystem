@@ -19,6 +19,7 @@ export interface ProcessKnowledgeDTO {
   businessRules: string[];
   risks: string[];
   conflicts: string[];
+  documents?: ProcessDocumentDTO[];
 }
 
 export interface ClassificationResultDTO {
