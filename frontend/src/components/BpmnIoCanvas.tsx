@@ -4,13 +4,15 @@ import BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import type { ProcessGraphDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import type { ProcessKnowledgeDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import './BpmnIoCanvas.css';
 
 interface Props {
   graph: ProcessGraphDTO;
+  knowledge?: ProcessKnowledgeDTO;
 }
 
-export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
+export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -38,7 +40,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
         const response = await fetch('http://localhost:8080/api/v1/process/bpmn/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(graph)
+          body: JSON.stringify({ graph, knowledge })
         });
 
         if (!response.ok) {
