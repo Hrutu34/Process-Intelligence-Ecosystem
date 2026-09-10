@@ -320,6 +320,7 @@ export const ProcessWorkspace: React.FC<Props> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <ProcessKnowledgeReview
             data={process.knowledge}
+            documents={process.knowledge.documents || []} 
             onProceedToIntelligence={() => setActiveTab('validation')}
             onReset={() => {}}
           />
@@ -387,7 +388,7 @@ export const ProcessWorkspace: React.FC<Props> = ({
       {activeTab === 'bpmn' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {process.graph ? (
-            <BpmnIoCanvas graph={process.graph} />
+            <BpmnIoCanvas graph={process.graph} knowledge={process.knowledge} />
           ) : (
             <ProcessGraphViewer
               knowledge={process.knowledge}

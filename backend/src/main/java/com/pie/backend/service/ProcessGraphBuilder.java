@@ -91,6 +91,15 @@ public class ProcessGraphBuilder {
         for (String raw : activities) {
             if (raw == null || raw.isBlank()) continue;
             String label = raw.trim();
+            String taskType = "USER_TASK"; // Default fallback
+
+            // EXTRACT AI SEMANTIC TAG (e.g., "Review Request [SERVICE_TASK]")
+            if (label.matches(".*\\[[A-Z_]+\\]$")) {
+                int bracketIdx = label.lastIndexOf('[');
+                taskType = label.substring(bracketIdx + 1, label.length() - 1);
+                label = label.substring(0, bracketIdx).trim();
+            }
+
             String id = "activity-" + slugify(label);
 
             if (!nodeRegistry.containsKey(id)) {
@@ -98,7 +107,8 @@ public class ProcessGraphBuilder {
                         .id(id)
                         .type(NodeType.Activity)
                         .label(label)
-                        .metadata(NodeMetadata.builder().build())
+                        // Inject the AI-detected taskType into metadata
+                        .metadata(NodeMetadata.builder().taskType(taskType).build()) 
                         .build();
                 nodeRegistry.put(id, node);
                 list.add(node);
@@ -155,6 +165,18 @@ public class ProcessGraphBuilder {
         for (String raw : knowledge.gateways()) {
             if (raw == null || raw.isBlank()) continue;
             String label = raw.trim();
+            GatewayType gatewayType = GatewayType.exclusive; // Default fallback
+
+            // EXTRACT AI SEMANTIC TAG (e.g., "Is Approved? [PARALLEL]")
+            if (label.matches(".*\\[[A-Z_]+\\]$")) {
+                int bracketIdx = label.lastIndexOf('[');
+                String tag = label.substring(bracketIdx + 1, label.length() - 1).toUpperCase();
+                label = label.substring(0, bracketIdx).trim();
+                
+                if (tag.equals("PARALLEL")) gatewayType = GatewayType.parallel;
+                else if (tag.equals("INCLUSIVE")) gatewayType = GatewayType.inclusive;
+            }
+
             String id = "gateway-" + slugify(label);
 
             if (!nodeRegistry.containsKey(id)) {
@@ -162,7 +184,7 @@ public class ProcessGraphBuilder {
                         .id(id)
                         .type(NodeType.Gateway)
                         .label(label)
-                        .metadata(NodeMetadata.builder().gatewayType(GatewayType.exclusive).build())
+                        .metadata(NodeMetadata.builder().gatewayType(gatewayType).build())
                         .build();
                 nodeRegistry.put(id, node);
                 list.add(node);
@@ -207,21 +229,32 @@ public class ProcessGraphBuilder {
 
         for (int i = 0; i < rawEvents.size(); i++) {
             String label = rawEvents.get(i);
+            EventType eventType = EventType.intermediate; // Default fallback
+
+            // EXTRACT AI SEMANTIC TAG (e.g., "Wait 1 business day [TIMER]")
+            if (label.matches(".*\\[[A-Z_]+\\]$")) {
+                int bracketIdx = label.lastIndexOf('[');
+                String tag = label.substring(bracketIdx + 1, label.length() - 1).toUpperCase();
+                label = label.substring(0, bracketIdx).trim();
+                
+                if (tag.equals("START")) eventType = EventType.start;
+                else if (tag.equals("END")) eventType = EventType.end;
+                else if (tag.equals("TIMER")) eventType = EventType.timer;
+                else if (tag.equals("MESSAGE")) eventType = EventType.intermediate; // No message enum yet
+            }
+
             String id = "event-" + slugify(label);
             String lower = label.toLowerCase(Locale.ROOT);
 
-            EventType eventType;
             String duration = null;
 
-            if (lower.contains("timer") || lower.contains("timeout") || lower.contains("day") || lower.contains("hour")) {
-                eventType = EventType.timer;
+            if (eventType == EventType.timer || lower.contains("timer") || lower.contains("timeout") || lower.contains("day") || lower.contains("hour")) {
+                if (eventType == EventType.intermediate) eventType = EventType.timer;
                 duration = extractDurationIso(label);
-            } else if (i == 0 && (lower.contains("start") || lower.contains("trigger") || lower.contains("initiat") || rawEvents.size() > 1)) {
+            } else if (eventType == EventType.intermediate && i == 0 && (lower.contains("start") || lower.contains("trigger") || lower.contains("initiat") || rawEvents.size() > 1)) {
                 eventType = EventType.start;
-            } else if (lower.contains("end") || lower.contains("complet") || lower.contains("finish") || lower.contains("archived") || i == rawEvents.size() - 1) {
+            } else if (eventType == EventType.intermediate && (lower.contains("end") || lower.contains("complet") || lower.contains("finish") || lower.contains("archived") || i == rawEvents.size() - 1)) {
                 eventType = EventType.end;
-            } else {
-                eventType = EventType.intermediate;
             }
 
             if (!nodeRegistry.containsKey(id)) {
@@ -375,18 +408,13 @@ public class ProcessGraphBuilder {
             addSequenceEdge(startEvent.getId(), activityNodes.get(0).getId(), edgeRegistry);
         }
 
-        // Find primary End Event (avoiding intermediate validation events)
+        // Find primary End Event dynamically
         GraphNode endEvent = eventNodes.stream()
                 .filter(e -> e.getMetadata() != null && e.getMetadata().getEventType() == EventType.end)
-                .max(Comparator.comparingInt(e -> {
-                    String l = e.getLabel().toLowerCase(Locale.ROOT);
-                    if (l.contains("process completed") || l.contains("reimbursement process completed") || l.contains("process end") || l.contains("archived")) return 100;
-                    if (l.contains("complet") || l.contains("finish")) return 50;
-                    return 10;
-                }))
+                .findFirst()
                 .orElse(null);
 
-        // 2. Parse business rules and branch structures
+        // 2. Parse explicit branching rules
         List<ParsedBranchRule> parsedRules = parseBusinessRules(knowledge, activityNodes, gatewayNodes, endEvent);
 
         Set<String> nodesWithOutgoingFlow = new HashSet<>();
@@ -408,7 +436,6 @@ public class ProcessGraphBuilder {
                     exceptionTargetNodes.add(branch.targetNodeId);
 
                     if (branch.isTimer) {
-                        // Rule 6: Timeout / Timer representation
                         String timerEventId = "event-timer-" + slugify(branch.conditionLabel);
                         if (!nodeRegistry.containsKey(timerEventId)) {
                             GraphNode timerNode = GraphNode.builder()
@@ -432,119 +459,36 @@ public class ProcessGraphBuilder {
                 }
             }
 
-            // Loop back connections (Correction / Retry)
+            // Loop back connections
             if (rule.loopBackSourceId != null && rule.loopBackTargetId != null) {
                 addSequenceEdge(rule.loopBackSourceId, rule.loopBackTargetId, edgeRegistry);
                 nodesWithOutgoingFlow.add(rule.loopBackSourceId);
             }
         }
 
-        // 3. Connect sequential sub-flows (excluding branch/exception targets to prevent accidental linearization)
+        // 3. Connect sequential sub-flows for ANY generic process
         for (int i = 0; i < activityNodes.size() - 1; i++) {
             GraphNode current = activityNodes.get(i);
             GraphNode next = activityNodes.get(i + 1);
 
-            // Connect only if current has no outgoing flow and next is not an exception/retry branch target
+            // Connect only if current has no outgoing flow and next is not a branch target
             if (!gatewayPredecessors.contains(current.getId()) &&
                 !nodesWithOutgoingFlow.contains(current.getId()) &&
                 !exceptionTargetNodes.contains(next.getId()) &&
                 !isTerminalActivity(current.getLabel())) {
+                
                 addSequenceEdge(current.getId(), next.getId(), edgeRegistry);
                 nodesWithOutgoingFlow.add(current.getId());
             }
         }
 
-        // 4. Connect specific operational progressions:
-        // Correction path: Correct Request -> Resubmit
-        GraphNode correctAct = findBestMatchingActivity(activityNodes, "sends the request back to the employee for correction", "correct request");
-        GraphNode resubmitAct = findBestMatchingActivity(activityNodes, "the employee corrects the request and resubmits it", "resubmits");
-        if (correctAct != null && resubmitAct != null) {
-            addSequenceEdge(correctAct.getId(), resubmitAct.getId(), edgeRegistry);
-            nodesWithOutgoingFlow.add(correctAct.getId());
-        }
-
-        // Exception path: Send to manager -> Manager reviews
-        GraphNode sendMgr = findBestMatchingActivity(activityNodes, "sends the request to manager for exception decision", "sends the request to manager");
-        GraphNode mgrRev = findBestMatchingActivity(activityNodes, "manager reviews policy violation", "reviews policy violation");
-        if (sendMgr != null && mgrRev != null) {
-            addSequenceEdge(sendMgr.getId(), mgrRev.getId(), edgeRegistry);
-            nodesWithOutgoingFlow.add(sendMgr.getId());
-        }
-
-        // Clarification path: Send to employee -> Provide clarification -> Review updated info
-        GraphNode sendClarify = findBestMatchingActivity(activityNodes, "sends request to employee for clarification", "for clarification");
-        GraphNode provideClarify = findBestMatchingActivity(activityNodes, "employee provides required clarification", "provides required clarification");
-        GraphNode reviewClarify = findBestMatchingActivity(activityNodes, "finance reviews updated information", "reviews updated information");
-        if (sendClarify != null && provideClarify != null) {
-            addSequenceEdge(sendClarify.getId(), provideClarify.getId(), edgeRegistry);
-            nodesWithOutgoingFlow.add(sendClarify.getId());
-        }
-        if (provideClarify != null && reviewClarify != null) {
-            addSequenceEdge(provideClarify.getId(), reviewClarify.getId(), edgeRegistry);
-            nodesWithOutgoingFlow.add(provideClarify.getId());
-        }
-
-        // Escalation path: Request to finance manager -> Finance manager reviews
-        GraphNode sendFinMgr = findBestMatchingActivity(activityNodes, "sends request to finance manager for additional budget approval", "sends request to finance manager");
-        GraphNode finMgrRev = findBestMatchingActivity(activityNodes, "finance manager reviews budget request", "reviews budget request");
-        if (sendFinMgr != null && finMgrRev != null) {
-            addSequenceEdge(sendFinMgr.getId(), finMgrRev.getId(), edgeRegistry);
-            nodesWithOutgoingFlow.add(sendFinMgr.getId());
-        }
-
-        // Payment path: Create payment -> Send payment to bank
-        GraphNode createPay = findBestMatchingActivity(activityNodes, "creates reimbursement payment", "creates payment");
-        GraphNode sendPay = findBestMatchingActivity(activityNodes, "sends payment to bank account", "sends payment");
-        if (createPay != null && sendPay != null) {
-            addSequenceEdge(createPay.getId(), sendPay.getId(), edgeRegistry);
-            nodesWithOutgoingFlow.add(createPay.getId());
-        }
-
-        // Failure path: Create failure case -> Investigate failure -> Mark paid (BUG 6 fix)
-        GraphNode failCase = findBestMatchingActivity(activityNodes, "creates payment failure case for finance team", "payment failure case");
-        GraphNode investFail = findBestMatchingActivity(activityNodes, "finance team investigates payment failure and processes payment manually", "investigates payment failure");
-        GraphNode markPaid = findBestMatchingActivity(activityNodes, "marks reimbursement as paid and sends confirmation notification", "marks reimbursement as paid", "mark paid");
-        if (failCase != null && investFail != null) {
-            addSequenceEdge(failCase.getId(), investFail.getId(), edgeRegistry);
-            nodesWithOutgoingFlow.add(failCase.getId());
-        }
-        if (investFail != null && markPaid != null) {
-            addSequenceEdge(investFail.getId(), markPaid.getId(), edgeRegistry);
-            nodesWithOutgoingFlow.add(investFail.getId());
-        }
-
-        // Archival path: Terminal steps (Mark Paid, Rejections, Cancellations) -> Archive -> End (BUG 6 & BUG 7 fix)
-        GraphNode archiveAct = findBestMatchingActivity(activityNodes, "completed reimbursement request is archived for auditing", "is archived for auditing", "archive");
-        GraphNode rejectAct = findBestMatchingActivity(activityNodes, "rejects reimbursement request and notifies employee", "rejects reimbursement request", "reject");
-        GraphNode cancelAct = findBestMatchingActivity(activityNodes, "automatically cancels reimbursement request", "automatically cancel", "cancel reimbursement");
-
-        if (archiveAct != null) {
-            if (markPaid != null && !markPaid.getId().equals(archiveAct.getId())) {
-                addSequenceEdge(markPaid.getId(), archiveAct.getId(), edgeRegistry);
-            }
-            if (rejectAct != null && !rejectAct.getId().equals(archiveAct.getId())) {
-                addSequenceEdge(rejectAct.getId(), archiveAct.getId(), edgeRegistry);
-            }
-            if (cancelAct != null && !cancelAct.getId().equals(archiveAct.getId())) {
-                addSequenceEdge(cancelAct.getId(), archiveAct.getId(), edgeRegistry);
-            }
-            if (endEvent != null) {
-                addSequenceEdge(archiveAct.getId(), endEvent.getId(), edgeRegistry);
-            }
-        } else if (endEvent != null) {
-            if (markPaid != null) addSequenceEdge(markPaid.getId(), endEvent.getId(), edgeRegistry);
-            if (rejectAct != null) addSequenceEdge(rejectAct.getId(), endEvent.getId(), edgeRegistry);
-            if (cancelAct != null) addSequenceEdge(cancelAct.getId(), endEvent.getId(), edgeRegistry);
-        }
-
-        // Final closure check for any remaining leaf activity
+        // 4. Attach terminal nodes to the End Event
         if (endEvent != null) {
-            for (GraphNode act : activityNodes) {
-                boolean hasOutgoing = edgeRegistry.values().stream().anyMatch(e ->
-                        e.getFrom().equals(act.getId()) && (e.getEdgeType() == EdgeType.sequence || e.getEdgeType() == EdgeType.conditional));
-
-                if (!hasOutgoing && !act.getId().equals(endEvent.getId())) {
-                    addSequenceEdge(act.getId(), endEvent.getId(), edgeRegistry);
+            for (GraphNode current : activityNodes) {
+                // If a node was left hanging with no outgoing connections, plug it into the End Event
+                if (!nodesWithOutgoingFlow.contains(current.getId())) {
+                    addSequenceEdge(current.getId(), endEvent.getId(), edgeRegistry);
+                    nodesWithOutgoingFlow.add(current.getId());
                 }
             }
         }
@@ -554,190 +498,53 @@ public class ProcessGraphBuilder {
     // 4. PARSER FOR RULES, BRANCHES & LOOPS
     // ==========================================
 
+    private String extractActionPart(String rule) {
+        if (rule == null || rule.isBlank()) return "";
+        
+        // Parse standard "IF condition THEN action" format
+        int thenIdx = rule.toLowerCase(Locale.ROOT).indexOf("then ");
+        if (thenIdx >= 0) {
+            return rule.substring(thenIdx + 5).trim();
+        }
+        
+        // Parse comma-separated "If condition, action" format
+        int commaIdx = rule.indexOf(',');
+        if (commaIdx >= 0 && commaIdx < rule.length() - 1) {
+            String afterComma = rule.substring(commaIdx + 1).trim();
+            int elseIdx = afterComma.toLowerCase(Locale.ROOT).indexOf("else ");
+            if (elseIdx > 0) {
+                afterComma = afterComma.substring(0, elseIdx).trim();
+            }
+            return afterComma;
+        }
+        return rule;
+    }
+
+    private String extractConditionLabel(String rule) {
+        if (rule == null || rule.isBlank()) return "yes";
+        String lower = rule.toLowerCase(Locale.ROOT);
+        
+        int ifIdx = lower.indexOf("if ");
+        int thenIdx = lower.indexOf(" then");
+        int commaIdx = lower.indexOf(',');
+        
+        int endIdx = thenIdx > 0 ? thenIdx : (commaIdx > ifIdx ? commaIdx : -1);
+        
+        if (ifIdx >= 0 && endIdx > ifIdx + 3) {
+            String cond = rule.substring(ifIdx + 3, endIdx).trim();
+            if (cond.length() <= 30) return cond; // Ensure labels don't get too long
+        }
+        
+        // Generic fallbacks based on sentence sentiment
+        if (lower.contains("reject") || lower.contains("fail") || lower.contains("invalid")) return "no";
+        return "yes";
+    }
+
+    // ==========================================
+    // 3. GENERIC BUSINESS RULE PARSER (AI TAG-AWARE)
+    // ==========================================
+
     private List<ParsedBranchRule> parseBusinessRules(
-            ProcessKnowledgeDTO knowledge,
-            List<GraphNode> activityNodes,
-            List<GraphNode> gatewayNodes,
-            GraphNode endEvent) {
-
-        List<ParsedBranchRule> rules = new ArrayList<>();
-        if (gatewayNodes == null || gatewayNodes.isEmpty()) {
-            return rules;
-        }
-
-        // Determine if input belongs to known Expense Reimbursement regression domain
-        boolean isExpenseDomain = gatewayNodes.stream().anyMatch(gw -> {
-            String l = gw.getLabel().toLowerCase(Locale.ROOT);
-            return l.contains("7 day") || l.contains("retry limit") || l.contains("receipts valid") ||
-                   l.contains("manager exception") || l.contains("within policy") || l.contains("information complete") ||
-                   (l.contains("manager approval") && findBestMatchingActivity(activityNodes, "validate budget") != null);
-        });
-
-        if (isExpenseDomain) {
-            return parseExpenseBusinessRules(knowledge, activityNodes, gatewayNodes);
-        }
-
-        // Generic Semantic Branch Engine for any business process
-        return parseGenericBusinessRules(knowledge, activityNodes, gatewayNodes, endEvent);
-    }
-
-    private List<ParsedBranchRule> parseExpenseBusinessRules(
-            ProcessKnowledgeDTO knowledge,
-            List<GraphNode> activityNodes,
-            List<GraphNode> gatewayNodes) {
-
-        List<ParsedBranchRule> rules = new ArrayList<>();
-
-        for (GraphNode gw : gatewayNodes) {
-            String gwLabel = gw.getLabel();
-            String gwLower = gwLabel.toLowerCase(Locale.ROOT);
-
-            GraphNode evalAct = findEvaluatingActivity(gwLower, activityNodes);
-            String evalActId = evalAct != null ? evalAct.getId() : null;
-
-            List<BranchTarget> branches = new ArrayList<>();
-            String loopSource = null;
-            String loopTarget = null;
-
-            // Pattern 1: Timeout / 7-Day Window (Rule 6)
-            if (gwLower.contains("7 day") || gwLower.contains("7-day") || gwLower.contains("timeout") || gwLower.contains("timer") || gwLower.contains("deadline")) {
-                GraphNode reviewUpdated = findBestMatchingActivity(activityNodes, "review updated information", "updated information", "verify receipts");
-                GraphNode cancelAct = findBestMatchingActivity(activityNodes, "automatically cancels", "automatically cancel", "cancel reimbursement", "cancel request");
-
-                if (reviewUpdated != null) {
-                    branches.add(new BranchTarget(reviewUpdated.getId(), "yes", false));
-                    GraphNode verifyReceipts = findBestMatchingActivity(activityNodes, "verify receipts and expense amounts", "verify receipts", "finance verifies receipts");
-                    if (verifyReceipts != null) {
-                        loopSource = reviewUpdated.getId();
-                        loopTarget = verifyReceipts.getId();
-                    }
-                }
-                if (cancelAct != null) {
-                    branches.add(new BranchTarget(cancelAct.getId(), "7-day timeout", true));
-                }
-            }
-
-            // Pattern 2: Retry Limit Reached Gateway (Rule 5)
-            else if (gwLower.contains("retry limit") || gwLower.contains("retries")) {
-                GraphNode retryPay = findBestMatchingActivity(activityNodes, "retries payment up to three times", "retry payment", "retries payment");
-                GraphNode failCase = findBestMatchingActivity(activityNodes, "creates payment failure case", "investigates payment failure", "failure case");
-                GraphNode sendPay = findBestMatchingActivity(activityNodes, "sends payment to bank account", "send payment", "payment system sends");
-
-                if (retryPay != null) {
-                    branches.add(new BranchTarget(retryPay.getId(), "no", false));
-                    if (sendPay != null) {
-                        loopSource = retryPay.getId();
-                        loopTarget = sendPay.getId();
-                    }
-                }
-                if (failCase != null) {
-                    branches.add(new BranchTarget(failCase.getId(), "yes", false));
-                }
-            }
-
-            // Pattern 3: Payment Successful Gateway (BUG 3 & BUG 4 fix)
-            else if (gwLower.contains("payment success") || gwLower.contains("payment successful") || gwLower.contains("payment")) {
-                GraphNode markPaid = findBestMatchingActivity(activityNodes, "marks reimbursement as paid", "mark paid", "confirmation notification");
-                GraphNode retryLimitGw = findBestMatchingActivity(activityNodes, "retries payment", "payment failure", "retry");
-
-                if (markPaid != null) {
-                    branches.add(new BranchTarget(markPaid.getId(), "success", false));
-                }
-                if (retryLimitGw != null) {
-                    branches.add(new BranchTarget(retryLimitGw.getId(), "failure", false));
-                }
-            }
-
-            // Pattern 4: Additional Budget Approved Gateway
-            else if (gwLower.contains("additional budget") || gwLower.contains("budget approval")) {
-                GraphNode paymentProc = findBestMatchingActivity(activityNodes, "creates reimbursement payment", "payment system creates", "create payment", "approve reimbursement");
-                GraphNode rejectAct = findBestMatchingActivity(activityNodes, "rejects reimbursement request and notifies", "rejects reimbursement", "reject");
-
-                if (paymentProc != null) {
-                    branches.add(new BranchTarget(paymentProc.getId(), "approved", false));
-                }
-                if (rejectAct != null) {
-                    branches.add(new BranchTarget(rejectAct.getId(), "rejected", false));
-                }
-            }
-
-            // Pattern 5: Receipts Valid / Clarification Gateway
-            else if (gwLower.contains("receipts valid") || gwLower.contains("receipt")) {
-                GraphNode approveReimb = findBestMatchingActivity(activityNodes, "finance approves reimbursement", "approves reimbursement", "approve reimbursement");
-                GraphNode clarifyAct = findBestMatchingActivity(activityNodes, "sends request to employee for clarification", "for clarification", "clarification");
-
-                if (approveReimb != null) {
-                    branches.add(new BranchTarget(approveReimb.getId(), "valid", false));
-                }
-                if (clarifyAct != null) {
-                    branches.add(new BranchTarget(clarifyAct.getId(), "invalid", false));
-                }
-            }
-
-            // Pattern 6: Budget Available Gateway
-            else if (gwLower.contains("budget available") || gwLower.contains("budget")) {
-                GraphNode verifyReceipts = findBestMatchingActivity(activityNodes, "verifies receipts and expense amounts", "finance verifies receipts", "verify receipts");
-                GraphNode finMgrReview = findBestMatchingActivity(activityNodes, "additional budget approval", "finance manager reviews budget", "finance manager");
-
-                if (verifyReceipts != null) {
-                    branches.add(new BranchTarget(verifyReceipts.getId(), "sufficient", false));
-                }
-                if (finMgrReview != null) {
-                    branches.add(new BranchTarget(finMgrReview.getId(), "insufficient", false));
-                }
-            }
-
-            // Pattern 7: Manager Exception Review Gateway
-            else if (gwLower.contains("exception") || gwLower.contains("manager review") || gwLower.contains("manager approval")) {
-                GraphNode financeVal = findBestMatchingActivity(activityNodes, "finance validates available reimbursement budget", "financial validation", "validate budget");
-                GraphNode rejectAct = findBestMatchingActivity(activityNodes, "rejects reimbursement request and notifies", "rejects reimbursement", "reject");
-
-                if (financeVal != null) {
-                    branches.add(new BranchTarget(financeVal.getId(), "approved", false));
-                }
-                if (rejectAct != null) {
-                    branches.add(new BranchTarget(rejectAct.getId(), "rejected", false));
-                }
-            }
-
-            // Pattern 8: Policy Compliance Gateway
-            else if (gwLower.contains("policy") || gwLower.contains("within policy")) {
-                GraphNode financeVal = findBestMatchingActivity(activityNodes, "finance validates available reimbursement budget", "financial validation", "finance validates");
-                GraphNode mgrReview = findBestMatchingActivity(activityNodes, "manager for exception decision", "reviews policy violation", "manager reviews exception", "manager");
-
-                if (financeVal != null) {
-                    branches.add(new BranchTarget(financeVal.getId(), "yes", false));
-                }
-                if (mgrReview != null) {
-                    branches.add(new BranchTarget(mgrReview.getId(), "no", false));
-                }
-            }
-
-            // Pattern 9: Information / Completeness Gateway (BUG 1 fix)
-            else if (gwLower.contains("information") || gwLower.contains("mandatory") || gwLower.contains("complete") || gwLower.contains("valid")) {
-                GraphNode correctAct = findBestMatchingActivity(activityNodes, "sends the request back to the employee for correction", "correct request", "for correction");
-                GraphNode resubmitAct = findBestMatchingActivity(activityNodes, "the employee corrects the request and resubmits it", "resubmit", "resubmits");
-                GraphNode nextAct = findBestMatchingActivity(activityNodes, "checks whether the expense is within policy", "check policy", "within policy", "financial validation");
-
-                if (correctAct != null) {
-                    branches.add(new BranchTarget(correctAct.getId(), "no", false)); // BUG 1 fix: invalid/no to correction
-                    if (resubmitAct != null) {
-                        loopSource = resubmitAct.getId();
-                        loopTarget = evalActId != null ? evalActId : (activityNodes.isEmpty() ? null : activityNodes.get(0).getId());
-                    }
-                }
-                if (nextAct != null) {
-                    branches.add(new BranchTarget(nextAct.getId(), "yes", false)); // BUG 1 fix: valid/yes to policy check
-                }
-            }
-
-            rules.add(new ParsedBranchRule(evalActId, gw.getId(), branches, loopSource, loopTarget));
-        }
-
-        return rules;
-    }
-
-    private List<ParsedBranchRule> parseGenericBusinessRules(
             ProcessKnowledgeDTO knowledge,
             List<GraphNode> activityNodes,
             List<GraphNode> gatewayNodes,
@@ -746,98 +553,63 @@ public class ProcessGraphBuilder {
         List<ParsedBranchRule> rules = new ArrayList<>();
         List<String> businessRules = knowledge.businessRules() != null ? knowledge.businessRules() : List.of();
 
-        Map<String, List<BranchTarget>> gatewayBranches = new LinkedHashMap<>();
-        List<Integer> branchTargetIndices = new ArrayList<>();
-
-        // 1. Identify primary branch targets for each gateway
+        // Ensure every gateway gets processed
         for (int i = 0; i < gatewayNodes.size(); i++) {
             GraphNode gw = gatewayNodes.get(i);
-            String gwLabel = gw.getLabel();
-            String gwClean = gwLabel.replaceAll("[?:]", "").trim().toLowerCase(Locale.ROOT);
+            String gwLabel = gw.getLabel().toLowerCase(Locale.ROOT).replaceAll("[?:]", "").trim();
+            
+            // 1. Identify which activity precedes this gateway (Evaluating Activity)
+            GraphNode evalAct = null;
+            if (!activityNodes.isEmpty()) {
+                // If it's the first gateway, attach it to the first or second activity
+                evalAct = activityNodes.get(Math.min(i, activityNodes.size() - 1)); 
+            }
+            String evalActId = evalAct != null ? evalAct.getId() : null;
+
             List<BranchTarget> branches = new ArrayList<>();
 
-            // Search business rules for a condition matching this gateway
-            String matchingRule = null;
-            for (String br : businessRules) {
-                String brLower = br.toLowerCase(Locale.ROOT);
-                if (brLower.contains(gwClean)) {
-                    matchingRule = br;
-                    break;
-                }
-                String[] tokens = gwClean.split("\\s+");
-                int matchCount = 0;
-                for (String t : tokens) {
-                    if (t.length() >= 4 && brLower.contains(t)) {
-                        matchCount++;
+            // 2. Parse AI-generated Business Rules to find branches belonging to this gateway
+            boolean ruleMatched = false;
+            for (String ruleStr : businessRules) {
+                String ruleLower = ruleStr.toLowerCase(Locale.ROOT);
+                
+                // If the rule mentions the gateway's topic
+                if (ruleLower.contains(gwLabel) || hasHighTokenOverlap(ruleLower, gwLabel)) {
+                    ruleMatched = true;
+                    
+                    // Parse "IF [Condition] THEN [Action]" or "IF [Condition], [Action]" format
+                    String condition = extractConditionLabel(ruleStr);
+                    String action = extractActionPart(ruleStr);
+                    
+                    GraphNode targetAct = findBestMatchingActivity(activityNodes, action);
+                    
+                    if (targetAct != null) {
+                        boolean isTimer = condition.contains("timeout") || condition.contains("day") || condition.contains("hour");
+                        branches.add(new BranchTarget(targetAct.getId(), condition, isTimer));
                     }
                 }
-                if (matchCount >= 2 || (tokens.length == 1 && matchCount == 1)) {
-                    matchingRule = br;
-                    break;
+            }
+
+            // 3. Fallback: If no explicit AI rule matched, generate safe default branches
+            if (!ruleMatched || branches.isEmpty()) {
+                // Determine next sequential activity
+                int evalIdx = evalAct != null ? activityNodes.indexOf(evalAct) : -1;
+                GraphNode nextSeqAct = (evalIdx >= 0 && evalIdx + 1 < activityNodes.size()) 
+                                        ? activityNodes.get(evalIdx + 1) : null;
+                
+                if (nextSeqAct != null) {
+                    branches.add(new BranchTarget(nextSeqAct.getId(), "yes", false));
+                }
+                
+                // Route the negative branch to the End Event or loop back
+                if (endEvent != null && branches.size() < 2) {
+                    branches.add(new BranchTarget(endEvent.getId(), "no", false));
                 }
             }
 
-            GraphNode primaryTarget = null;
-            String conditionLabel = "yes";
-
-            if (matchingRule != null) {
-                String actionPart = extractActionPart(matchingRule);
-                conditionLabel = extractConditionLabel(matchingRule, gwClean);
-                primaryTarget = findBestMatchingActivity(activityNodes, actionPart);
-            }
-
-            if (primaryTarget == null) {
-                primaryTarget = findBestMatchingActivity(activityNodes, gwClean);
-            }
-
-            if (primaryTarget == null && i < activityNodes.size()) {
-                primaryTarget = activityNodes.get(Math.min(i + 1, activityNodes.size() - 1));
-            }
-
-            if (primaryTarget != null) {
-                branches.add(new BranchTarget(primaryTarget.getId(), conditionLabel, false));
-                int actIdx = activityNodes.indexOf(primaryTarget);
-                if (actIdx >= 0) branchTargetIndices.add(actIdx);
-            }
-
-            gatewayBranches.put(gw.getId(), branches);
-        }
-
-        // 2. Identify the evaluating activity (the activity right before the first branch action)
-        int firstBranchIdx = branchTargetIndices.stream().mapToInt(v -> v).min().orElse(-1);
-        GraphNode evalAct = null;
-        if (firstBranchIdx > 0) {
-            evalAct = activityNodes.get(firstBranchIdx - 1);
-        } else if (!activityNodes.isEmpty()) {
-            evalAct = findEvaluatingActivityGeneric(activityNodes);
-            if (evalAct == null) evalAct = activityNodes.get(0);
-        }
-
-        // 3. Assemble branches ensuring every gateway has at least 2 distinct paths
-        for (int i = 0; i < gatewayNodes.size(); i++) {
-            GraphNode gw = gatewayNodes.get(i);
-            List<BranchTarget> branches = gatewayBranches.getOrDefault(gw.getId(), new ArrayList<>());
-            String evalActId = (i == 0 && evalAct != null) ? evalAct.getId() : null;
-
-            if (i < gatewayNodes.size() - 1) {
-                // Decision cascade: alternative path routes to the next gateway check
-                GraphNode nextGw = gatewayNodes.get(i + 1);
-                boolean alreadyHasNext = branches.stream().anyMatch(b -> b.targetNodeId().equals(nextGw.getId()));
-                if (!alreadyHasNext) {
-                    branches.add(new BranchTarget(nextGw.getId(), "no", false));
-                }
-            } else {
-                // Final gateway: alternative branch routes to End Event or alternative activity
-                if (branches.size() < 2) {
-                    if (endEvent != null) {
-                        branches.add(new BranchTarget(endEvent.getId(), "no", false));
-                    } else if (firstBranchIdx >= 0 && firstBranchIdx + 1 < activityNodes.size()) {
-                        GraphNode altAct = activityNodes.get(activityNodes.size() - 1);
-                        if (!branches.isEmpty() && !branches.get(0).targetNodeId().equals(altAct.getId())) {
-                            branches.add(new BranchTarget(altAct.getId(), "no", false));
-                        }
-                    }
-                }
+            // Ensure a gateway always has at least 2 branches (otherwise it's not a decision)
+            if (branches.size() == 1 && endEvent != null) {
+                branches.add(new BranchTarget(endEvent.getId(), "no", false));
             }
 
             rules.add(new ParsedBranchRule(evalActId, gw.getId(), branches, null, null));
@@ -846,107 +618,17 @@ public class ProcessGraphBuilder {
         return rules;
     }
 
-    private String extractActionPart(String rule) {
-        if (rule == null || rule.isBlank()) return "";
-        int commaIdx = rule.indexOf(',');
-        if (commaIdx >= 0 && commaIdx < rule.length() - 1) {
-            String afterComma = rule.substring(commaIdx + 1).trim();
-            if (afterComma.toLowerCase(Locale.ROOT).startsWith("then ")) {
-                afterComma = afterComma.substring(5).trim();
-            }
-            int elseIdx = afterComma.toLowerCase(Locale.ROOT).indexOf("otherwise");
-            if (elseIdx < 0) elseIdx = afterComma.toLowerCase(Locale.ROOT).indexOf("else ");
-            if (elseIdx > 0) {
-                afterComma = afterComma.substring(0, elseIdx).trim();
-            }
-            return afterComma;
-        }
-        int thenIdx = rule.toLowerCase(Locale.ROOT).indexOf("then ");
-        if (thenIdx >= 0) {
-            return rule.substring(thenIdx + 5).trim();
-        }
-        return rule;
-    }
-
-    private String extractConditionLabel(String rule, String fallback) {
-        if (rule == null || rule.isBlank()) return "yes";
-        String lower = rule.toLowerCase(Locale.ROOT);
-        if (lower.contains("minor")) return "minor drift";
-        if (lower.contains("critical") || lower.contains("exceed")) return "critical threshold";
-        if (lower.contains("approved") || lower.contains("approval")) return "approved";
-        if (lower.contains("rejected")) return "rejected";
-        if (lower.contains("valid")) return "valid";
-        if (lower.contains("invalid")) return "invalid";
-        if (lower.contains("sufficient")) return "sufficient";
-        if (lower.contains("insufficient")) return "insufficient";
-        if (lower.contains("success")) return "success";
-        if (lower.contains("fail")) return "fail";
-
-        int ifIdx = lower.indexOf("if ");
-        int commaIdx = lower.indexOf(',');
-        if (ifIdx >= 0 && commaIdx > ifIdx + 3) {
-            String cond = rule.substring(ifIdx + 3, commaIdx).trim();
-            if (cond.length() <= 30) {
-                return cond;
-            }
-        }
-        return "yes";
-    }
-
-    private GraphNode findEvaluatingActivityGeneric(List<GraphNode> activityNodes) {
-        for (GraphNode act : activityNodes) {
-            String l = act.getLabel().toLowerCase(Locale.ROOT);
-            if (l.contains("review") || l.contains("check") || l.contains("inspect") ||
-                l.contains("evaluat") || l.contains("assess") || l.contains("verif") ||
-                l.contains("test") || l.contains("monitor") || l.contains("validat") ||
-                l.contains("detect") || l.contains("analyz")) {
-                return act;
-            }
-        }
-        return null;
-    }
-
-    private GraphNode findEvaluatingActivity(String gatewayLabel, List<GraphNode> activityNodes) {
-        String gw = gatewayLabel.toLowerCase(Locale.ROOT);
-
-        if (gw.contains("7 day") || gw.contains("7-day") || gw.contains("timeout") || gw.contains("deadline") || gw.contains("timer")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "clarification", "request clarification");
-            if (act != null) return act;
-        }
-        if (gw.contains("retry") || gw.contains("retries")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "send payment", "sends payment", "payment system");
-            if (act != null) return act;
-        }
-        if (gw.contains("additional budget") || gw.contains("budget approval")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "finance manager reviews budget request", "reviews budget request", "finance manager");
-            if (act != null) return act;
-        }
-        if (gw.contains("payment")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "sends payment to bank account", "send payment to bank account", "send payment");
-            if (act != null) return act;
-        }
-        if (gw.contains("receipt")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "finance verifies receipts and expense amounts", "verifies receipts", "verify receipts");
-            if (act != null) return act;
-        }
-        if (gw.contains("budget available") || gw.contains("budget")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "finance validates available reimbursement budget", "finance validates", "validate budget");
-            if (act != null) return act;
-        }
-        if (gw.contains("exception") || gw.contains("manager review") || gw.contains("manager approval")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "manager reviews policy violation", "reviews policy violation", "review request", "manager");
-            if (act != null) return act;
-        }
-        if (gw.contains("policy")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "checks whether the expense is within policy", "check policy", "within policy");
-            if (act != null) return act;
-        }
-        if (gw.contains("information") || gw.contains("mandatory") || gw.contains("complete")) {
-            GraphNode act = findBestMatchingActivity(activityNodes, "validates that all mandatory fields and receipts are present", "validate request", "validate");
-            if (act != null) return act;
-        }
-
-        return findBestMatchingActivity(activityNodes, gw);
+    // Helper: Find common tokens to match gateways to rules
+    private boolean hasHighTokenOverlap(String text1, String text2) {
+        Set<String> tokens1 = new HashSet<>(Arrays.asList(text1.split("\\W+")));
+        Set<String> tokens2 = new HashSet<>(Arrays.asList(text2.split("\\W+")));
+        tokens1.removeIf(t -> t.length() < 4); // ignore short words
+        tokens2.removeIf(t -> t.length() < 4);
+        
+        Set<String> intersection = new HashSet<>(tokens1);
+        intersection.retainAll(tokens2);
+        
+        return !intersection.isEmpty();
     }
 
     private GraphNode findBestMatchingActivity(List<GraphNode> activityNodes, String... searchPhrases) {

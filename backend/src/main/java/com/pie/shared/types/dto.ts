@@ -3,6 +3,8 @@ export interface ProcessDocumentDTO {
   name: string;
   content: string;
   sourceType: string;
+  category?: string;
+  confidence?: number;
 }
 
 export interface ProcessKnowledgeDTO {
@@ -17,6 +19,7 @@ export interface ProcessKnowledgeDTO {
   businessRules: string[];
   risks: string[];
   conflicts: string[];
+  documents?: ProcessDocumentDTO[];
 }
 
 export interface ClassificationResultDTO {

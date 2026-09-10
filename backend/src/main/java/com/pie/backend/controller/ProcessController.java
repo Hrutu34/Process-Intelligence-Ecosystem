@@ -2,6 +2,8 @@ package com.pie.backend.controller;
 
 import com.pie.backend.service.DocumentIngestionService;
 import com.pie.backend.service.AiProcessQualityService;
+import com.pie.backend.service.BpmnDomainModelMapper;
+import com.pie.backend.service.BpmnXmlGenerationService;
 import com.pie.backend.service.ProcessGraphBuilder;
 import com.pie.backend.service.ProcessQualityValidator;
 import com.pie.shared.dto.ProcessGraphDTO;
@@ -24,12 +26,15 @@ public class ProcessController {
     private final ProcessGraphBuilder graphBuilder;
     private final ProcessQualityValidator qualityValidator;
     private final AiProcessQualityService aiQualityService;
+    private final BpmnDomainModelMapper bpmnMapper;
+    private final BpmnXmlGenerationService bpmnXmlService;
+    private final com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService;
 
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator) {
-        this(ingestionService, graphBuilder, qualityValidator, null);
+        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null);
     }
 
     @Autowired
@@ -37,11 +42,17 @@ public class ProcessController {
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator,
-            AiProcessQualityService aiQualityService) {
+            AiProcessQualityService aiQualityService,
+            BpmnDomainModelMapper bpmnMapper,
+            BpmnXmlGenerationService bpmnXmlService,
+            com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
         this.qualityValidator = qualityValidator;
         this.aiQualityService = aiQualityService;
+        this.bpmnMapper = bpmnMapper;
+        this.bpmnXmlService = bpmnXmlService;
+        this.aiBpmnRefinementService = aiBpmnRefinementService;
     }
 
     @PostMapping("/extract-text")
@@ -60,6 +71,24 @@ public class ProcessController {
     @PostMapping("/graph")
     public ResponseEntity<ProcessGraphDTO> buildGraph(@RequestBody ProcessKnowledgeDTO knowledge) {
         return ResponseEntity.ok(graphBuilder.build(knowledge));
+    }
+
+    // MATCHES FRONTEND FETCH CALL: /api/v1/process/bpmn/generate
+    @PostMapping(value = "/bpmn/generate", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> buildBpmn(@RequestBody com.pie.shared.dto.BpmnGenerateRequestPayload payload) {
+        if (bpmnMapper == null || bpmnXmlService == null) {
+            return ResponseEntity.internalServerError().build();
+        }
+        // Generate draft
+        String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
+        
+        // Refine with AI if knowledge is provided
+        if (payload.knowledge() != null && aiBpmnRefinementService != null) {
+            String refinedXml = aiBpmnRefinementService.refineBpmn(draftXml, payload.knowledge());
+            return ResponseEntity.ok(refinedXml);
+        }
+        
+        return ResponseEntity.ok(draftXml);
     }
 
     @PostMapping("/validate")

@@ -59,6 +59,91 @@
   background: rgba(57, 245, 208, 0.08);
 }
 
+/* Document Classification Table Styles */
+.classification-table-container {
+  background: linear-gradient(145deg, #0e2d5b, #061735);
+  border: 1px solid rgba(57, 245, 208, 0.2);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(1, 10, 25, 0.4);
+}
+
+.classification-header {
+  padding: 16px 20px;
+  background: rgba(4, 18, 45, 0.6);
+  border-bottom: 1px solid rgba(57, 245, 208, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.classification-header h3 {
+  color: var(--white);
+  font-size: 16px;
+  margin: 0;
+}
+
+.class-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.class-table th {
+  padding: 12px 20px;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid rgba(116, 183, 220, 0.1);
+}
+
+.class-table td {
+  padding: 16px 20px;
+  color: var(--soft-white);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.class-table tr:last-child td {
+  border-bottom: none;
+}
+
+.doc-name {
+  font-weight: 600;
+  color: var(--white);
+}
+
+.cat-badge {
+  background: rgba(57, 245, 208, 0.15);
+  color: var(--aqua);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.conf-bar-bg {
+  width: 100px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+.conf-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+.conf-bar-fill.high { background: #39f5d0; }
+.conf-bar-fill.med { background: #fbd437; }
+.conf-bar-fill.low { background: #ff6b6b; }
+
 .conflict-banner {
   display: flex;
   align-items: center;
@@ -95,6 +180,38 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+}
+
+/* --- AI Semantic Chips --- */
+.entity-li-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.ai-chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.chip-task {
+  background: rgba(57, 245, 208, 0.12);
+  color: var(--aqua);
+  border: 1px solid rgba(57, 245, 208, 0.25);
+}
+
+.chip-gateway {
+  background: rgba(251, 212, 55, 0.12);
+  color: #fbd437;
+  border: 1px solid rgba(251, 212, 55, 0.25);
 }
 
 @media (max-width: 1300px) {
