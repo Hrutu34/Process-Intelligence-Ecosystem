@@ -1,6 +1,6 @@
 package com.pie.backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.pie.shared.dto.ReviewReportDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,7 @@ public class AiProcessReviewService {
 
     private static final Logger log = LoggerFactory.getLogger(AiProcessReviewService.class);
     private final ChatClient chatClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     public AiProcessReviewService(ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();
