@@ -3,6 +3,7 @@ import ProcessEntry from "./components/ProcessEntry";
 import { ProcessKnowledgeReview } from "./components/ProcessKnowledgeReview";
 import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent";
 import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
+import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import { useRef, useState } from "react";
@@ -15,6 +16,7 @@ function App() {
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [activeFileCount, setActiveFileCount] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<AgentTab>("01_KNOWLEDGE");
+  const [currentBpmnXml, setCurrentBpmnXml] = useState<string | null>(null);
 
   const agents = [
     {
@@ -187,21 +189,14 @@ function App() {
                 <ProcessGraphViewer
                   knowledge={extractedData}
                   defaultView="bpmn"
-                  onProceedToBpmn={() => setActiveTab("04_REVIEW")}
+                  onProceed={() => setActiveTab("04_REVIEW")}
+                  proceedLabel="PROCEED TO PROCESS REVIEW <span>↗</span>"
+                  onXmlChange={setCurrentBpmnXml}
                 />
               )}
 
               {activeTab === "04_REVIEW" && (
-                <div className="agent-placeholder-card">
-                  <span className="agent-icon">✦</span>
-                  <h3>Agent 04: Process Review & Translation Agent</h3>
-                  <p>
-                    Translates technical BPMN XML back into clear executive summaries and audit reports.
-                  </p>
-                  <button className="yellow-button" type="button" onClick={() => alert("Agent 04 ready to run!")}>
-                    GENERATE EXECUTIVE SUMMARY <span>↗</span>
-                  </button>
-                </div>
+                <ProcessReviewAgent bpmnXml={currentBpmnXml} />
               )}
             </div>
           </section>

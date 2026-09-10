@@ -6,6 +6,7 @@ interface Props {
   title?: string;
   mascot?: string;
   steps?: StepItem[];
+  theme?: 'aqua' | 'yellow' | 'coral';
 }
 
 interface StepItem {
@@ -27,6 +28,7 @@ export const AgentLoadingScreen: React.FC<Props> = ({
   title = 'Knowledge Extraction Agent in Progress',
   mascot = '🧠',
   steps = BASE_STEPS,
+  theme = 'aqua',
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
@@ -45,10 +47,10 @@ export const AgentLoadingScreen: React.FC<Props> = ({
   }, [currentStepIndex, multiplier, steps]);
 
   return (
-    <div className="agent-loading-card">
+    <div className={`agent-loading-card theme-${theme}`}>
       <div className="loading-orbit">
         <div className="inner-pulse" />
-        <span className="agent-mascot">{mascot}</span>
+        <span className="agent-mascot pulsing">{mascot}</span>
       </div>
 
       <div className="loading-header">

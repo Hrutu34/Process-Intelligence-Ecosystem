@@ -1,0 +1,69 @@
+.process-review-agent {
+  width: 100%;
+  padding: 0;
+}
+
+.review-report-card {
+  background: linear-gradient(145deg, #103263, #071a3d);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 18px;
+  box-shadow: 12px 14px 30px rgba(1, 10, 25, 0.55),
+              -8px -8px 20px rgba(31, 72, 117, 0.3),
+              inset 1px 1px rgba(255, 255, 255, 0.08);
+  padding: 32px;
+  color: var(--soft-white);
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(116, 183, 220, 0.2);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.report-header h3 {
+  margin: 0;
+  color: var(--white);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.report-content h4 {
+  margin-top: 32px;
+  margin-bottom: 16px;
+  color: var(--yellow);
+  font-family: var(--mono);
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.summary-section p {
+  line-height: 1.8;
+  white-space: pre-wrap;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.issues-section ul, .recommendations-section ul {
+  padding-left: 20px;
+  line-height: 1.6;
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0;
+}
+
+.issues-section li, .recommendations-section li {
+  margin-bottom: 8px;
+}
+
+.error-text {
+  color: #ff6b6b;
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+

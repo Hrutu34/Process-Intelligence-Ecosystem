@@ -10,9 +10,11 @@ import './BpmnIoCanvas.css';
 interface Props {
   graph: ProcessGraphDTO;
   knowledge?: ProcessKnowledgeDTO;
+  onXmlChange?: (xml: string) => void;
+  onReviewClick?: () => void;
 }
 
-export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
+export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, onXmlChange, onReviewClick }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -22,6 +24,12 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (onXmlChange && xmlString) {
+      onXmlChange(xmlString);
+    }
+  }, [xmlString, onXmlChange]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -140,7 +148,10 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
           <button type="button" className="btn-ghost" onClick={handleCopyXml}>{copied ? 'Copied XML' : 'Copy XML'}</button>
-          <button type="button" className="yellow-button" onClick={handleDownloadXml} disabled={isLoading || !!renderError}>DOWNLOAD .BPMN <span>↓</span></button>
+          <button type="button" className="btn-ghost" onClick={handleDownloadXml} disabled={isLoading || !!renderError}>DOWNLOAD .BPMN <span>↓</span></button>
+          {onReviewClick && (
+            <button type="button" className="yellow-button" onClick={onReviewClick} disabled={isLoading || !!renderError}>REVIEW BPMN <span>↗</span></button>
+          )}
         </div>
       </div>
       

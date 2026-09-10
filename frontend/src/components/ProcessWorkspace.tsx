@@ -374,30 +374,31 @@ export const ProcessWorkspace: React.FC<Props> = ({
          ======================================================== */}
       {activeTab === 'graph' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <ProcessGraphViewer
-            knowledge={process.knowledge}
-            defaultView="visual"
-            onProceedToBpmn={() => setActiveTab('bpmn')}
-          />
-        </div>
-      )}
-
-      {/* ========================================================
-          TAB 4: BPMN 2.0 (bpmn.io Vector Canvas)
-         ======================================================== */}
-      {activeTab === 'bpmn' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {process.graph ? (
-            <BpmnIoCanvas graph={process.graph} knowledge={process.knowledge} />
-          ) : (
             <ProcessGraphViewer
               knowledge={process.knowledge}
-              defaultView="bpmn"
-              onProceedToBpmn={() => setActiveTab('review')}
+              defaultView="visual"
+              onProceed={() => setActiveTab('bpmn')}
+              proceedLabel="PROCEED TO BPMN MODELLING <span>↗</span>"
             />
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {activeTab === 'bpmn' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {process.graph ? (
+              <BpmnIoCanvas graph={process.graph} knowledge={process.knowledge} onReviewClick={() => setActiveTab('review')} />
+            ) : (
+              process.knowledge && (
+                <ProcessGraphViewer
+                  knowledge={process.knowledge}
+                  defaultView="bpmn"
+                  onProceed={() => setActiveTab('review')}
+                  proceedLabel="PROCEED TO PROCESS REVIEW <span>↗</span>"
+                />
+              )
+            )}
+          </div>
+        )}
 
       {/* ========================================================
           TAB 5: VALIDATION (Actionable Quality Gaps)

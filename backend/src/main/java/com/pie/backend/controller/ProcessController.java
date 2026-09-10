@@ -29,12 +29,13 @@ public class ProcessController {
     private final BpmnDomainModelMapper bpmnMapper;
     private final BpmnXmlGenerationService bpmnXmlService;
     private final com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService;
+    private final com.pie.backend.service.AiProcessReviewService aiProcessReviewService;
 
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator) {
-        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null);
+        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null, null);
     }
 
     @Autowired
@@ -45,7 +46,8 @@ public class ProcessController {
             AiProcessQualityService aiQualityService,
             BpmnDomainModelMapper bpmnMapper,
             BpmnXmlGenerationService bpmnXmlService,
-            com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService) {
+            com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService,
+            com.pie.backend.service.AiProcessReviewService aiProcessReviewService) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
         this.qualityValidator = qualityValidator;
@@ -53,6 +55,7 @@ public class ProcessController {
         this.bpmnMapper = bpmnMapper;
         this.bpmnXmlService = bpmnXmlService;
         this.aiBpmnRefinementService = aiBpmnRefinementService;
+        this.aiProcessReviewService = aiProcessReviewService;
     }
 
     @PostMapping("/extract-text")
@@ -104,6 +107,14 @@ public class ProcessController {
             report = aiQualityService.enhance(knowledge, graph, report);
         }
         return ResponseEntity.ok(report);
+    }
+
+    @PostMapping("/review/summary")
+    public ResponseEntity<com.pie.shared.dto.ReviewReportDTO> generateReviewSummary(@RequestBody TextPayload payload) {
+        if (aiProcessReviewService == null) {
+            return ResponseEntity.internalServerError().build();
+        }
+        return ResponseEntity.ok(aiProcessReviewService.generateSummary(payload.content()));
     }
 
     public record TextPayload(String content) {
