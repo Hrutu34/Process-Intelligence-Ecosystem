@@ -110,11 +110,17 @@ public class ProcessController {
     }
 
     @PostMapping("/review/summary")
-    public ResponseEntity<com.pie.shared.dto.ReviewReportDTO> generateReviewSummary(@RequestBody TextPayload payload) {
+    public ResponseEntity<?> generateReviewSummary(@RequestBody TextPayload payload) {
         if (aiProcessReviewService == null) {
             return ResponseEntity.internalServerError().build();
         }
-        return ResponseEntity.ok(aiProcessReviewService.generateSummary(payload.content()));
+        try {
+            return ResponseEntity.ok(aiProcessReviewService.generateSummary(payload.content()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error generating review summary.");
+        }
     }
 
     public record TextPayload(String content) {

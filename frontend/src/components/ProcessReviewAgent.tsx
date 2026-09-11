@@ -7,10 +7,23 @@ interface Props {
   bpmnXml: string | null;
 }
 
+interface ProcessStep {
+  sequence: number;
+  name: string;
+  description: string;
+}
+
+interface ProcessDecision {
+  name: string;
+  description: string;
+}
+
 interface ReviewReport {
+  processName: string;
   summary: string;
-  issues: string[];
-  recommendations: string[];
+  participants: string[];
+  steps: ProcessStep[];
+  decisions: ProcessDecision[];
 }
 
 export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml }) => {
@@ -43,7 +56,8 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml }) => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to generate review: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(errorText || `Failed to generate review: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -94,7 +108,10 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml }) => {
       {report && (
         <div className="review-report-card">
           <div className="report-header">
-            <h3>Executive Process Summary</h3>
+            <div>
+              <p style={{ color: 'var(--muted)', fontSize: 13, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: 1 }}>Process Name</p>
+              <h3>{report.processName || 'Executive Process Summary'}</h3>
+            </div>
             <button className="btn-ghost" onClick={() => setReport(null)}>
               Reset
             </button>
@@ -104,24 +121,40 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml }) => {
               <h4>Process Summary</h4>
               <p>{report.summary}</p>
             </div>
-            {report.issues && report.issues.length > 0 && (
+            {report.participants && report.participants.length > 0 && (
               <div className="issues-section">
-                <h4>Potential Issues</h4>
-                <ul>
-                  {report.issues.map((issue, idx) => (
-                    <li key={idx}>{issue}</li>
+                <h4>Participants</h4>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {report.participants.map((p, idx) => (
+                    <span key={idx} style={{ background: 'rgba(88, 170, 205, 0.1)', border: '1px solid rgba(88, 170, 205, 0.3)', padding: '4px 12px', borderRadius: '16px', fontSize: '13px', color: 'var(--aqua)' }}>{p}</span>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
-            {report.recommendations && report.recommendations.length > 0 && (
+            {report.steps && report.steps.length > 0 && (
               <div className="recommendations-section">
-                <h4>Recommendations</h4>
-                <ul>
-                  {report.recommendations.map((rec, idx) => (
-                    <li key={idx}>{rec}</li>
+                <h4>Process Steps</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {report.steps.map((step) => (
+                    <div key={step.sequence} style={{ background: 'rgba(57, 245, 208, 0.05)', padding: '12px 16px', borderRadius: '8px', borderLeft: '3px solid var(--aqua)' }}>
+                      <strong style={{ color: 'var(--aqua)' }}>{step.sequence}. {step.name}</strong>
+                      <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: '14px' }}>{step.description}</p>
+                    </div>
                   ))}
-                </ul>
+                </div>
+              </div>
+            )}
+            {report.decisions && report.decisions.length > 0 && (
+              <div className="recommendations-section">
+                <h4>Key Decisions & Approvals</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {report.decisions.map((dec, idx) => (
+                    <div key={idx} style={{ background: 'rgba(198, 255, 0, 0.08)', padding: '12px 16px', borderRadius: '8px', borderLeft: '3px solid var(--electric)' }}>
+                      <strong style={{ color: 'var(--electric)' }}>{dec.name}</strong>
+                      <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: '14px' }}>{dec.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

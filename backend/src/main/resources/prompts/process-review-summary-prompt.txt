@@ -21,8 +21,21 @@ Guidelines:
 
 Output your response as a JSON object with the following structure:
 {
-  "summary": "This process describes how... (The main text of the summary combining the requested details)",
-  "issues": ["(Optional) Any confusing parts or missing end states identified"],
-  "recommendations": ["(Optional) Suggestions to make the process clearer or simpler"]
+  "processName": "(Name of the process)",
+  "summary": "(The main text of the summary combining the requested details)",
+  "participants": ["Participant 1", "Participant 2"],
+  "steps": [
+    {
+      "sequence": 1,
+      "name": "Step Name",
+      "description": "Step Description"
+    }
+  ],
+  "decisions": [
+    {
+      "name": "Decision Name",
+      "description": "Decision Description"
+    }
+  ]
 }
 
