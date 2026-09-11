@@ -5,6 +5,7 @@ import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent"
 import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
 import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
+import { ChatDock } from "./components/ChatDock";
 import type {
   CanonicalProcessGraph,
   ProcessKnowledgeDTO,
@@ -429,6 +430,13 @@ function App() {
           <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
         </div>
       </footer>
+
+      <ChatDock
+        processName={(extractedData as unknown as { processName?: string } | null)?.processName || undefined}
+        bpmnXml={bpmnXml}
+        knowledge={extractedData}
+        graph={processGraph}
+      />
     </div>
   );
 }
