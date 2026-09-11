@@ -26,16 +26,24 @@ interface ReviewReport {
   decisions: ProcessDecision[];
 }
 
+const reportCache = new Map<string, ReviewReport>();
+
 export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml }) => {
-  const [report, setReport] = useState<ReviewReport | null>(null);
+  const [report, setReport] = useState<ReviewReport | null>(() => {
+    return bpmnXml ? reportCache.get(bpmnXml) || null : null;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasFetched = React.useRef(false);
 
   React.useEffect(() => {
-    if (bpmnXml && !report && !loading && !error && !hasFetched.current) {
-      hasFetched.current = true;
-      handleGenerateSummary();
+    if (bpmnXml) {
+      if (reportCache.has(bpmnXml)) {
+        setReport(reportCache.get(bpmnXml)!);
+      } else if (!report && !loading && !error && !hasFetched.current) {
+        hasFetched.current = true;
+        handleGenerateSummary();
+      }
     }
   }, [bpmnXml]);
 
@@ -61,6 +69,9 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml }) => {
       }
 
       const data = await response.json();
+      if (bpmnXml) {
+        reportCache.set(bpmnXml, data);
+      }
       setReport(data);
     } catch (err: any) {
       setError(err.message || "An error occurred during review generation.");
@@ -70,6 +81,15 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml }) => {
   };
 
 
+
+  const handleRegenerateSummary = () => {
+    if (bpmnXml) {
+      reportCache.delete(bpmnXml);
+    }
+    hasFetched.current = false;
+    setReport(null);
+    handleGenerateSummary();
+  };
 
   if (loading) {
     return (
@@ -112,9 +132,14 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml }) => {
               <p style={{ color: 'var(--muted)', fontSize: 13, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: 1 }}>Process Name</p>
               <h3>{report.processName || 'Executive Process Summary'}</h3>
             </div>
-            <button className="btn-ghost" onClick={() => setReport(null)}>
-              Reset
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn-ghost" onClick={handleRegenerateSummary} style={{ color: 'var(--aqua)', borderColor: 'rgba(57, 245, 208, 0.3)' }}>
+                REGENERATE RESPONSE <span>↺</span>
+              </button>
+              <button className="btn-ghost" onClick={() => setReport(null)}>
+                Reset
+              </button>
+            </div>
           </div>
           <div className="report-content">
             <div className="summary-section">
