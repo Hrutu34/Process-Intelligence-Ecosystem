@@ -285,6 +285,10 @@ export function canonicalGraphToBpmnXml(graph: CanonicalProcessGraph): string {
     }
   });
 
+  const hasLanes = roleNodes.length > 0;
+  const collabId = 'Collaboration_1';
+  const participantId = 'Participant_1';
+
   // XML Builder
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -294,8 +298,41 @@ export function canonicalGraphToBpmnXml(graph: CanonicalProcessGraph): string {
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
                   id="Definitions_1"
                   targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="${processId}" name="${escapeXml(processName)}" isExecutable="true">
 `;
+
+  if (hasLanes) {
+    xml += `  <bpmn:collaboration id="${collabId}">\n`;
+    xml += `    <bpmn:participant id="${participantId}" name="${escapeXml(processName)}" processRef="${processId}" />\n`;
+    xml += `  </bpmn:collaboration>\n`;
+  }
+
+  xml += `  <bpmn:process id="${processId}" name="${escapeXml(processName)}" isExecutable="true">\n`;
+
+  if (hasLanes) {
+    xml += `    <bpmn:laneSet id="LaneSet_1">\n`;
+    roleNodes.forEach((role, rIdx) => {
+      const roleId = sanitizeId(role.id);
+      const laneId = `Lane_${roleId}`;
+      xml += `      <bpmn:lane id="${laneId}" name="${escapeXml(role.label)}">\n`;
+
+      // Assign matching activities to this lane
+      activityNodes.forEach((act) => {
+        const actRoleRef = act.metadata?.roleRef;
+        const matchesRole =
+          actRoleRef === role.id ||
+          actRoleRef === roleId ||
+          (act.label && act.label.toLowerCase().includes(role.label.toLowerCase())) ||
+          (rIdx === 0 && !actRoleRef);
+
+        if (matchesRole) {
+          xml += `        <bpmn:flowNodeRef>${sanitizeId(act.id)}</bpmn:flowNodeRef>\n`;
+        }
+      });
+
+      xml += `      </bpmn:lane>\n`;
+    });
+    xml += `    </bpmn:laneSet>\n`;
+  }
 
   // Start Events
   startEvents.forEach((ev) => {
@@ -369,10 +406,17 @@ function getTaskTagName(act: GraphNode): string {
     xml += `    <${tagName} id="${actId}" name="${escapeXml(taskName)}" />\n`;
   });
 
-  // Gateways
+  // Gateways (Exclusive & Parallel)
   gatewayNodes.forEach((gw) => {
     const gwId = sanitizeId(gw.id);
-    xml += `    <bpmn:exclusiveGateway id="${gwId}" name="${escapeXml(gw.label || 'Decision')}" />\n`;
+    const isParallel =
+      gw.metadata?.gatewayType === 'parallel' ||
+      (gw.label || '').toLowerCase().includes('parallel');
+    if (isParallel) {
+      xml += `    <bpmn:parallelGateway id="${gwId}" name="${escapeXml(gw.label || 'Parallel Gateway')}" />\n`;
+    } else {
+      xml += `    <bpmn:exclusiveGateway id="${gwId}" name="${escapeXml(gw.label || 'Decision')}" />\n`;
+    }
   });
 
   // End Events
@@ -390,8 +434,29 @@ function getTaskTagName(act: GraphNode): string {
   xml += `  </bpmn:process>\n`;
 
   // BPMN Diagram Interchange (BPMNDI)
+  const planeElementId = hasLanes ? collabId : processId;
   xml += `  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="${processId}">\n`;
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="${planeElementId}">\n`;
+
+  if (hasLanes) {
+    const posValues = Array.from(positions.values());
+    const maxRight = posValues.length > 0 ? Math.max(...posValues.map((p) => p.x + p.width)) : 800;
+    const poolWidth = Math.max(860, Math.round(maxRight - 40));
+    const laneHeight = 160;
+    const poolHeight = Math.max(320, roleNodes.length * laneHeight);
+
+    xml += `      <bpmndi:BPMNShape id="${participantId}_di" bpmnElement="${participantId}" isHorizontal="true">
+        <dc:Bounds x="80" y="60" width="${poolWidth}" height="${poolHeight}" />
+      </bpmndi:BPMNShape>\n`;
+
+    roleNodes.forEach((role, rIdx) => {
+      const laneId = `Lane_${sanitizeId(role.id)}`;
+      const laneY = 60 + rIdx * laneHeight;
+      xml += `      <bpmndi:BPMNShape id="${laneId}_di" bpmnElement="${laneId}" isHorizontal="true">
+        <dc:Bounds x="110" y="${laneY}" width="${poolWidth - 30}" height="${laneHeight}" />
+      </bpmndi:BPMNShape>\n`;
+    });
+  }
 
   // Shapes - strictly for elements that exist in positions
   positions.forEach((pos, id) => {

@@ -9,9 +9,10 @@ import './BpmnIoCanvas.css';
 
 interface Props {
   graph: CanonicalProcessGraph;
+  rawXml?: string;
 }
 
-export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
+export const BpmnIoCanvas: React.FC<Props> = ({ graph, rawXml }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const [copied, setCopied] = useState<boolean>(false);
@@ -19,7 +20,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
   const [renderError, setRenderError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current || !graph) return;
+    if (!containerRef.current || (!graph && !rawXml)) return;
 
     let isMounted = true;
     let viewerInstance: any = null;
@@ -34,7 +35,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph }) => {
       });
       viewerRef.current = viewerInstance;
 
-      const xml = canonicalGraphToBpmnXml(graph);
+      const xml = rawXml || canonicalGraphToBpmnXml(graph);
       setXmlString(xml);
       setRenderError(null);
 

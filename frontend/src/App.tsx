@@ -3,8 +3,16 @@ import ProcessEntry from "./components/ProcessEntry";
 import { ProcessKnowledgeReview } from "./components/ProcessKnowledgeReview";
 import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent";
 import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
+import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
-import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
+import type {
+  CanonicalProcessGraph,
+  ProcessKnowledgeDTO,
+} from "../../backend/src/main/java/com/pie/shared/types/dto";
+import type { ProcessNarrative } from "./services/bpmnNarrativeGenerator";
+import { CORPUS_SAMPLES } from "./utils/bpmnCorpusSamples";
+import { processService } from "./services/processService";
+import { parseBpmnXmlClient } from "./utils/bpmnXmlParser";
 import { useRef, useState } from "react";
 
 type AgentTab = "01_KNOWLEDGE" | "02_INTELLIGENCE" | "03_BPMN" | "04_REVIEW";
@@ -12,6 +20,9 @@ type AgentTab = "01_KNOWLEDGE" | "02_INTELLIGENCE" | "03_BPMN" | "04_REVIEW";
 function App() {
   const processEntryRef = useRef<HTMLDivElement | null>(null);
   const [extractedData, setExtractedData] = useState<ProcessKnowledgeDTO | null>(null);
+  const [bpmnXml, setBpmnXml] = useState<string | null>(null);
+  const [processGraph, setProcessGraph] = useState<CanonicalProcessGraph | null>(null);
+  const [processNarrative, setProcessNarrative] = useState<ProcessNarrative | null>(null);
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [activeFileCount, setActiveFileCount] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<AgentTab>("01_KNOWLEDGE");
@@ -42,7 +53,7 @@ function App() {
       number: "04",
       icon: "✦",
       title: "Process Review",
-      description: "Turns complex process diagrams back into language your business actually understands.",
+      description: "Translates technical BPMN XML back into clear executive summaries and audit reports.",
       accent: "yellow",
     },
   ];
@@ -52,15 +63,57 @@ function App() {
     setIsExtracting(true);
   };
 
-  const handleExtractionSuccess = (data: ProcessKnowledgeDTO) => {
+  const handleExtractionSuccess = (
+    data: ProcessKnowledgeDTO,
+    xml?: string,
+    graph?: CanonicalProcessGraph,
+    narrative?: ProcessNarrative,
+    directTab?: AgentTab
+  ) => {
     setExtractedData(data);
+    if (xml) setBpmnXml(xml);
+    if (graph) setProcessGraph(graph);
+    if (narrative) setProcessNarrative(narrative);
     setIsExtracting(false);
-    setActiveTab("01_KNOWLEDGE");
+    setActiveTab(directTab || (xml ? "04_REVIEW" : "01_KNOWLEDGE"));
   };
 
   const handleReset = () => {
     setExtractedData(null);
+    setBpmnXml(null);
+    setProcessGraph(null);
+    setProcessNarrative(null);
     setIsExtracting(false);
+    setActiveTab("01_KNOWLEDGE");
+  };
+
+  const handleSelectAgentCard = async (agentNumber: string) => {
+    const defaultSample = CORPUS_SAMPLES[0]; // F01_clean_purchase_requisition.bpmn
+    try {
+      const p = await processService.importBpmnXml(defaultSample.xml, defaultSample.name);
+      handleExtractionSuccess(
+        p.knowledge,
+        p.bpmnXml,
+        p.graph,
+        p.narrative,
+        agentNumber === "04"
+          ? "04_REVIEW"
+          : agentNumber === "03"
+          ? "03_BPMN"
+          : agentNumber === "02"
+          ? "02_INTELLIGENCE"
+          : "01_KNOWLEDGE"
+      );
+    } catch {
+      const parsed = parseBpmnXmlClient(defaultSample.xml, defaultSample.name);
+      handleExtractionSuccess(
+        parsed.knowledge,
+        parsed.xml,
+        parsed.graph,
+        undefined,
+        agentNumber === "04" ? "04_REVIEW" : "01_KNOWLEDGE"
+      );
+    }
   };
 
   return (
@@ -187,16 +240,19 @@ function App() {
               )}
 
               {activeTab === "04_REVIEW" && (
-                <div className="agent-placeholder-card">
-                  <span className="agent-icon">✦</span>
-                  <h3>Agent 04: Process Review & Translation Agent</h3>
-                  <p>
-                    Translates technical BPMN XML back into clear executive summaries and audit reports.
-                  </p>
-                  <button className="yellow-button" type="button" onClick={() => alert("Agent 04 ready to run!")}>
-                    GENERATE EXECUTIVE SUMMARY <span>↗</span>
-                  </button>
-                </div>
+                <ProcessReviewAgent
+                  knowledge={extractedData}
+                  graph={processGraph}
+                  bpmnXml={bpmnXml}
+                  initialNarrative={processNarrative}
+                  onProcessUpdated={(k, g, x, n) => {
+                    setExtractedData(k);
+                    setProcessGraph(g);
+                    setBpmnXml(x);
+                    if (n) setProcessNarrative(n);
+                  }}
+                  onProceedToBpmn={() => setActiveTab("03_BPMN")}
+                />
               )}
             </div>
           </section>
@@ -268,7 +324,13 @@ function App() {
 
                 <div className="agent-grid">
                   {agents.map((agent, index) => (
-                    <article className={`agent-card ${agent.accent}`} key={agent.number}>
+                    <article
+                      className={`agent-card ${agent.accent}`}
+                      key={agent.number}
+                      onClick={() => handleSelectAgentCard(agent.number)}
+                      style={{ cursor: "pointer" }}
+                      title={`Launch Agent ${agent.number}: ${agent.title}`}
+                    >
                       <div className="agent-header">
                         <span className="agent-index">{agent.number}</span>
                         <span className="agent-icon">{agent.icon}</span>
@@ -281,7 +343,7 @@ function App() {
 
                       <div className="agent-footer">
                         <span>AGENT {agent.number}</span>
-                        <span>0{index + 1} ———→</span>
+                        <span>LAUNCH 0{index + 1} ———→</span>
                       </div>
                     </article>
                   ))}
@@ -348,7 +410,7 @@ function App() {
                         })
                       }
                     >
-                      <span>START WITH A DOCUMENT</span>
+                      <span>START WITH A DOCUMENT OR BPMN</span>
                       <strong>↗</strong>
                     </button>
                   </div>

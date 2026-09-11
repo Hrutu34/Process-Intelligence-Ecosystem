@@ -175,4 +175,151 @@ class ProcessQualityValidatorTest {
         assertTrue(issues.stream().anyMatch(i ->
                 "GATEWAY_RULE_DEAD_END".equals(i.ruleId()) && i.issue().contains("Dead-End Branch Detected")));
     }
+
+    @Test
+    @DisplayName("D02 & D06: Detects vague task names like 'Process' and 'Do needful'")
+    void testVagueTaskNaming() {
+        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+                .graphId("graph-vague-tasks")
+                .addNodes(List.of(
+                        GraphNode.builder().id("t1").type(NodeType.Activity).label("Process").build(),
+                        GraphNode.builder().id("t2").type(NodeType.Activity).label("Do needful").build(),
+                        GraphNode.builder().id("t3").type(NodeType.Activity).label("Verify applicant credit score").build()
+                ))
+                .build();
+
+        List<ValidationIssueDTO> issues = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        validator.validateTaskNaming(graph.getNodes(), issues, recommendations);
+
+        assertEquals(2, issues.size());
+        assertTrue(issues.stream().anyMatch(i -> i.issue().contains("Process")));
+        assertTrue(issues.stream().anyMatch(i -> i.issue().contains("Do needful")));
+    }
+
+    @Test
+    @DisplayName("D05: Detects orphan node with 0 incoming and 0 outgoing sequence flows")
+    void testOrphanNodeDetection() {
+        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+                .graphId("graph-orphan")
+                .addNodes(List.of(
+                        GraphNode.builder().id("t1").type(NodeType.Activity).label("Submit request").build(),
+                        GraphNode.builder().id("t2").type(NodeType.Activity).label("Approve request").build(),
+                        GraphNode.builder().id("t9").type(NodeType.Activity).label("Update HR calendar").build()
+                ))
+                .addEdges(List.of(
+                        GraphEdge.builder().id("e1").from("t1").to("t2").edgeType(EdgeType.sequence).build()
+                ))
+                .build();
+
+        List<ValidationIssueDTO> issues = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        validator.validateConnectivityAndOrphans(graph.getNodes(), graph.getEdges(), issues, recommendations);
+
+        assertTrue(issues.stream().anyMatch(i -> "ORPHAN_NODE_RULE".equals(i.ruleId()) && i.issue().contains("Update HR calendar")));
+    }
+
+    @Test
+    @DisplayName("D07: Detects parallel split without matching join gateway")
+    void testParallelSplitWithoutJoin() {
+        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+                .graphId("graph-parallel-mismatch")
+                .addNodes(List.of(
+                        GraphNode.builder().id("gs").type(NodeType.Gateway).label("Fulfil in parallel")
+                                .metadata(NodeMetadata.builder().gatewayType(GatewayType.parallel).build()).build(),
+                        GraphNode.builder().id("t1").type(NodeType.Activity).label("Pick and pack").build(),
+                        GraphNode.builder().id("t2").type(NodeType.Activity).label("Generate invoice").build()
+                ))
+                .addEdges(List.of(
+                        GraphEdge.builder().id("e1").from("gs").to("t1").edgeType(EdgeType.sequence).build(),
+                        GraphEdge.builder().id("e2").from("gs").to("t2").edgeType(EdgeType.sequence).build()
+                ))
+                .build();
+
+        List<ValidationIssueDTO> issues = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        validator.validateParallelGateways(graph.getNodes(), graph.getEdges(), issues, recommendations);
+
+        assertTrue(issues.stream().anyMatch(i -> "PARALLEL_SPLIT_JOIN_RULE".equals(i.ruleId())));
+    }
+
+    @Test
+    @DisplayName("D10: Detects unlabeled decision gateway")
+    void testUnlabeledDecisionGateway() {
+        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+                .graphId("graph-unlabeled-gw")
+                .addNodes(List.of(
+                        GraphNode.builder().id("g1").type(NodeType.Gateway).label("").build()
+                ))
+                .build();
+
+        List<ValidationIssueDTO> issues = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        validator.validateGatewayLabels(graph.getNodes(), issues, recommendations);
+
+        assertTrue(issues.stream().anyMatch(i -> "UNLABELED_GATEWAY_RULE".equals(i.ruleId())));
+    }
+
+    @Test
+    @DisplayName("D11: Detects duplicate consecutive activities")
+    void testDuplicateConsecutiveActivities() {
+        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+                .graphId("graph-duplicate-tasks")
+                .addNodes(List.of(
+                        GraphNode.builder().id("t4").type(NodeType.Activity).label("Investigate issue").build(),
+                        GraphNode.builder().id("t5").type(NodeType.Activity).label("Investigate issue").build()
+                ))
+                .addEdges(List.of(
+                        GraphEdge.builder().id("e1").from("t4").to("t5").edgeType(EdgeType.sequence).build()
+                ))
+                .build();
+
+        List<ValidationIssueDTO> issues = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        validator.validateConsecutiveDuplicates(graph.getNodes(), graph.getEdges(), issues, recommendations);
+
+        assertTrue(issues.stream().anyMatch(i -> "DUPLICATE_ACTIVITY_RULE".equals(i.ruleId())));
+    }
+
+    @Test
+    @DisplayName("D12: Detects missing swimlanes when multiple operational roles are present")
+    void testMissingSwimlanesDetection() {
+        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+                .graphId("graph-missing-lanes")
+                .addNodes(List.of(
+                        GraphNode.builder().id("t1").type(NodeType.Activity).label("Service desk logs ticket").build(),
+                        GraphNode.builder().id("t2").type(NodeType.Activity).label("Support agent investigates issue").build()
+                ))
+                .build();
+
+        List<ValidationIssueDTO> issues = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        validator.validateSwimlanesAndRoles(graph.getNodes(), issues, recommendations);
+
+        assertTrue(issues.stream().anyMatch(i -> "SWIMLANE_GOVERNANCE_RULE".equals(i.ruleId())));
+    }
+
+    @Test
+    @DisplayName("D13: Detects excessive linear complexity with over-decomposed steps")
+    void testExcessiveLinearComplexity() {
+        CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
+                .graphId("graph-linear-chain")
+                .addNodes(List.of(
+                        GraphNode.builder().id("t1").type(NodeType.Activity).label("Step 1").build(),
+                        GraphNode.builder().id("t2").type(NodeType.Activity).label("Step 2").build(),
+                        GraphNode.builder().id("t3").type(NodeType.Activity).label("Step 3").build(),
+                        GraphNode.builder().id("t4").type(NodeType.Activity).label("Step 4").build(),
+                        GraphNode.builder().id("t5").type(NodeType.Activity).label("Step 5").build(),
+                        GraphNode.builder().id("t6").type(NodeType.Activity).label("Step 6").build(),
+                        GraphNode.builder().id("t7").type(NodeType.Activity).label("Step 7").build(),
+                        GraphNode.builder().id("t8").type(NodeType.Activity).label("Step 8").build()
+                ))
+                .build();
+
+        List<ValidationIssueDTO> issues = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+        validator.validateLinearComplexity(graph.getNodes(), List.of(), issues, recommendations);
+
+        assertTrue(issues.stream().anyMatch(i -> "LINEAR_COMPLEXITY_RULE".equals(i.ruleId())));
+    }
 }

@@ -32,8 +32,9 @@ class ProcessControllerTest {
         ProcessGraphValidator validator = new ProcessGraphValidator();
         CanonicalProcessGraphBuilder graphBuilder = new CanonicalProcessGraphBuilder(validator);
         ProcessQualityValidator qualityValidator = new ProcessQualityValidator();
+        com.pie.backend.service.BpmnXmlParser bpmnParser = new com.pie.backend.service.BpmnXmlParser();
 
-        ProcessController controller = new ProcessController(ingestionService, graphBuilder, qualityValidator);
+        ProcessController controller = new ProcessController(ingestionService, graphBuilder, qualityValidator, bpmnParser);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
         objectMapper = new ObjectMapper();
     }

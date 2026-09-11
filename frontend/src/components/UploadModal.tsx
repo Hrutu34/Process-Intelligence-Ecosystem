@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { processService } from '../services/processService';
 import type { ProcessEntity } from '../services/types';
+import { CORPUS_SAMPLES } from '../utils/bpmnCorpusSamples';
+import { DESCRIPTION_BANK } from '../utils/descriptionBankSamples';
 import './UploadModal.css';
 
 interface Props {
@@ -9,58 +11,107 @@ interface Props {
 }
 
 export const UploadModal: React.FC<Props> = ({ onClose, onProcessCreated }) => {
-  const [tab, setTab] = useState<'upload' | 'text'>('text');
+  const [tab, setTab] = useState<'text' | 'bpmn' | 'upload'>('bpmn');
   const [files, setFiles] = useState<File[]>([]);
-  const [rawText, setRawText] = useState(
-    `Customer places an order.
-Sales reviews the order.
-If approved, Inventory checks stock.
-If in stock, Logistics ships the product.
-If rejected or out of stock, Customer is notified.`
-  );
-  const [processTitle, setProcessTitle] = useState('Order Fulfillment Process');
+  const [selectedCorpusId, setSelectedCorpusId] = useState<string>('F01');
+  const [bpmnXmlInput, setBpmnXmlInput] = useState<string>(CORPUS_SAMPLES[0]?.xml || '');
+  const [selectedDescId, setSelectedDescId] = useState<string>('D01');
+  const [rawText, setRawText] = useState<string>(DESCRIPTION_BANK[0]?.description || '');
+  const [processTitle, setProcessTitle] = useState<string>('Purchase Requisition Approval');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
+  const handleSelectCorpusSample = (corpusId: string) => {
+    setSelectedCorpusId(corpusId);
+    const sample = CORPUS_SAMPLES.find((s) => s.id === corpusId);
+    if (sample) {
+      setBpmnXmlInput(sample.xml);
+      setProcessTitle(sample.name.replace(/\.bpmn$/i, '').replace(/^[A-Z0-9]+_/, '').replace(/[-_]/g, ' '));
+    }
+  };
+
+  const handleSelectDescSample = (descId: string) => {
+    setSelectedDescId(descId);
+    const sample = DESCRIPTION_BANK.find((d) => d.id === descId);
+    if (sample) {
+      setRawText(sample.description);
+      setProcessTitle(sample.title);
+    }
+  };
+
+  const handleBpmnFileUpload = async (uploadedFiles: FileList | null) => {
+    if (!uploadedFiles || uploadedFiles.length === 0) return;
+    const file = uploadedFiles[0];
+    const text = await file.text();
+    setBpmnXmlInput(text);
+    setProcessTitle(file.name.replace(/\.bpmn$/i, '').replace(/[-_]/g, ' '));
+    setSelectedCorpusId('');
+  };
+
   const handleStartIngestion = async () => {
     setIsProcessing(true);
-    setCurrentStep(1); // Document Ingestion
+    setCurrentStep(1); // Ingestion & Parsing
 
     try {
-      await new Promise((r) => setTimeout(r, 600));
-      setCurrentStep(2); // Knowledge Extraction
+      await new Promise((r) => setTimeout(r, 500));
+      setCurrentStep(2); // Semantic Graph Extraction
 
-      let knowledge;
-      let sourceName = 'Direct_Text_Input.txt';
-      let sourceType: 'PDF' | 'DOCX' | 'TXT' | 'FreeText' = 'FreeText';
+      let createdProcess: ProcessEntity;
 
-      if (tab === 'upload' && files.length > 0) {
-        sourceName = files[0].name;
-        sourceType = files[0].name.endsWith('.pdf')
+      if (tab === 'bpmn') {
+        const sample = CORPUS_SAMPLES.find((s) => s.id === selectedCorpusId);
+        const fileName = sample ? sample.name : `${processTitle || 'Model'}.bpmn`;
+
+        await new Promise((r) => setTimeout(r, 500));
+        setCurrentStep(3); // Business Narrative Generation (Capability 2)
+
+        await new Promise((r) => setTimeout(r, 400));
+        setCurrentStep(4); // Quality & Defect Report (Capability 3)
+
+        createdProcess = await processService.importBpmnXml(bpmnXmlInput, fileName);
+      } else if (tab === 'upload' && files.length > 0) {
+        const sourceName = files[0].name;
+        const sourceType = files[0].name.endsWith('.pdf')
           ? 'PDF'
           : files[0].name.endsWith('.docx')
           ? 'DOCX'
+          : files[0].name.endsWith('.bpmn')
+          ? 'BPMN'
           : 'TXT';
-        knowledge = await processService.extractKnowledgeFromFiles(files);
+
+        if (sourceType === 'BPMN') {
+          createdProcess = await processService.importBpmnFile(files[0]);
+        } else {
+          const knowledge = await processService.extractKnowledgeFromFiles(files);
+          await new Promise((r) => setTimeout(r, 500));
+          setCurrentStep(3);
+          await new Promise((r) => setTimeout(r, 400));
+          setCurrentStep(4);
+          createdProcess = await processService.createProcessFromIngestion(
+            processTitle || 'New Extracted Process',
+            sourceName,
+            sourceType,
+            knowledge,
+            files[0].name
+          );
+        }
       } else {
-        knowledge = await processService.extractKnowledgeFromText(rawText);
+        // Raw Text Tab
+        const knowledge = await processService.extractKnowledgeFromText(rawText);
+        await new Promise((r) => setTimeout(r, 500));
+        setCurrentStep(3);
+        await new Promise((r) => setTimeout(r, 400));
+        setCurrentStep(4);
+        createdProcess = await processService.createProcessFromIngestion(
+          processTitle || 'New Extracted Process',
+          'Description_Bank_Prompt.txt',
+          'FreeText',
+          knowledge,
+          rawText
+        );
       }
 
-      await new Promise((r) => setTimeout(r, 600));
-      setCurrentStep(3); // Canonical Process Graph Generation
-
-      const createdProcess = await processService.createProcessFromIngestion(
-        processTitle || 'New Extracted Process',
-        sourceName,
-        sourceType,
-        knowledge,
-        rawText
-      );
-
-      await new Promise((r) => setTimeout(r, 600));
-      setCurrentStep(4); // BPMN 2.0 & Validation
-
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 300));
       setCurrentStep(5); // Complete
 
       setTimeout(() => {
@@ -69,19 +120,22 @@ If rejected or out of stock, Customer is notified.`
       }, 500);
     } catch (err) {
       console.error('Ingestion failed', err);
-      alert('Ingestion error. Check backend connection.');
+      alert('Ingestion error. Check connection or BPMN XML format.');
       setIsProcessing(false);
     }
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="upload-modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="upload-modal-card" style={{ maxWidth: 780 }} onClick={(e) => e.stopPropagation()}>
         <div className="history-modal-header">
           <div>
-            <h3>Autonomous Process Ingestion</h3>
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-              Transform documents or text into a Canonical Process Graph & BPMN 2.0
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 22 }}>🤖</span>
+              <h3 style={{ margin: 0 }}>ProcessIQ Copilot Ingestion Pipeline</h3>
+            </div>
+            <span style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4, display: 'block' }}>
+              Text-to-BPMN Generation • BPMN-to-Text Narrative • Structural Quality & Defect Report
             </span>
           </div>
           {!isProcessing && (
@@ -99,9 +153,11 @@ If rejected or out of stock, Customer is notified.`
                 {currentStep > 1 ? '✓' : '1'}
               </div>
               <div>
-                <strong style={{ color: 'var(--white)', fontSize: 14 }}>Document Classification & NLP</strong>
+                <strong style={{ color: 'var(--white)', fontSize: 14 }}>
+                  {tab === 'bpmn' ? 'BPMN 2.0 XML Ingestion' : 'Document Ingestion & NLP Parsing'}
+                </strong>
                 <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)' }}>
-                  Parsing text entities, clauses, and semantic boundaries...
+                  {tab === 'bpmn' ? 'Parsing flow elements, sequence edges, and gateway branches...' : 'Parsing raw instructions and entity boundaries...'}
                 </span>
               </div>
             </div>
@@ -111,9 +167,11 @@ If rejected or out of stock, Customer is notified.`
                 {currentStep > 2 ? '✓' : '2'}
               </div>
               <div>
-                <strong style={{ color: 'var(--white)', fontSize: 14 }}>AI Knowledge Extraction</strong>
+                <strong style={{ color: 'var(--white)', fontSize: 14 }}>
+                  Canonical Graph & Role Mapping
+                </strong>
                 <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)' }}>
-                  Extracting activities, actors, decision gates, and business rules...
+                  Constructing directed topological nodes, sequence flows, and swimlanes...
                 </span>
               </div>
             </div>
@@ -123,9 +181,11 @@ If rejected or out of stock, Customer is notified.`
                 {currentStep > 3 ? '✓' : '3'}
               </div>
               <div>
-                <strong style={{ color: 'var(--white)', fontSize: 14 }}>Canonical Process Graph Construction</strong>
+                <strong style={{ color: 'var(--white)', fontSize: 14 }}>
+                  Plain-Language Business Narrative (Capability 2)
+                </strong>
                 <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)' }}>
-                  Building deterministic sequence nodes, edge conditions, and role swimlanes...
+                  Synthesizing business walkthrough for non-expert process stakeholders...
                 </span>
               </div>
             </div>
@@ -135,9 +195,11 @@ If rejected or out of stock, Customer is notified.`
                 {currentStep > 4 ? '✓' : '4'}
               </div>
               <div>
-                <strong style={{ color: 'var(--white)', fontSize: 14 }}>BPMN 2.0 & Quality Validation</strong>
+                <strong style={{ color: 'var(--white)', fontSize: 14 }}>
+                  Structural Quality & Defect Report (Capability 3)
+                </strong>
                 <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)' }}>
-                  Synthesizing vector coordinates and quality score...
+                  Inspecting start/end events, gateway splits, joins, and actionability...
                 </span>
               </div>
             </div>
@@ -152,7 +214,7 @@ If rejected or out of stock, Customer is notified.`
                 className="login-input"
                 value={processTitle}
                 onChange={(e) => setProcessTitle(e.target.value)}
-                placeholder="e.g. Order Fulfillment Workflow"
+                placeholder="e.g. Purchase Requisition Approval"
               />
             </div>
 
@@ -160,38 +222,166 @@ If rejected or out of stock, Customer is notified.`
             <div className="upload-tabs">
               <button
                 type="button"
+                className={`upload-tab-btn ${tab === 'bpmn' ? 'active' : ''}`}
+                onClick={() => setTab('bpmn')}
+              >
+                📐 BPMN 2.0 XML (Corpus Files)
+              </button>
+              <button
+                type="button"
                 className={`upload-tab-btn ${tab === 'text' ? 'active' : ''}`}
                 onClick={() => setTab('text')}
               >
-                ✍️ Raw Text Input
+                ✍️ Text-to-BPMN (Description Bank)
               </button>
               <button
                 type="button"
                 className={`upload-tab-btn ${tab === 'upload' ? 'active' : ''}`}
                 onClick={() => setTab('upload')}
               >
-                📄 Upload Documents (PDF / DOCX / TXT)
+                📄 Upload Documents (PDF/DOCX/BPMN)
               </button>
             </div>
 
-            {tab === 'text' ? (
-              <div className="login-field">
-                <label>Process Description or Policy Clauses</label>
-                <textarea
-                  className="login-input"
-                  style={{ height: 160, resize: 'vertical', lineHeight: 1.5 }}
-                  value={rawText}
-                  onChange={(e) => setRawText(e.target.value)}
-                  placeholder="Type or paste process instructions..."
-                />
+            {/* TAB 1: BPMN 2.0 XML & Corpus Samples */}
+            {tab === 'bpmn' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <span style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+                    Select a Hackathon Benchmark Corpus File to Test:
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {CORPUS_SAMPLES.map((sample) => {
+                      const isClean = sample.name.includes('clean');
+                      const isSelected = selectedCorpusId === sample.id;
+                      return (
+                        <button
+                          key={sample.id}
+                          type="button"
+                          onClick={() => handleSelectCorpusSample(sample.id)}
+                          style={{
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            border: isSelected ? '1px solid var(--aqua)' : '1px solid rgba(116, 183, 220, 0.2)',
+                            background: isSelected
+                              ? 'rgba(57, 245, 208, 0.2)'
+                              : isClean
+                              ? 'rgba(57, 245, 208, 0.05)'
+                              : 'rgba(255, 107, 107, 0.08)',
+                            color: isSelected ? 'var(--aqua)' : isClean ? 'var(--aqua)' : '#ff8787',
+                          }}
+                        >
+                          {sample.id}: {sample.name.replace(/^[A-Z0-9]+_/, '').replace(/\.bpmn$/i, '').replace(/_/g, ' ')}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <label
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      background: 'rgba(57, 245, 208, 0.1)',
+                      border: '1px dashed var(--aqua)',
+                      color: 'var(--aqua)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span>📁</span> Choose Custom .bpmn File
+                    <input
+                      type="file"
+                      accept=".bpmn,.xml"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleBpmnFileUpload(e.target.files)}
+                    />
+                  </label>
+                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    {selectedCorpusId ? `Active Preset: ${selectedCorpusId}` : 'Custom file loaded'}
+                  </span>
+                </div>
+
+                <div className="login-field">
+                  <label>BPMN 2.0 XML Content</label>
+                  <textarea
+                    className="login-input"
+                    style={{ height: 120, resize: 'vertical', fontFamily: 'var(--mono)', fontSize: 11, lineHeight: 1.4 }}
+                    value={bpmnXmlInput}
+                    onChange={(e) => {
+                      setBpmnXmlInput(e.target.value);
+                      setSelectedCorpusId('');
+                    }}
+                    placeholder="<bpmn:definitions ...> ... </bpmn:definitions>"
+                  />
+                </div>
               </div>
-            ) : (
+            )}
+
+            {/* TAB 2: Text-to-BPMN (Description Bank) */}
+            {tab === 'text' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <span style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+                    Select an official Description Bank prompt to test Text-to-BPMN:
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {DESCRIPTION_BANK.map((desc) => {
+                      const isSelected = selectedDescId === desc.id;
+                      return (
+                        <button
+                          key={desc.id}
+                          type="button"
+                          onClick={() => handleSelectDescSample(desc.id)}
+                          style={{
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            border: isSelected ? '1px solid var(--aqua)' : '1px solid rgba(116, 183, 220, 0.2)',
+                            background: isSelected ? 'rgba(57, 245, 208, 0.2)' : 'rgba(4, 18, 45, 0.6)',
+                            color: isSelected ? 'var(--aqua)' : 'var(--soft-white)',
+                          }}
+                        >
+                          {desc.id}: {desc.title} ({desc.clarity})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="login-field">
+                  <label>Plain-Language Process Description</label>
+                  <textarea
+                    className="login-input"
+                    style={{ height: 130, resize: 'vertical', lineHeight: 1.5 }}
+                    value={rawText}
+                    onChange={(e) => {
+                      setRawText(e.target.value);
+                      setSelectedDescId('');
+                    }}
+                    placeholder="Describe your process in free text..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: Document Upload */}
+            {tab === 'upload' && (
               <div>
                 <label className="dropzone-area" style={{ display: 'block' }}>
                   <input
                     type="file"
                     multiple
-                    accept=".pdf,.docx,.txt"
+                    accept=".pdf,.docx,.txt,.bpmn"
                     style={{ display: 'none' }}
                     onChange={(e) => {
                       if (e.target.files) {
@@ -204,7 +394,7 @@ If rejected or out of stock, Customer is notified.`
                     Drop files here or click to browse
                   </strong>
                   <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    Supports PDF SOPs, Word documents (DOCX), and plain text
+                    Supports BPMN 2.0 XML (.bpmn), PDF SOPs, Word documents (.docx), and plain text
                   </span>
                 </label>
 
@@ -220,12 +410,12 @@ If rejected or out of stock, Customer is notified.`
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
               <button type="button" className="btn-ghost" onClick={onClose}>
                 Cancel
               </button>
               <button type="button" className="yellow-button" onClick={handleStartIngestion}>
-                START INGESTION PIPELINE <span>↗</span>
+                RUN PIPELINE <span>↗</span>
               </button>
             </div>
           </>

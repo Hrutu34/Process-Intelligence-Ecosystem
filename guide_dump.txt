@@ -1,0 +1,289 @@
+PROCESSIQ
+
+AI COPILOT FOR BPMN
+
+Participant Guide — What to Build & What to Deliver
+
+Challenge theme: An AI copilot that turns plain language into valid BPMN 2.0 process models — and turns existing BPMN models back into clear descriptions and honest quality reviews.
+
+Version 1.0  •  Issued 08 September 2026  •  Classification: INTERNAL
+
+Contents
+
+TOC \h \o "1-2"Contents PAGEREF _Toc239768683 \h 2
+
+1. The Challenge at a Glance PAGEREF _Toc239768684 \h 3
+
+2. Fixed Scope — What Every Team MUST Solve PAGEREF _Toc239768685 \h 4
+
+2.1 The three mandatory capabilities PAGEREF _Toc239768686 \h 4
+
+2.2 Core BPMN patterns you must handle PAGEREF _Toc239768687 \h 4
+
+2.3 Defects your quality report must be able to catch PAGEREF _Toc239768688 \h 4
+
+2.4 Round-trip & usability expectations PAGEREF _Toc239768689 \h 5
+
+3. Open Space — How You Solve It Is Up to You PAGEREF _Toc239768690 \h 6
+
+3.1 Everything below is your choice PAGEREF _Toc239768691 \h 6
+
+3.2 Example directions (inspiration, NOT requirements) PAGEREF _Toc239768692 \h 6
+
+3.3 Optional bonus directions PAGEREF _Toc239768693 \h 6
+
+4. The Data You Get PAGEREF _Toc239768694 \h 7
+
+5. How You’ll Be Judged PAGEREF _Toc239768695 \h 8
+
+6. What to Submit PAGEREF _Toc239768696 \h 8
+
+Minimum demo checklist PAGEREF _Toc239768697 \h 8
+
+7. Governance & Responsible-Use Expectations PAGEREF _Toc239768698 \h 8
+
+1. The Challenge at a Glance
+
+Across the organization, business processes are still captured informally — in free text, slide decks, or ad-hoc diagrams drawn by people with no formal process-modeling training. The result is documentation that is inconsistent, incomplete, and often structurally wrong: missing start or end events, dangling flows, misused gateways, and swimlanes that obscure ownership. These defects slow down reviews, create ambiguity in audits, and block automation that depends on clean, machine-readable models.
+
+The gap runs both ways: people struggle to turn an informal description into a correct model, and just as often struggle to understand what an existing BPMN file actually says. Your challenge is to close both gaps with a single, coherent copilot.
+
+The one-line brief
+
+Build a copilot that (1) generates a valid BPMN 2.0 model from a plain-language description, (2) explains an existing BPMN file in plain language, and (3) produces a separate, explainable quality report of its structural defects with concrete fixes.
+
+How this guide is structured
+
+Section 2 defines the FIXED scope — the problem every team MUST solve. Section 3 defines the OPEN space — how you solve it and what your solution looks like. Read both: you win by nailing the fixed scope and then differentiating in the open space.
+
+2. Fixed Scope — What Every Team MUST Solve
+
+This is the non-negotiable core. Judges will first verify that your solution delivers the three capabilities below on standard BPMN 2.0 XML, before evaluating anything else.
+
+2.1 The three mandatory capabilities
+
+#
+
+Capability
+
+Input → Output
+
+Minimum bar
+
+1
+
+Text-to-BPMN generation
+
+Plain-language process description → valid BPMN 2.0 XML
+
+Produces well-formed BPMN 2.0 with correct core elements for a given description.
+
+2
+
+BPMN-to-text description
+
+Uploaded BPMN file → plain-language narrative
+
+Explains what the process does in business language a non-expert can follow.
+
+3
+
+BPMN quality / error report
+
+Uploaded BPMN file → separate defect report
+
+Flags structural defects with explainable, concrete fixes.
+
+Two outputs, not one (hard requirement)
+
+For an uploaded file, the plain-language description and the quality/error report MUST be two distinct, separately-labelled outputs — never merged into a single blob. This separation is part of the fixed scope.
+
+2.2 Core BPMN patterns you must handle
+
+You are not required to support the full BPMN 2.0 specification. You MUST correctly handle the core patterns below — the ones present in the provided corpus:
+
+Tasks / activities.
+
+Start and end events.
+
+Exclusive (XOR) and parallel (AND) gateways.
+
+Sequence flows.
+
+Pools and lanes (roles / ownership).
+
+2.3 Defects your quality report must be able to catch
+
+At minimum, your error report should detect the classes of structural defect below. The provided corpus plants concrete examples of each.
+
+Defect class
+
+What it looks like
+
+Missing start / end event
+
+A process that begins with a task or ends without an end event.
+
+Dangling / unconnected flow
+
+A step or arrow that leads nowhere; an orphan task with no connections.
+
+Incorrect gateway usage
+
+An exclusive gateway with one outgoing flow, or branches with no conditions / default.
+
+Missing parallel join
+
+A parallel split whose branches never synchronize.
+
+Vague task names
+
+Non-actionable labels such as “Process” or “Do needful”.
+
+Missing swimlanes / roles
+
+Multiple roles implied but no pool/lanes to assign ownership.
+
+Excessive complexity / duplication
+
+Over-decomposed chains or duplicate consecutive tasks.
+
+Definition of Done (baseline)
+
+Given a description from the Description Bank, your system outputs valid BPMN 2.0 XML. Given a BPMN file from the corpus, it outputs (a) a plain-language description and (b) a separate defect report that correctly flags at least the planted defects in that file, each with a concrete suggested fix. Meet this and you are “in scope.”
+
+2.4 Round-trip & usability expectations
+
+Round-trip fidelity — a model you generate from text should be re-describable back to something close to the original intent, so judges can verify both directions.
+
+Non-expert usability — all three outputs must be understandable by a business user, not only in BPMN jargon.
+
+3. Open Space — How You Solve It Is Up to You
+
+The problem is fixed; the solution is deliberately open. There is no single correct architecture, technology, or output style. We are intentionally NOT prescribing how to build this — choosing the approach is the whole point of the hackathon. Teams are encouraged to take different, creative routes.
+
+3.1 Everything below is your choice
+
+The technology and approach you use to understand text and reason over BPMN structure.
+
+How you detect defects — structural analysis, rules, learned models, or any mix you invent.
+
+The interface — chat copilot, side-by-side editor, report view, IDE plugin, or something new.
+
+How you present and rank defects, and how you phrase fixes.
+
+Any extra capabilities beyond the mandatory three.
+
+3.2 Example directions (inspiration, NOT requirements)
+
+These are illustrative starting points only, listed to spark ideas — they are deliberately varied so no single approach is favoured. You are free to ignore all of them.
+
+A conversational assistant that builds and refines a diagram turn by turn.
+
+A batch “linter” that scans a folder of BPMN files and produces quality scorecards.
+
+A visual side-by-side that highlights each defect on the diagram with an inline fix.
+
+A round-trip demonstrator: text → diagram → text, showing fidelity both ways.
+
+Suggested rendering layer (optional)
+
+The brief suggests bpmn-js (the open-source bpmn.io toolkit) for viewing/editing so you don’t build a renderer from scratch. This is a convenience, not a requirement — any BPMN 2.0-compliant viewer, or none, is fine. Judges score your intelligence layer, not your renderer.
+
+3.3 Optional bonus directions
+
+Task-name quality coaching with suggested rewrites.
+
+Swimlane/role inference from an unstructured description.
+
+Complexity metrics and simplification suggestions.
+
+Handling ambiguous or under-specified descriptions gracefully (see the “Ambiguous” rows in the Description Bank).
+
+4. The Data You Get
+
+Because the original idea owner is unavailable, we provide a realistic synthetic data kit. BPMN is an XML interchange format, not tabular data, so the kit comes in two authentic parts, fully documented in the companion “Synthetic Dataset Report.”
+
+Part
+
+Format
+
+What it is
+
+Which capability it feeds
+
+BPMN corpus
+
+8 × .bpmn (BPMN 2.0 XML)
+
+Real process models — 2 clean references + 6 with planted defects
+
+BPMN-to-text + quality report
+
+Description Bank
+
+Excel sheet
+
+10 plain-language process descriptions of varying clarity
+
+Text-to-BPMN generation
+
+Catalog & glossary
+
+Excel sheets
+
+File index, element inventory, BPMN glossary
+
+Orientation for all tracks
+
+Answer key
+
+Hidden Excel sheet
+
+Every planted defect + correct fix (for organisers)
+
+Scoring
+
+Defects are already planted
+
+The 6 defective BPMN files deliberately contain missing events, dangling/orphan flows, misused gateways, vague task names, missing lanes, and duplicates — your targets to detect and fix. Do NOT hardcode to specific file or element IDs: judges may score you on a modified copy with different IDs and additional defects.
+
+5. What to Submit
+
+A working demo (live or recorded) showing all three capabilities on the provided data.
+
+For at least two corpus files: the generated plain-language description AND the separate defect report.
+
+For at least two Description-Bank entries: the generated BPMN 2.0 XML (and a rendered view if you have one).
+
+A short write-up of your approach and the defect classes you detect.- PPT
+
+Your code repository or export with run instructions.
+
+Minimum demo checklist
+
+Text-to-BPMN produces valid BPMN 2.0 for at least two descriptions.
+
+BPMN-to-text produces a clear narrative for at least two corpus files.
+
+The quality report is a SEPARATE output and catches the planted defects in those files.
+
+Each flagged defect comes with a concrete, explainable fix.
+
+Outputs are readable by a non-expert.
+
+6. Governance & Responsible-Use Expectations
+
+Because this tool influences how processes are documented and automated, teams should build with appropriate care:
+
+Human-in-the-loop — treat generated models and fixes as suggestions a person reviews and accepts, not silent auto-edits.
+
+Explainability — every flagged defect and fix should carry a reason a business user can understand.
+
+Traceability — keep the original file and show what changed, so nothing is altered without an audit trail.
+
+No overreach — if a description is ambiguous, surface the ambiguity rather than inventing unstated logic.
+
+Innovate freely, but stay on target
+
+The scope is fixed so judging is fair; the solution is open so you can shine. Nail the three capabilities — with the two file outputs kept separate — then surprise us with how you do it.

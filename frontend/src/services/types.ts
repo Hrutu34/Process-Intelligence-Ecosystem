@@ -58,7 +58,7 @@ export interface ProcessEntity {
   name: string;
   description: string;
   sourceDocument: string;
-  sourceType: 'PDF' | 'DOCX' | 'TXT' | 'FreeText';
+  sourceType: 'PDF' | 'DOCX' | 'TXT' | 'FreeText' | 'BPMN';
   rawText?: string;
   createdAt: string;
   lastUpdated: string;
@@ -69,6 +69,15 @@ export interface ProcessEntity {
   knowledge: ProcessKnowledgeDTO;
   graph?: CanonicalProcessGraph;
   bpmnXml?: string;
+  narrative?: {
+    executiveSummary: string;
+    triggerNarrative: string;
+    flowSteps: string[];
+    decisionNarratives: string[];
+    concurrencyNarratives: string[];
+    outcomeNarrative: string;
+    fullMarkdown: string;
+  };
   insights: ProcessInsight[];
   validationIssues: ValidationIssue[];
   sourceTraces: SourceTrace[];
@@ -85,7 +94,7 @@ export interface DocumentItem {
   id: string;
   name: string;
   size: string;
-  type: 'PDF' | 'DOCX' | 'TXT' | 'FreeText';
+  type: 'PDF' | 'DOCX' | 'TXT' | 'FreeText' | 'BPMN';
   uploadedAt: string;
   status: 'Uploaded' | 'Processing' | 'Completed' | 'Failed';
   extractedEntitiesCount: number;

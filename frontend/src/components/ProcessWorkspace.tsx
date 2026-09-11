@@ -5,9 +5,11 @@ import { ProcessGraphViewer } from './ProcessGraphViewer';
 import { BpmnIoCanvas } from './BpmnIoCanvas';
 import { ProcessKnowledgeReview } from './ProcessKnowledgeReview';
 import { ProcessHistoryModal } from './ProcessHistoryModal';
+import { generateProcessNarrative } from '../services/bpmnNarrativeGenerator';
 import './ProcessWorkspace.css';
 
 export type WorkspaceTab =
+  | 'copilot'
   | 'overview'
   | 'knowledge'
   | 'graph'
@@ -28,9 +30,10 @@ export const ProcessWorkspace: React.FC<Props> = ({
   onApplyFix,
   onBackToProcesses,
 }) => {
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>('overview');
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>(process.sourceType === 'BPMN' ? 'copilot' : 'overview');
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+  const [copiedNarrative, setCopiedNarrative] = useState(false);
 
   // AI Assistant Chat State
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -146,8 +149,16 @@ export const ProcessWorkspace: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 6 Tabs Navigation Strip */}
+      {/* Tabs Navigation Strip */}
       <div className="workspace-tabs-strip">
+        <button
+          type="button"
+          className={`ws-tab-btn ${activeTab === 'copilot' ? 'active' : ''}`}
+          onClick={() => setActiveTab('copilot')}
+          style={activeTab === 'copilot' ? { borderColor: 'var(--aqua)', color: 'var(--aqua)', fontWeight: 700 } : {}}
+        >
+          <span>🎯 Copilot Deliverables (Two Outputs)</span>
+        </button>
         <button
           type="button"
           className={`ws-tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
@@ -191,6 +202,265 @@ export const ProcessWorkspace: React.FC<Props> = ({
           <span>✦ AI Review & Assistant</span>
         </button>
       </div>
+
+      {/* ========================================================
+          TAB 0: AI COPILOT DELIVERABLES (Two Outputs, Not One)
+         ======================================================== */}
+      {activeTab === 'copilot' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Hackathon Header Banner */}
+          <div className="panel-card" style={{ background: 'linear-gradient(135deg, rgba(9, 33, 73, 0.9), rgba(5, 21, 51, 0.95))', borderColor: 'rgba(57, 245, 208, 0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 24 }}>🎯</span>
+                  <h3 style={{ margin: 0, fontSize: 18, color: 'var(--white)' }}>ProcessIQ AI Copilot for BPMN — Deliverables Hub</h3>
+                  <span className="type-pill" style={{ color: 'var(--aqua)', borderColor: 'var(--aqua)' }}>
+                    Fixed Scope Evaluator
+                  </span>
+                </div>
+                <p style={{ margin: '6px 0 0 0', fontSize: 13, color: 'var(--soft-white)' }}>
+                  Per hackathon requirements: Output 1 (Plain-Language Description) and Output 2 (Structural Quality &amp; Defect Report) are strictly separated below.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => {
+                    const narrative = process.narrative || (process.graph ? generateProcessNarrative(process.graph, process.name) : null);
+                    if (narrative) {
+                      navigator.clipboard.writeText(narrative.fullMarkdown);
+                      setCopiedNarrative(true);
+                      setTimeout(() => setCopiedNarrative(false), 2000);
+                    }
+                  }}
+                >
+                  {copiedNarrative ? '✓ Copied Markdown' : '📋 Copy Narrative'}
+                </button>
+                <button
+                  type="button"
+                  className="yellow-button"
+                  onClick={() => setActiveTab('bpmn')}
+                >
+                  View Canvas ⌘
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* DUAL OUTPUTS: Two Columns */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24, alignItems: 'start' }}>
+            {/* OUTPUT 1: PLAIN-LANGUAGE NARRATIVE (CAPABILITY 2) */}
+            <div className="panel-card" style={{ borderTop: '4px solid var(--aqua)' }}>
+              <div className="panel-card-header" style={{ marginBottom: 16 }}>
+                <div>
+                  <span className="type-pill" style={{ color: 'var(--aqua)', marginBottom: 6, display: 'inline-block' }}>
+                    OUTPUT 1 • CAPABILITY 2
+                  </span>
+                  <h3 style={{ fontSize: 18, margin: 0 }}>Plain-Language Narrative</h3>
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    Business language explanation for non-expert stakeholders
+                  </span>
+                </div>
+                <span className="quality-badge high">Human Readable</span>
+              </div>
+
+              {(() => {
+                const narrative = process.narrative || (process.graph ? generateProcessNarrative(process.graph, process.name) : null);
+                if (!narrative) {
+                  return <span style={{ color: 'var(--muted)', fontSize: 13 }}>Generating business narrative...</span>;
+                }
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {/* Executive Overview */}
+                    <div style={{ background: 'rgba(4, 18, 45, 0.6)', padding: 14, borderRadius: 10, border: '1px solid rgba(116, 183, 220, 0.15)' }}>
+                      <strong style={{ color: 'var(--aqua)', fontSize: 13, display: 'block', marginBottom: 6 }}>
+                        Executive Summary
+                      </strong>
+                      <p style={{ color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>
+                        {narrative.executiveSummary}
+                      </p>
+                    </div>
+
+                    {/* Initiation */}
+                    <div>
+                      <strong style={{ color: 'var(--white)', fontSize: 13, display: 'block', marginBottom: 4 }}>
+                        1. Initiation &amp; Process Trigger
+                      </strong>
+                      <p style={{ color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                        {narrative.triggerNarrative}
+                      </p>
+                    </div>
+
+                    {/* Flow Steps */}
+                    <div>
+                      <strong style={{ color: 'var(--white)', fontSize: 13, display: 'block', marginBottom: 8 }}>
+                        2. Step-by-Step Activities &amp; Ownership
+                      </strong>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {narrative.flowSteps.map((step, idx) => (
+                          <div key={idx} style={{ padding: '8px 12px', background: 'rgba(4, 18, 45, 0.4)', borderRadius: 6, fontSize: 12, color: 'var(--soft-white)', borderLeft: '3px solid var(--aqua)' }}>
+                            {step}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Decision Points */}
+                    {narrative.decisionNarratives.length > 0 && (
+                      <div>
+                        <strong style={{ color: 'var(--white)', fontSize: 13, display: 'block', marginBottom: 8 }}>
+                          3. Decision Logic &amp; Gateway Routing
+                        </strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {narrative.decisionNarratives.map((dec, idx) => (
+                            <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255, 229, 127, 0.08)', borderRadius: 6, fontSize: 12, color: '#ffe57f', borderLeft: '3px solid #ffe57f' }}>
+                              {dec}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Concurrency */}
+                    {narrative.concurrencyNarratives.length > 0 && (
+                      <div>
+                        <strong style={{ color: 'var(--white)', fontSize: 13, display: 'block', marginBottom: 8 }}>
+                          4. Parallel Workstreams &amp; Synchronization
+                        </strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {narrative.concurrencyNarratives.map((c, idx) => (
+                            <div key={idx} style={{ padding: '8px 12px', background: 'rgba(57, 245, 208, 0.08)', borderRadius: 6, fontSize: 12, color: 'var(--aqua)', borderLeft: '3px solid var(--aqua)' }}>
+                              {c}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Outcome */}
+                    <div>
+                      <strong style={{ color: 'var(--white)', fontSize: 13, display: 'block', marginBottom: 4 }}>
+                        5. Process Closure &amp; Expected Outcomes
+                      </strong>
+                      <p style={{ color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                        {narrative.outcomeNarrative}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* OUTPUT 2: DEFECT & QUALITY REPORT (CAPABILITY 3) */}
+            <div className="panel-card" style={{ borderTop: `4px solid ${process.qualityScore >= 80 ? 'var(--aqua)' : '#ff6b6b'}` }}>
+              <div className="panel-card-header" style={{ marginBottom: 16 }}>
+                <div>
+                  <span className="type-pill" style={{ color: process.qualityScore >= 80 ? 'var(--aqua)' : '#ff6b6b', marginBottom: 6, display: 'inline-block' }}>
+                    OUTPUT 2 • CAPABILITY 3
+                  </span>
+                  <h3 style={{ fontSize: 18, margin: 0 }}>BPMN Quality &amp; Defect Report</h3>
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    Structural analysis, planted defect detection, and concrete fixes
+                  </span>
+                </div>
+                <span className={`quality-badge ${process.qualityScore >= 80 ? 'high' : 'medium'}`}>
+                  Score: {process.qualityScore} / 100
+                </span>
+              </div>
+
+              {/* Defect Count Summary */}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                <div className="stat-card" style={{ flex: 1, padding: 12 }}>
+                  <span className="stat-card-label">Open Defects</span>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: process.validationIssues.filter(i => !i.isApplied).length > 0 ? '#ff6b6b' : 'var(--aqua)' }}>
+                    {process.validationIssues.filter(i => !i.isApplied).length}
+                  </div>
+                </div>
+                <div className="stat-card" style={{ flex: 1, padding: 12 }}>
+                  <span className="stat-card-label">Resolved</span>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--aqua)' }}>
+                    {process.validationIssues.filter(i => i.isApplied).length}
+                  </div>
+                </div>
+                <div className="stat-card" style={{ flex: 1, padding: 12 }}>
+                  <span className="stat-card-label">Health</span>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: process.qualityScore >= 80 ? 'var(--aqua)' : '#ffe57f' }}>
+                    {process.qualityScore >= 80 ? 'Clean Reference' : 'Defective'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Issues List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {process.validationIssues.length === 0 ? (
+                  <div style={{ background: 'rgba(57, 245, 208, 0.08)', border: '1px solid rgba(57, 245, 208, 0.3)', padding: 16, borderRadius: 10, textAlign: 'center' }}>
+                    <span style={{ fontSize: 24, display: 'block', marginBottom: 6 }}>✓</span>
+                    <strong style={{ color: 'var(--aqua)', fontSize: 14, display: 'block' }}>
+                      No Structural Defects Detected
+                    </strong>
+                    <span style={{ fontSize: 12, color: 'var(--soft-white)' }}>
+                      This model complies with core BPMN 2.0 validation standards (Start/End existence, gateway completeness, connectivity, and role alignment).
+                    </span>
+                  </div>
+                ) : (
+                  process.validationIssues.map((issue) => (
+                    <div
+                      key={issue.id}
+                      className={`validation-card ${issue.severity.toLowerCase()} ${issue.isApplied ? 'resolved' : ''}`}
+                      style={{ padding: 14 }}
+                    >
+                      <div className="validation-left">
+                        <div className="validation-title-row">
+                          <span className="type-pill" style={{ color: issue.isApplied ? 'var(--aqua)' : issue.severity === 'Critical' ? '#ff6b6b' : '#ffe57f', fontSize: 11 }}>
+                            {issue.isApplied ? '✓ FIXED' : issue.severity.toUpperCase()}
+                          </span>
+                          <strong style={{ color: 'var(--white)', fontSize: 13 }}>{issue.title}</strong>
+                        </div>
+                        <p style={{ color: 'var(--soft-white)', fontSize: 12, margin: '6px 0' }}>
+                          {issue.description}
+                        </p>
+                        {issue.suggestedFix && (
+                          <div style={{ background: 'rgba(4, 18, 45, 0.6)', padding: '6px 10px', borderRadius: 6, fontSize: 11, color: 'var(--aqua)' }}>
+                            💡 <strong>Concrete Fix:</strong> {issue.suggestedFix}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+                        {!issue.isApplied ? (
+                          <button
+                            type="button"
+                            className="yellow-button"
+                            style={{ padding: '6px 12px', fontSize: 11 }}
+                            onClick={() => onApplyFix(issue.id)}
+                          >
+                            Apply Fix ⚡
+                          </button>
+                        ) : (
+                          <span style={{ color: 'var(--aqua)', fontSize: 11, fontWeight: 700, textAlign: 'center' }}>
+                            ✓ Resolved
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          style={{ padding: '4px 8px', fontSize: 11 }}
+                          onClick={() => setActiveTab('bpmn')}
+                        >
+                          Canvas ↗
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================
           TAB 1: OVERVIEW
@@ -387,7 +657,7 @@ export const ProcessWorkspace: React.FC<Props> = ({
       {activeTab === 'bpmn' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {process.graph ? (
-            <BpmnIoCanvas graph={process.graph} />
+            <BpmnIoCanvas graph={process.graph} rawXml={process.bpmnXml} />
           ) : (
             <ProcessGraphViewer
               knowledge={process.knowledge}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_Proc_ONB" targetNamespace="http://processiq.hackathon">
+<bpmn:process id="Proc_ONB" name="Employee Onboarding" isExecutable="false">
+<bpmn:startEvent id="s1" name="New hire accepted"><bpmn:outgoing>f1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:task id="t1" name="Collect employee documents"><bpmn:incoming>f1</bpmn:incoming><bpmn:outgoing>f2</bpmn:outgoing></bpmn:task>
+<bpmn:parallelGateway id="gs" name="Prepare in parallel"><bpmn:incoming>f2</bpmn:incoming><bpmn:outgoing>f3</bpmn:outgoing><bpmn:outgoing>f4</bpmn:outgoing><bpmn:outgoing>f5</bpmn:outgoing></bpmn:parallelGateway>
+<bpmn:task id="t2" name="Create IT accounts"><bpmn:incoming>f3</bpmn:incoming><bpmn:outgoing>f6</bpmn:outgoing></bpmn:task>
+<bpmn:task id="t3" name="Assign workstation"><bpmn:incoming>f4</bpmn:incoming><bpmn:outgoing>f7</bpmn:outgoing></bpmn:task>
+<bpmn:task id="t4" name="Enroll in payroll"><bpmn:incoming>f5</bpmn:incoming><bpmn:outgoing>f8</bpmn:outgoing></bpmn:task>
+<bpmn:parallelGateway id="gj" name="All ready"><bpmn:incoming>f6</bpmn:incoming><bpmn:incoming>f7</bpmn:incoming><bpmn:incoming>f8</bpmn:incoming><bpmn:outgoing>f9</bpmn:outgoing></bpmn:parallelGateway>
+<bpmn:task id="t5" name="Conduct induction"><bpmn:incoming>f9</bpmn:incoming><bpmn:outgoing>f10</bpmn:outgoing></bpmn:task>
+<bpmn:endEvent id="e1" name="Onboarding complete"><bpmn:incoming>f10</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="f1" name="" sourceRef="s1" targetRef="t1"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f2" name="" sourceRef="t1" targetRef="gs"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f3" name="" sourceRef="gs" targetRef="t2"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f4" name="" sourceRef="gs" targetRef="t3"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f5" name="" sourceRef="gs" targetRef="t4"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f6" name="" sourceRef="t2" targetRef="gj"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f7" name="" sourceRef="t3" targetRef="gj"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f8" name="" sourceRef="t4" targetRef="gj"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f9" name="" sourceRef="gj" targetRef="t5"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f10" name="" sourceRef="t5" targetRef="e1"></bpmn:sequenceFlow>
+</bpmn:process>
+<bpmndi:BPMNDiagram id="Dia_Proc_ONB"><bpmndi:BPMNPlane id="Plane_Proc_ONB" bpmnElement="Proc_ONB">
+<bpmndi:BPMNShape id="s1_di" bpmnElement="s1"><dc:Bounds x="150" y="90" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="140" y="128" width="76" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t1_di" bpmnElement="t1"><dc:Bounds x="340" y="90" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="gs_di" bpmnElement="gs"><dc:Bounds x="530" y="90" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="520" y="142" width="90" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t2_di" bpmnElement="t2"><dc:Bounds x="720" y="90" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t3_di" bpmnElement="t3"><dc:Bounds x="720" y="220" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t4_di" bpmnElement="t4"><dc:Bounds x="720" y="350" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="gj_di" bpmnElement="gj"><dc:Bounds x="910" y="90" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="900" y="142" width="90" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t5_di" bpmnElement="t5"><dc:Bounds x="1100" y="90" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="e1_di" bpmnElement="e1"><dc:Bounds x="1290" y="90" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1280" y="128" width="76" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="186" y="108" /><di:waypoint x="263" y="108" /><di:waypoint x="263" y="130" /><di:waypoint x="340" y="130" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="440" y="130" /><di:waypoint x="485" y="130" /><di:waypoint x="485" y="115" /><di:waypoint x="530" y="115" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="580" y="115" /><di:waypoint x="650" y="115" /><di:waypoint x="650" y="130" /><di:waypoint x="720" y="130" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="580" y="115" /><di:waypoint x="650" y="115" /><di:waypoint x="650" y="260" /><di:waypoint x="720" y="260" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="580" y="115" /><di:waypoint x="650" y="115" /><di:waypoint x="650" y="390" /><di:waypoint x="720" y="390" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f6_di" bpmnElement="f6"><di:waypoint x="820" y="130" /><di:waypoint x="865" y="130" /><di:waypoint x="865" y="115" /><di:waypoint x="910" y="115" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f7_di" bpmnElement="f7"><di:waypoint x="820" y="260" /><di:waypoint x="865" y="260" /><di:waypoint x="865" y="115" /><di:waypoint x="910" y="115" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f8_di" bpmnElement="f8"><di:waypoint x="820" y="390" /><di:waypoint x="865" y="390" /><di:waypoint x="865" y="115" /><di:waypoint x="910" y="115" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f9_di" bpmnElement="f9"><di:waypoint x="960" y="115" /><di:waypoint x="1030" y="115" /><di:waypoint x="1030" y="130" /><di:waypoint x="1100" y="130" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f10_di" bpmnElement="f10"><di:waypoint x="1200" y="130" /><di:waypoint x="1245" y="130" /><di:waypoint x="1245" y="108" /><di:waypoint x="1290" y="108" /></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>

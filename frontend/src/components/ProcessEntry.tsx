@@ -1,22 +1,29 @@
 import React, { useRef, useState } from 'react';
-import type { ProcessKnowledgeDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import type {
+  CanonicalProcessGraph,
+  ProcessKnowledgeDTO,
+} from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import { processService } from '../services/processService';
+import { CORPUS_SAMPLES, type CorpusSample } from '../utils/bpmnCorpusSamples';
+import { DESCRIPTION_BANK } from '../utils/descriptionBankSamples';
+import { parseBpmnXmlClient } from '../utils/bpmnXmlParser';
+import { generateProcessNarrative, type ProcessNarrative } from '../services/bpmnNarrativeGenerator';
 import './ProcessEntry.css';
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-const ALLOWED_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-];
-
 type ActiveTab = 'file' | 'text';
 
 interface Props {
   onStart: (fileCount: number) => void;
-  onSuccess: (data: ProcessKnowledgeDTO) => void;
+  onSuccess: (
+    data: ProcessKnowledgeDTO,
+    bpmnXml?: string,
+    graph?: CanonicalProcessGraph,
+    narrative?: ProcessNarrative,
+    directTab?: '01_KNOWLEDGE' | '02_INTELLIGENCE' | '03_BPMN' | '04_REVIEW'
+  ) => void;
   onError?: (err: string) => void;
 }
 
@@ -29,14 +36,35 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const isAllowedFile = (file: File): boolean => {
+    const name = file.name.toLowerCase();
+    const allowedExtensions = ['.pdf', '.docx', '.txt', '.xlsx', '.bpmn', '.xml'];
+    if (allowedExtensions.some((ext) => name.endsWith(ext))) {
+      return true;
+    }
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/xml',
+      'text/xml',
+      'application/bpmn+xml',
+      'application/octet-stream',
+    ];
+    return allowedTypes.includes(file.type);
+  };
+
   const validateFiles = (newFiles: FileList | File[]): File[] => {
     setError(null);
     const validFiles: File[] = [];
     const currentFiles = files;
 
     Array.from(newFiles).forEach((file: File) => {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        setError(`Skipped ${file.name}: Invalid file type.`);
+      if (!isAllowedFile(file)) {
+        setError(
+          `Skipped ${file.name}: Invalid file type. Supported types: .bpmn, .xml, .pdf, .docx, .txt, .xlsx.`
+        );
         return;
       }
 
@@ -47,12 +75,10 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
 
       const alreadyExists =
         currentFiles.some(
-          (existingFile) =>
-            existingFile.name === file.name && existingFile.size === file.size
+          (existingFile) => existingFile.name === file.name && existingFile.size === file.size
         ) ||
         validFiles.some(
-          (existingFile) =>
-            existingFile.name === file.name && existingFile.size === file.size
+          (existingFile) => existingFile.name === file.name && existingFile.size === file.size
         );
 
       if (!alreadyExists) {
@@ -88,6 +114,33 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
     setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  // One-click loader for Hackathon benchmark corpus (F01–F08)
+  const handleLoadSample = async (sample: CorpusSample) => {
+    setError(null);
+    onStart(1);
+    try {
+      const process = await processService.importBpmnXml(sample.xml, sample.name);
+      onSuccess(
+        process.knowledge,
+        process.bpmnXml,
+        process.graph,
+        process.narrative,
+        '04_REVIEW'
+      );
+    } catch (err) {
+      console.warn('Sample load fallback to client parser:', err);
+      const clientRes = parseBpmnXmlClient(sample.xml, sample.name);
+      const narrative = generateProcessNarrative(clientRes.graph, clientRes.processName);
+      onSuccess(
+        clientRes.knowledge,
+        clientRes.xml,
+        clientRes.graph,
+        narrative,
+        '04_REVIEW'
+      );
+    }
+  };
+
   const handleSubmit = async () => {
     setError(null);
 
@@ -104,20 +157,60 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
     onStart(activeTab === 'file' ? files.length : 1);
 
     try {
-      let response: Response;
-
       if (activeTab === 'file') {
+        // Check if any uploaded file is a BPMN 2.0 XML file
+        const bpmnFile = files.find((f) => {
+          const n = f.name.toLowerCase();
+          return n.endsWith('.bpmn') || n.endsWith('.xml');
+        });
+
+        if (bpmnFile) {
+          try {
+            const process = await processService.importBpmnFile(bpmnFile);
+            onSuccess(
+              process.knowledge,
+              process.bpmnXml,
+              process.graph,
+              process.narrative,
+              '04_REVIEW'
+            );
+            return;
+          } catch (bpmnErr) {
+            console.warn('BPMN Service Ingestion fallback to client parser:', bpmnErr);
+            const xmlText = await bpmnFile.text();
+            const clientRes = parseBpmnXmlClient(xmlText, bpmnFile.name);
+            const narrative = generateProcessNarrative(clientRes.graph, clientRes.processName);
+            onSuccess(
+              clientRes.knowledge,
+              clientRes.xml,
+              clientRes.graph,
+              narrative,
+              '04_REVIEW'
+            );
+            return;
+          }
+        }
+
+        // Otherwise handle document upload (PDF, DOCX, TXT, XLSX)
         const formData = new FormData();
         files.forEach((file) => {
           formData.append('files', file);
         });
 
-        response = await fetch('http://localhost:8080/api/v1/process/extract-file', {
+        const response = await fetch('http://localhost:8080/api/v1/process/extract-file', {
           method: 'POST',
           body: formData,
         });
+
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}: Failed to extract knowledge.`);
+        }
+
+        const processIntelligence: ProcessKnowledgeDTO = await response.json();
+        onSuccess(processIntelligence, undefined, undefined, undefined, '01_KNOWLEDGE');
       } else {
-        response = await fetch('http://localhost:8080/api/v1/process/extract-text', {
+        // Raw text input
+        const response = await fetch('http://localhost:8080/api/v1/process/extract-text', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -126,14 +219,14 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
             content: text,
           }),
         });
-      }
 
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}: Failed to extract knowledge.`);
-      }
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}: Failed to extract knowledge.`);
+        }
 
-      const processIntelligence: ProcessKnowledgeDTO = await response.json();
-      onSuccess(processIntelligence);
+        const processIntelligence: ProcessKnowledgeDTO = await response.json();
+        onSuccess(processIntelligence, undefined, undefined, undefined, '01_KNOWLEDGE');
+      }
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'An unknown connection error occurred.';
       setError(errMsg);
@@ -149,7 +242,7 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
           className={`entry-tab ${activeTab === 'file' ? 'active' : ''}`}
           onClick={() => setActiveTab('file')}
         >
-          DOCUMENT UPLOAD
+          DOCUMENT & BPMN UPLOAD
         </button>
 
         <button
@@ -168,7 +261,7 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.docx,.txt,.xlsx"
+              accept=".pdf,.docx,.txt,.xlsx,.bpmn,.xml"
               onChange={handleFileSelect}
               style={{ display: 'none' }}
             />
@@ -213,7 +306,9 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
                     {files.map((file, idx) => (
                       <div className="file-item" key={`${file.name}-${idx}`}>
                         <div className="file-info">
-                          <span className="file-icon">📄</span>
+                          <span className="file-icon">
+                            {file.name.toLowerCase().endsWith('.bpmn') ? '⌘' : '📄'}
+                          </span>
                           <div className="file-details">
                             <span className="file-name">{file.name}</span>
                             <span className="file-size">
@@ -237,12 +332,39 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
               ) : (
                 <div className="empty-drop-zone">
                   <div className="upload-icon">+</div>
-                  <div className="upload-title">Feed P.I.E. multiple documents.</div>
+                  <div className="upload-title">Feed P.I.E. documents or BPMN 2.0 files.</div>
                   <div className="upload-description">
-                    PDF / DOCX / TXT / XLSX · Drop them here or click to browse
+                    BPMN / XML / PDF / DOCX / TXT / XLSX · Drop them here or click to browse
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Benchmark Presets Toolbar right on landing hero */}
+            <div className="preset-corpus-strip">
+              <span className="preset-strip-label">⚡ QUICK BENCHMARK CORPUS:</span>
+              <div className="preset-chips">
+                {CORPUS_SAMPLES.slice(0, 6).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className="preset-chip-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLoadSample(s);
+                    }}
+                    title={`Load benchmark ${s.name}`}
+                  >
+                    <span className="preset-chip-id">{s.id}</span>
+                    <span>
+                      {s.name
+                        .replace(/^[A-Z0-9]+_/, '')
+                        .replace(/\.bpmn$/i, '')
+                        .replace(/[-_]/g, ' ')}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         ) : (
@@ -252,8 +374,27 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
               value={text}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
               placeholder="Describe the process you want P.I.E. to analyze..."
-              rows={12}
+              rows={10}
             />
+
+            {/* Quick Example Descriptions Strip */}
+            <div className="preset-corpus-strip" style={{ marginTop: '14px' }}>
+              <span className="preset-strip-label">⚡ LOAD EXAMPLE TEXT:</span>
+              <div className="preset-chips">
+                {DESCRIPTION_BANK.slice(0, 5).map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    className="preset-chip-btn"
+                    onClick={() => setText(d.description)}
+                    title={d.description}
+                  >
+                    <span className="preset-chip-id">{d.id}</span>
+                    <span>{d.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

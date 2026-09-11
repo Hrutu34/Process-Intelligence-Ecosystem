@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_Proc_PR" targetNamespace="http://processiq.hackathon">
+<bpmn:collaboration id="Collab_Proc_PR"><bpmn:participant id="Part_Proc_PR" name="Purchase Requisition Approval" processRef="Proc_PR" /></bpmn:collaboration>
+<bpmn:process id="Proc_PR" name="Purchase Requisition Approval" isExecutable="false">
+<bpmn:laneSet id="LaneSet_Proc_PR">
+<bpmn:lane id="Lane_Emp" name="Employee">
+<bpmn:flowNodeRef>s1</bpmn:flowNodeRef>
+<bpmn:flowNodeRef>t1</bpmn:flowNodeRef>
+<bpmn:flowNodeRef>t3</bpmn:flowNodeRef>
+<bpmn:flowNodeRef>e1</bpmn:flowNodeRef>
+</bpmn:lane>
+<bpmn:lane id="Lane_Mgr" name="Manager">
+<bpmn:flowNodeRef>t2</bpmn:flowNodeRef>
+<bpmn:flowNodeRef>g1</bpmn:flowNodeRef>
+<bpmn:flowNodeRef>t4</bpmn:flowNodeRef>
+<bpmn:flowNodeRef>e2</bpmn:flowNodeRef>
+</bpmn:lane>
+</bpmn:laneSet>
+<bpmn:startEvent id="s1" name="Requisition needed"><bpmn:outgoing>f1</bpmn:outgoing></bpmn:startEvent>
+<bpmn:userTask id="t1" name="Create purchase requisition"><bpmn:incoming>f1</bpmn:incoming><bpmn:outgoing>f2</bpmn:outgoing></bpmn:userTask>
+<bpmn:userTask id="t2" name="Review requisition"><bpmn:incoming>f2</bpmn:incoming><bpmn:outgoing>f3</bpmn:outgoing></bpmn:userTask>
+<bpmn:exclusiveGateway id="g1" name="Approved?" default="f5"><bpmn:incoming>f3</bpmn:incoming><bpmn:outgoing>f4</bpmn:outgoing><bpmn:outgoing>f5</bpmn:outgoing></bpmn:exclusiveGateway>
+<bpmn:userTask id="t3" name="Create purchase order"><bpmn:incoming>f4</bpmn:incoming><bpmn:outgoing>f6</bpmn:outgoing></bpmn:userTask>
+<bpmn:userTask id="t4" name="Notify requester of rejection"><bpmn:incoming>f5</bpmn:incoming><bpmn:outgoing>f7</bpmn:outgoing></bpmn:userTask>
+<bpmn:endEvent id="e1" name="PO created"><bpmn:incoming>f6</bpmn:incoming></bpmn:endEvent>
+<bpmn:endEvent id="e2" name="Requisition rejected"><bpmn:incoming>f7</bpmn:incoming></bpmn:endEvent>
+<bpmn:sequenceFlow id="f1" name="" sourceRef="s1" targetRef="t1"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f2" name="" sourceRef="t1" targetRef="t2"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f3" name="" sourceRef="t2" targetRef="g1"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f4" name="Yes" sourceRef="g1" targetRef="t3"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">approved == true</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f5" name="No" sourceRef="g1" targetRef="t4"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f6" name="" sourceRef="t3" targetRef="e1"></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="f7" name="" sourceRef="t4" targetRef="e2"></bpmn:sequenceFlow>
+</bpmn:process>
+<bpmndi:BPMNDiagram id="Dia_Proc_PR"><bpmndi:BPMNPlane id="Plane_Proc_PR" bpmnElement="Collab_Proc_PR">
+<bpmndi:BPMNShape id="Part_Proc_PR_di" bpmnElement="Part_Proc_PR" isHorizontal="true"><dc:Bounds x="110" y="90" width="1106" height="345" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Lane_Emp_di" bpmnElement="Lane_Emp" isHorizontal="true"><dc:Bounds x="140" y="80" width="1076" height="170" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Lane_Mgr_di" bpmnElement="Lane_Mgr" isHorizontal="true"><dc:Bounds x="140" y="250" width="1076" height="170" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="s1_di" bpmnElement="s1"><dc:Bounds x="150" y="120" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="140" y="158" width="76" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t1_di" bpmnElement="t1"><dc:Bounds x="340" y="120" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t2_di" bpmnElement="t2"><dc:Bounds x="530" y="290" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="g1_di" bpmnElement="g1"><dc:Bounds x="720" y="290" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="710" y="342" width="90" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t3_di" bpmnElement="t3"><dc:Bounds x="910" y="120" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="t4_di" bpmnElement="t4"><dc:Bounds x="910" y="305" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="e1_di" bpmnElement="e1"><dc:Bounds x="1100" y="120" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1090" y="158" width="76" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="e2_di" bpmnElement="e2"><dc:Bounds x="1100" y="305" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1090" y="343" width="76" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="186" y="138" /><di:waypoint x="263" y="138" /><di:waypoint x="263" y="160" /><di:waypoint x="340" y="160" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="440" y="160" /><di:waypoint x="485" y="160" /><di:waypoint x="485" y="330" /><di:waypoint x="530" y="330" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="630" y="330" /><di:waypoint x="675" y="330" /><di:waypoint x="675" y="315" /><di:waypoint x="720" y="315" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="770" y="315" /><di:waypoint x="840" y="315" /><di:waypoint x="840" y="160" /><di:waypoint x="910" y="160" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="770" y="315" /><di:waypoint x="840" y="315" /><di:waypoint x="840" y="345" /><di:waypoint x="910" y="345" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f6_di" bpmnElement="f6"><di:waypoint x="1010" y="160" /><di:waypoint x="1055" y="160" /><di:waypoint x="1055" y="138" /><di:waypoint x="1100" y="138" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="f7_di" bpmnElement="f7"><di:waypoint x="1010" y="345" /><di:waypoint x="1055" y="345" /><di:waypoint x="1055" y="323" /><di:waypoint x="1100" y="323" /></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>

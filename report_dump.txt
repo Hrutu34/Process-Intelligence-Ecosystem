@@ -1,0 +1,623 @@
+SYNTHETIC DATASET
+
+REPORT
+
+ProcessIQ — BPMN Corpus, Description Bank & Defect Catalog
+
+Companion data kit for the ProcessIQ hackathon. Because BPMN is an XML interchange format, the kit is delivered as real BPMN 2.0 files plus an Excel catalog and description bank.
+
+Corpus: ProcessIQ_BPMN_Corpus.zip  •  Catalog: ProcessIQ_BPMN_Hackathon_Synthetic_Dataset.xlsx
+
+Version 1.0  •  08 September 2026  •  Classification: INTERNAL
+
+Contents
+
+TOC \h \o "1-2"
+
+1. Why This Dataset Exists (and Why It’s Shaped This Way)
+
+The original problem-idea owner is currently unavailable, so no curated data could be obtained in time. To keep the hackathon unblocked, we generated a realistic synthetic data kit that mirrors how BPMN work actually arrives in practice.
+
+Unlike a typical dataset, this domain’s data is not tabular. The authentic inputs are (a) BPMN 2.0 XML files exported from modeling tools, and (b) free-text process descriptions written by employees. We therefore deliver both, rather than forcing process logic into spreadsheet rows.
+
+Source-system assumption (one line)
+
+BPMN 2.0 XML files as exported by modeling tools such as Camunda Modeler / bpmn.io / Signavio, paired with plain-language process descriptions typical of Word/SharePoint documentation. Everything is 100% synthetic — no real company, customer, or process data.
+
+2. What’s in the Kit
+
+Component
+
+Format
+
+Count
+
+Purpose
+
+BPMN corpus
+
+.bpmn (BPMN 2.0 XML, with diagram interchange)
+
+8 files
+
+Inputs for BPMN-to-text and quality-report tracks
+
+Description Bank
+
+Excel sheet
+
+10 rows
+
+Inputs for the text-to-BPMN track
+
+BPMN Catalog
+
+Excel sheet
+
+8 rows
+
+Index of every file and its intended use
+
+Element Inventory
+
+Excel sheet
+
+8 rows
+
+Element counts per file for quick orientation
+
+Glossary
+
+Excel sheet
+
+10 rows
+
+Core BPMN terms in plain language
+
+Defect Answer Key
+
+Hidden Excel sheet
+
+13 rows
+
+Every planted defect + correct fix (organisers only)
+
+Answer key included (hidden)
+
+The workbook ships with a hidden “Defect_Answer_Key” sheet listing all 13 planted defects, where each lives (file + element), its severity, and the correct fix. Organisers unhide it to score submissions.
+
+3. The BPMN Corpus
+
+Eight BPMN 2.0 files. Two are clean references (useful for the description track and as a correctness baseline); six contain deliberately planted structural defects. Every file includes diagram-interchange (DI) data, so it renders in bpmn-js or any BPMN 2.0 viewer.
+
+File ID
+
+File name
+
+Process
+
+Defects?
+
+Primary use
+
+F01
+
+F01_clean_purchase_requisition.bpmn
+
+Purchase Requisition Approval (pool + 2 lanes, XOR gateway)
+
+No
+
+Reference / BPMN-to-text
+
+F02
+
+F02_clean_employee_onboarding.bpmn
+
+Employee Onboarding (parallel split + join)
+
+No
+
+Reference / BPMN-to-text
+
+F03
+
+F03_defect_invoice_processing.bpmn
+
+Invoice Processing
+
+Yes
+
+Error detection
+
+F04
+
+F04_defect_customer_complaint.bpmn
+
+Customer Complaint Handling
+
+Yes
+
+Error detection
+
+F05
+
+F05_defect_leave_request.bpmn
+
+Leave Request
+
+Yes
+
+Error detection
+
+F06
+
+F06_defect_order_fulfillment.bpmn
+
+Order Fulfillment
+
+Yes
+
+Error detection
+
+F07
+
+F07_defect_expense_reimbursement.bpmn
+
+Expense Reimbursement
+
+Yes
+
+Error detection
+
+F08
+
+F08_defect_it_ticket.bpmn
+
+IT Ticket Resolution
+
+Yes
+
+Error detection
+
+3.1 BPMN structure used
+
+Each file is a standard BPMN 2.0 document. Teams will typically parse the following elements:
+
+Element
+
+XML tag
+
+Meaning
+
+Process / Collaboration
+
+bpmn:process, bpmn:collaboration
+
+The container; a collaboration adds a pool (participant).
+
+Lane set
+
+bpmn:laneSet / bpmn:lane
+
+Roles owning each node (flowNodeRef links nodes to lanes).
+
+Start / End event
+
+bpmn:startEvent / bpmn:endEvent
+
+Process trigger and outcome.
+
+Task
+
+bpmn:task / bpmn:userTask
+
+A unit of work.
+
+Exclusive gateway
+
+bpmn:exclusiveGateway
+
+XOR decision; may carry a default attribute.
+
+Parallel gateway
+
+bpmn:parallelGateway
+
+AND split / join.
+
+Sequence flow
+
+bpmn:sequenceFlow
+
+Ordered connection; may carry a conditionExpression.
+
+Diagram interchange
+
+bpmndi:BPMNShape / BPMNEdge
+
+Visual coordinates so the model renders.
+
+4. The Description Bank (Text-to-BPMN inputs)
+
+Ten plain-language process descriptions across varied domains and clarity levels. The “Ambiguous” entries are intentional — they test how gracefully a solution handles under-specified input rather than inventing unstated logic.
+
+ID
+
+Title
+
+Domain
+
+Clarity
+
+Tests
+
+D01
+
+Purchase Requisition Approval
+
+Procurement
+
+Clear
+
+XOR gateway, lanes
+
+D02
+
+Employee Onboarding
+
+HR
+
+Clear
+
+Parallel split + join
+
+D03
+
+Expense Reimbursement
+
+Finance
+
+Clear
+
+XOR with conditions + default
+
+D04
+
+Customer Complaint Handling
+
+Service
+
+Medium
+
+Decision gateway
+
+D05
+
+Order Fulfillment
+
+Logistics
+
+Medium
+
+Parallel join correctness
+
+D06
+
+Loan Application Review
+
+Banking
+
+Medium
+
+Multi-branch decision
+
+D07
+
+Restaurant Table Booking
+
+Hospitality
+
+Ambiguous
+
+Vagueness handling
+
+D08
+
+Software Bug Triage
+
+IT
+
+Medium
+
+Converging paths
+
+D09
+
+Insurance Claim Intake
+
+Insurance
+
+Clear
+
+Nested decisions
+
+D10
+
+Conference Talk Submission
+
+Events
+
+Ambiguous
+
+Inferring start/end
+
+Schema of the Description Bank sheet
+
+Columns: ID, Title, Domain, Clarity, Plain-language process description, Modeling notes / expected elements. The “expected elements” column is guidance only — there is no single correct model, and teams may produce valid variants.
+
+5. Defect Catalog (the targets to detect)
+
+Thirteen defects are planted across the six defective files. IDs match the hidden Defect_Answer_Key sheet. Each entry names the file, the element location, the impact, the severity, and the correct fix.
+
+5.1 Structural completeness defects
+
+ID
+
+File
+
+Defect
+
+Location
+
+Fix
+
+Sev.
+
+D01
+
+F03
+
+Missing end event
+
+Post to accounting
+
+Add an end event and connect it.
+
+High
+
+D03
+
+F04
+
+Missing start event
+
+Log complaint
+
+Add a start event before the first task.
+
+High
+
+D05
+
+F05
+
+Orphan / unconnected node
+
+Update HR calendar
+
+Connect the task into the flow.
+
+High
+
+D08
+
+F06
+
+Dangling flow / missing end
+
+Generate invoice
+
+Route branch into a join and an end.
+
+High
+
+5.2 Gateway & control-flow defects
+
+ID
+
+File
+
+Defect
+
+Location
+
+Fix
+
+Sev.
+
+D04
+
+F04
+
+Misused exclusive gateway (single outgoing)
+
+Severity?
+
+Add branch(es) with conditions, or remove GW.
+
+Med
+
+D07
+
+F06
+
+Parallel split without join
+
+Fulfil in parallel
+
+Add a matching parallel join gateway.
+
+High
+
+D09
+
+F07
+
+Gateway with no conditions / default
+
+(unlabeled GW)
+
+Add conditions and mark a default flow.
+
+High
+
+D10
+
+F07
+
+Unlabeled decision gateway
+
+(unlabeled GW)
+
+Name the gateway with its question.
+
+Low
+
+5.3 Clarity, ownership & complexity defects
+
+ID
+
+File
+
+Defect
+
+Location
+
+Fix
+
+Sev.
+
+D02
+
+F03
+
+Vague task name (“Process”)
+
+Process
+
+Rename to a verb+object action.
+
+Med
+
+D06
+
+F05
+
+Vague task name (“Do needful”)
+
+Do needful
+
+Rename to a concrete activity.
+
+Med
+
+D11
+
+F08
+
+Duplicate activity
+
+Investigate issue ×2
+
+Merge into one task.
+
+Med
+
+D12
+
+F08
+
+Missing swimlanes / roles
+
+whole process
+
+Add a pool with lanes and assign tasks.
+
+Med
+
+D13
+
+F08
+
+Excessive linear complexity
+
+whole process
+
+Consolidate over-decomposed steps.
+
+Low
+
+Fair-play note
+
+Do not hardcode fixes to these exact IDs or names (e.g., “if task == Do needful”). Judges may run your solution against a modified copy of the corpus with renamed elements and additional planted defects. Detect by structure and semantics, not by literal string match.
+
+6. How to Use the Kit
+
+Unzip the corpus and load the .bpmn files with any BPMN 2.0 parser (or bpmn-js). Each file is valid XML with DI.
+
+For the text-to-BPMN track, feed rows from the Description Bank sheet and emit BPMN 2.0 XML.
+
+For the analysis track, produce two SEPARATE outputs per file: a plain-language description and a defect report.
+
+Start with the clean references (F01, F02) to validate your parser, then move to the defective files.
+
+You may extend the kit — add descriptions, author new BPMN files, or plant new defects — to stress-test your solution.
+
+Reproducibility
+
+The Excel catalog and the BPMN corpus are generated procedurally with a fixed random seed, so the kit is reproducible and easy to extend by following the same schema and defect patterns described above.
+
+Appendix A — Workbook Sheets
+
+Sheet
+
+Type
+
+Notes
+
+README
+
+Info
+
+Purpose, structure, how to use
+
+Description_Bank
+
+Data
+
+10 plain-language descriptions (text-to-BPMN)
+
+BPMN_Catalog
+
+Index
+
+8 corpus files + intended use
+
+Element_Inventory
+
+Data
+
+Element counts per file
+
+Glossary
+
+Reference
+
+BPMN terms in plain language
+
+Defect_Answer_Key
+
+Hidden key
+
+13 planted defects + fixes — unhide to score

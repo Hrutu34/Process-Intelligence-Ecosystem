@@ -21,14 +21,17 @@ public class ProcessController {
     private final DocumentIngestionService ingestionService;
     private final ProcessGraphBuilder graphBuilder;
     private final ProcessQualityValidator qualityValidator;
+    private final com.pie.backend.service.BpmnXmlParser bpmnParser;
 
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
-            ProcessQualityValidator qualityValidator) {
+            ProcessQualityValidator qualityValidator,
+            com.pie.backend.service.BpmnXmlParser bpmnParser) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
         this.qualityValidator = qualityValidator;
+        this.bpmnParser = bpmnParser;
     }
 
     @PostMapping("/extract-text")
@@ -60,6 +63,53 @@ public class ProcessController {
         return ResponseEntity.ok(qualityValidator.validateQuality(graph));
     }
 
+    @PostMapping("/import-bpmn")
+    public ResponseEntity<BpmnImportResponseDTO> importBpmnXml(@RequestBody BpmnXmlPayload payload) {
+        try {
+            var parseResult = bpmnParser.parse(payload.xml());
+            ProcessQualityReportDTO qualityReport = qualityValidator.validateQuality(parseResult.graph());
+            return ResponseEntity.ok(new BpmnImportResponseDTO(
+                    parseResult.graph(),
+                    parseResult.knowledge(),
+                    parseResult.processName(),
+                    parseResult.processId(),
+                    qualityReport
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping(value = "/import-bpmn-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BpmnImportResponseDTO> importBpmnFile(@RequestParam("file") MultipartFile file) {
+        try {
+            String xmlContent = new String(file.getBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            var parseResult = bpmnParser.parse(xmlContent);
+            ProcessQualityReportDTO qualityReport = qualityValidator.validateQuality(parseResult.graph());
+            return ResponseEntity.ok(new BpmnImportResponseDTO(
+                    parseResult.graph(),
+                    parseResult.knowledge(),
+                    parseResult.processName(),
+                    parseResult.processId(),
+                    qualityReport
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     public record TextPayload(String content) {
+    }
+
+    public record BpmnXmlPayload(String xml) {
+    }
+
+    public record BpmnImportResponseDTO(
+            CanonicalProcessGraph graph,
+            ProcessKnowledgeDTO knowledge,
+            String processName,
+            String processId,
+            ProcessQualityReportDTO qualityReport
+    ) {
     }
 }

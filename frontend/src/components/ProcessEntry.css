@@ -310,3 +310,59 @@
 .remove-file-button:hover {
   color: #ff4444;
 }
+
+/* Quick Benchmark Presets Toolbar on Hero Dropzone */
+.preset-corpus-strip {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(4, 18, 45, 0.45);
+  border: 1px dashed rgba(57, 245, 208, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  flex-wrap: wrap;
+}
+
+.preset-strip-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--aqua);
+  letter-spacing: 1px;
+}
+
+.preset-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preset-chip-btn {
+  background: rgba(7, 26, 61, 0.8);
+  border: 1px solid rgba(116, 183, 220, 0.25);
+  color: var(--soft-white);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.preset-chip-btn:hover {
+  background: rgba(57, 245, 208, 0.12);
+  border-color: var(--aqua);
+  color: var(--white);
+  transform: translateY(-1px);
+}
+
+.preset-chip-id {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--electric);
+}
