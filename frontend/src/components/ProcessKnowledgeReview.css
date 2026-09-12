@@ -197,6 +197,13 @@
   color: var(--dim);
   font-family: var(--mono);
   font-size: 15px;
+  display: inline-block;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.collapse-arrow.open {
+  transform: rotate(180deg);
+  color: #fbd437;
 }
 
 .review-card-body {

@@ -39,19 +39,13 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
   onProceedToBpmn,
   onReset,
 }) => {
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const toggleSection = (key: string) => {
-    setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+    setExpandedKey((prev) => (prev === key ? null : key));
   };
 
-  const toggleAll = (collapse: boolean) => {
-    const nextState: Record<string, boolean> = {};
-    SECTIONS.forEach((s) => {
-      nextState[s.key] = collapse;
-    });
-    setCollapsedSections(nextState);
-  };
+  const collapseAll = () => setExpandedKey(null);
 
   const totalEntities = SECTIONS.reduce((acc, curr) => {
     const list = data[curr.key];
@@ -76,11 +70,8 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
         </div>
 
         <div className="review-controls">
-          <button type="button" className="btn-ghost" onClick={() => toggleAll(false)}>
-            Expand All
-          </button>
-          <button type="button" className="btn-ghost" onClick={() => toggleAll(true)}>
-            Collapse All
+          <button type="button" className="btn-ghost" onClick={collapseAll}>
+            Collapse
           </button>
           <button type="button" className="btn-ghost" onClick={onReset}>
             ↺ New Upload
@@ -120,7 +111,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
       <div className="review-grid">
         {SECTIONS.map((section) => {
           const items = (data[section.key] as string[]) || [];
-          const isCollapsed = !collapsedSections[section.key];
+          const isCollapsed = expandedKey !== section.key;
           const isCritical = section.critical && items.length > 0;
 
           return (
@@ -144,7 +135,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
                   <span className={`badge ${items.length === 0 ? 'badge-zero' : ''}`}>
                     {items.length}
                   </span>
-                  <span className="collapse-arrow">{isCollapsed ? '+' : '−'}</span>
+                  <span className={`collapse-arrow ${isCollapsed ? '' : 'open'}`}>▾</span>
                 </div>
               </div>
 
