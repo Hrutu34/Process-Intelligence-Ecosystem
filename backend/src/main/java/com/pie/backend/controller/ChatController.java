@@ -38,6 +38,9 @@ public class ChatController {
     @Value("classpath:prompts/chat-edit-prompt.txt")
     private Resource chatEditPromptResource;
 
+    @Value("classpath:prompts/narrative-prompt.txt")
+    private Resource narrativePromptResource;
+
     public ChatController(ChatClient.Builder chatClientBuilder, BpmnEditService bpmnEditService) {
         this.chatClient = chatClientBuilder.build();
         this.bpmnEditService = bpmnEditService;
@@ -49,14 +52,32 @@ public class ChatController {
             return ResponseEntity.badRequest().body(new ChatResponse("Please ask a question."));
         }
 
+        boolean hasContext = hasProcessContext(request.context());
+        boolean questionSeemsProcessSpecific = looksProcessSpecific(request.question());
+
+        // Refuse to fabricate: if user asks about "this process" but nothing is loaded, tell them.
+        if (!hasContext && questionSeemsProcessSpecific) {
+            return ResponseEntity.ok(new ChatResponse(
+                    "I do not have any process loaded right now. Please import a BPMN file or paste a process description first — then ask me about it. "
+                            + "If you meant a general BPMN question, rephrase without 'this process'."));
+        }
+
         try {
             String systemPrompt = loadSystemPrompt();
             String contextBlock = buildContextBlock(request.context());
             String historyBlock = buildHistoryBlock(request.history());
 
+            log.info("Chat request: contextChars={}, historyTurns={}, question=\"{}\"",
+                    contextBlock.length(),
+                    request.history() != null ? request.history().size() : 0,
+                    request.question());
+
             String userMessage = "CONTEXT:\n" + contextBlock
                     + "\n\nCONVERSATION HISTORY:\n" + historyBlock
-                    + "\n\nUSER QUESTION:\n" + request.question();
+                    + "\n\nUSER QUESTION:\n" + request.question()
+                    + (hasContext
+                        ? ""
+                        : "\n\nNOTE: No process is loaded. Answer only from general BPMN 2.0 knowledge and say so.");
 
             String answer = chatClient.prompt()
                     .system(systemPrompt)
@@ -74,6 +95,29 @@ public class ChatController {
             return ResponseEntity.ok(new ChatResponse(
                     "The AI service is temporarily unavailable. Please make sure Ollama is running and try again."));
         }
+    }
+
+    private boolean hasProcessContext(ChatContext ctx) {
+        if (ctx == null) return false;
+        boolean hasXml = ctx.bpmnXml() != null && !ctx.bpmnXml().isBlank();
+        boolean hasGraph = ctx.graph() != null && ctx.graph().getNodes() != null && !ctx.graph().getNodes().isEmpty();
+        boolean hasKnowledge = ctx.knowledge() != null
+                && ctx.knowledge().activities() != null
+                && !ctx.knowledge().activities().isEmpty();
+        return hasXml || hasGraph || hasKnowledge;
+    }
+
+    private boolean looksProcessSpecific(String question) {
+        if (question == null) return false;
+        String q = question.toLowerCase(java.util.Locale.ROOT);
+        String[] triggers = {
+                "this process", "this bpmn", "this diagram", "this flow", "this model",
+                "the process", "the bpmn", "the diagram", "the flow", "the model",
+                "summarize", "summarise", "explain the", "what is wrong", "what defects",
+                "list defects", "list the defects", "audit", "review this", "quality report"
+        };
+        for (String t : triggers) if (q.contains(t)) return true;
+        return false;
     }
 
     private String loadSystemPrompt() {
@@ -163,6 +207,35 @@ public class ChatController {
             return ResponseEntity.ok(new ChatEditResponse(
                     "I could not process that edit request. Make sure Ollama is running and try a more specific instruction.",
                     List.of(), null, false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/narrative")
+    public ResponseEntity<NarrativeResponse> narrative(@RequestBody NarrativeRequest request) {
+        if (request == null || request.context() == null) {
+            return ResponseEntity.badRequest().body(new NarrativeResponse(null, "Missing context"));
+        }
+        try {
+            String systemPrompt = loadPrompt(narrativePromptResource, "prompts/narrative-prompt.txt",
+                    "Generate a plain-English business narrative for the BPMN process described in the CONTEXT.");
+            String contextBlock = buildContextBlock(request.context());
+            String userMessage = "CONTEXT:\n" + contextBlock
+                    + "\n\nGenerate the narrative now using the required markdown sections.";
+
+            String markdown = chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(userMessage)
+                    .call()
+                    .content();
+
+            if (markdown == null || markdown.isBlank()) {
+                return ResponseEntity.ok(new NarrativeResponse(null, "Model returned empty response"));
+            }
+            return ResponseEntity.ok(new NarrativeResponse(markdown.trim(), null));
+        } catch (Exception e) {
+            log.error("Narrative generation failed: {}", e.getMessage(), e);
+            return ResponseEntity.ok(new NarrativeResponse(null,
+                    "AI service unavailable. Make sure Ollama is running."));
         }
     }
 
@@ -319,4 +392,8 @@ public class ChatController {
     public record ApplyEditsRequest(String bpmnXml, List<Map<String, Object>> operations) {}
 
     public record ApplyEditsResponse(String updatedXml, List<String> applied, List<String> failed) {}
+
+    public record NarrativeRequest(ChatContext context) {}
+
+    public record NarrativeResponse(String markdown, String error) {}
 }

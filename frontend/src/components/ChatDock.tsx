@@ -5,6 +5,8 @@ import type {
   ProcessQualityReportDTO,
 } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import { chatService, type ChatMessage, type EditOperation } from '../services/chatService';
+import { parseBpmnXmlClient } from '../utils/bpmnXmlParser';
+import { canonicalGraphToBpmnXml } from '../utils/bpmnXmlGenerator';
 import './ChatDock.css';
 
 interface Props {
@@ -62,8 +64,21 @@ export const ChatDock: React.FC<Props> = ({
     }
   }, [messages, loading, open, pendingEdit]);
 
-  const hasContext = Boolean(bpmnXml || knowledge || graph);
-  const suggestions = mode === 'edit' ? SUGGESTED_EDIT : SUGGESTED_ASK;
+  const hasContext = Boolean(
+    bpmnXml ||
+      (knowledge && (knowledge.activities?.length || 0) > 0) ||
+      (graph && (graph.nodes?.length || 0) > 0)
+  );
+  const suggestions = mode === 'edit'
+    ? SUGGESTED_EDIT
+    : hasContext
+    ? SUGGESTED_ASK
+    : [
+        'What is BPMN 2.0?',
+        'What is an exclusive gateway?',
+        'When should I use swimlanes?',
+        'What defects should I watch for in a BPMN model?',
+      ];
 
   const send = async (rawText?: string) => {
     const question = (rawText ?? input).trim();
@@ -158,8 +173,17 @@ export const ChatDock: React.FC<Props> = ({
           },
         ]);
       } else {
-        onBpmnUpdated?.(result.updatedXml);
-        setDownloadReady(result.updatedXml);
+        // Round-trip parse -> regenerate to build proper DI (layout) for any new elements.
+        // Backend only patches process XML; without DI the canvas will not render new shapes.
+        let renderableXml = result.updatedXml;
+        try {
+          const parsed = parseBpmnXmlClient(result.updatedXml);
+          renderableXml = canonicalGraphToBpmnXml(parsed.graph);
+        } catch (roundTripErr) {
+          console.warn('DI regeneration failed, using raw patched XML:', roundTripErr);
+        }
+        onBpmnUpdated?.(renderableXml);
+        setDownloadReady(renderableXml);
         setMessages((prev) => [
           ...prev,
           {
@@ -222,7 +246,7 @@ export const ChatDock: React.FC<Props> = ({
                     ? `Grounded on: ${processName || 'current process'}${
                         qualityReport ? ` · ${qualityReport.issues?.length || 0} defects` : ''
                       }`
-                    : 'No process loaded — ask general BPMN questions'}
+                    : '⚠ No process loaded — general BPMN Q&A only'}
                 </div>
               </div>
             </div>

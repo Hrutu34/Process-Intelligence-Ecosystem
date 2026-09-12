@@ -97,6 +97,18 @@ class ChatService {
     }
     return await response.json();
   }
+
+  async generateNarrative(context: ChatContext): Promise<{ markdown: string | null; error: string | null }> {
+    const response = await fetch(`${BACKEND_URL}/api/v1/process/narrative`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context }),
+    });
+    if (!response.ok) {
+      throw new Error(`Narrative request failed with HTTP ${response.status}`);
+    }
+    return await response.json();
+  }
 }
 
 export const chatService = new ChatService();

@@ -11,6 +11,7 @@ import { parseBpmnXmlClient } from '../utils/bpmnXmlParser';
 import { canonicalGraphToBpmnXml } from '../utils/bpmnXmlGenerator';
 import { BpmnIoCanvas } from './BpmnIoCanvas';
 import { processService } from '../services/processService';
+import { chatService } from '../services/chatService';
 import './ProcessReviewAgent.css';
 
 interface Props {
@@ -40,6 +41,8 @@ export const ProcessReviewAgent: React.FC<Props> = ({
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('NARRATIVE');
   const [narrative, setNarrative] = useState<ProcessNarrative | null>(initialNarrative || null);
+  const [aiNarrativeMarkdown, setAiNarrativeMarkdown] = useState<string | null>(null);
+  const [isGeneratingAiNarrative, setIsGeneratingAiNarrative] = useState<boolean>(false);
   const [qualityReport, setQualityReport] = useState<ProcessQualityReportDTO | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [selectedCorpusId, setSelectedCorpusId] = useState<string>('F01');
@@ -63,6 +66,53 @@ export const ProcessReviewAgent: React.FC<Props> = ({
   useEffect(() => {
     onQualityReportUpdated?.(qualityReport);
   }, [qualityReport, onQualityReportUpdated]);
+
+  const handleGenerateAiNarrative = async () => {
+    setIsGeneratingAiNarrative(true);
+    try {
+      const result = await chatService.generateNarrative({
+        processName: processTitle,
+        bpmnXml: localXml || undefined,
+        knowledge,
+        graph: localGraph,
+        qualityReport,
+      });
+      if (result.markdown) {
+        setAiNarrativeMarkdown(result.markdown);
+      } else {
+        setAiNarrativeMarkdown(`_Could not generate AI narrative: ${result.error || 'unknown error'}._`);
+      }
+    } catch (e) {
+      setAiNarrativeMarkdown('_AI narrative unavailable. Make sure the backend and Ollama are running._');
+    } finally {
+      setIsGeneratingAiNarrative(false);
+    }
+  };
+
+  const handleExportDefectsCsv = () => {
+    if (!qualityReport || !qualityReport.issues || qualityReport.issues.length === 0) return;
+    const rows: string[] = [];
+    rows.push(['Rule ID', 'Severity', 'Element ID', 'Issue', 'Suggestion'].map(csvEscape).join(','));
+    qualityReport.issues.forEach((iss: any) => {
+      rows.push([
+        iss.ruleId || '',
+        iss.severity || '',
+        iss.elementId || '',
+        iss.issue || '',
+        iss.suggestion || '',
+      ].map(csvEscape).join(','));
+    });
+    const csv = rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${processTitle || 'process'}-defects.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // Run or re-run the Executive Summary generation pipeline
   const handleGenerateSummary = async (targetGraph?: CanonicalProcessGraph, title?: string, xml?: string) => {
@@ -382,6 +432,32 @@ export const ProcessReviewAgent: React.FC<Props> = ({
           {/* SubTab 1: Plain-Language Business Narrative (Capability 2) */}
           {activeSubTab === 'NARRATIVE' && (
             <div className="pra-narrative-view">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleGenerateAiNarrative}
+                  disabled={isGeneratingAiNarrative || !localGraph}
+                  title={localGraph ? 'Ask the local LLM to write a richer narrative' : 'Load a process first'}
+                >
+                  {isGeneratingAiNarrative ? '⏳ Generating AI narrative...' : '✦ Generate AI Narrative'}
+                </button>
+              </div>
+
+              {aiNarrativeMarkdown && (
+                <div className="pra-narrative-card" style={{ marginBottom: 20 }}>
+                  <div className="pra-card-header">
+                    <span className="pra-card-icon">✦</span>
+                    <span>AI-Generated Business Narrative</span>
+                  </div>
+                  <div
+                    className="pra-ai-narrative-body"
+                    style={{ padding: 16, color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.6 }}
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(aiNarrativeMarkdown) }}
+                  />
+                </div>
+              )}
+
               {narrative ? (
                 <>
                   <div className="pra-summary-banner">
@@ -498,6 +574,17 @@ export const ProcessReviewAgent: React.FC<Props> = ({
           {/* SubTab 2: Defect Audit Report (Capability 3) */}
           {activeSubTab === 'DEFECTS' && (
             <div className="pra-defects-view">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleExportDefectsCsv}
+                  disabled={!qualityReport?.issues || qualityReport.issues.length === 0}
+                  title="Download defect list as CSV"
+                >
+                  ⬇ Export Defects CSV
+                </button>
+              </div>
               {/* Scorecard Header */}
               <div className="pra-scorecard">
                 <div className={`pra-score-gauge ${scoreClass}`}>
@@ -638,3 +725,72 @@ export const ProcessReviewAgent: React.FC<Props> = ({
     </div>
   );
 };
+
+function csvEscape(value: string): string {
+  const v = value == null ? '' : String(value);
+  if (v.includes(',') || v.includes('"') || v.includes('\n') || v.includes('\r')) {
+    return `"${v.replace(/"/g, '""')}"`;
+  }
+  return v;
+}
+
+function renderMarkdown(md: string): string {
+  const escapeHtml = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const lines = md.split(/\r?\n/);
+  const out: string[] = [];
+  let inList = false;
+  let inOrdered = false;
+
+  const closeList = () => {
+    if (inList) {
+      out.push('</ul>');
+      inList = false;
+    }
+    if (inOrdered) {
+      out.push('</ol>');
+      inOrdered = false;
+    }
+  };
+
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+
+    if (/^##\s+/.test(line)) {
+      closeList();
+      out.push(`<h4>${escapeHtml(line.replace(/^##\s+/, ''))}</h4>`);
+    } else if (/^#\s+/.test(line)) {
+      closeList();
+      out.push(`<h3>${escapeHtml(line.replace(/^#\s+/, ''))}</h3>`);
+    } else if (/^\s*[-*]\s+/.test(line)) {
+      if (!inList) {
+        closeList();
+        out.push('<ul>');
+        inList = true;
+      }
+      out.push(`<li>${inlineFormat(escapeHtml(line.replace(/^\s*[-*]\s+/, '')))}</li>`);
+    } else if (/^\s*\d+\.\s+/.test(line)) {
+      if (!inOrdered) {
+        closeList();
+        out.push('<ol>');
+        inOrdered = true;
+      }
+      out.push(`<li>${inlineFormat(escapeHtml(line.replace(/^\s*\d+\.\s+/, '')))}</li>`);
+    } else if (line.trim() === '') {
+      closeList();
+    } else {
+      closeList();
+      out.push(`<p>${inlineFormat(escapeHtml(line))}</p>`);
+    }
+  }
+  closeList();
+  return out.join('\n');
+}
+
+function inlineFormat(html: string): string {
+  return html
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+}

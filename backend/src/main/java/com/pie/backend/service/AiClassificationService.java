@@ -2,10 +2,12 @@ package com.pie.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pie.shared.dto.ClassificationResultDTO;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +17,11 @@ import java.nio.charset.StandardCharsets;
 public class AiClassificationService implements ClassificationService {
 
     private static final Logger log = LoggerFactory.getLogger(AiClassificationService.class);
+    private static final String FALLBACK_PROMPT = "Classify the input document into a category with confidence.";
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private String cachedPrompt = FALLBACK_PROMPT;
 
     @Value("classpath:prompts/document-classification-prompt.txt")
     private Resource classificationPromptResource;
@@ -26,28 +30,31 @@ public class AiClassificationService implements ClassificationService {
         this.chatClient = chatClientBuilder.build();
     }
 
+    @PostConstruct
+    void loadPrompt() {
+        try {
+            if (classificationPromptResource != null && classificationPromptResource.exists()) {
+                cachedPrompt = new String(classificationPromptResource.getContentAsByteArray(), StandardCharsets.UTF_8);
+                return;
+            }
+            Resource defaultRes = new ClassPathResource("prompts/document-classification-prompt.txt");
+            cachedPrompt = new String(defaultRes.getContentAsByteArray(), StandardCharsets.UTF_8);
+        } catch (Exception ex) {
+            log.warn("Falling back to inline classification prompt: {}", ex.getMessage());
+            cachedPrompt = FALLBACK_PROMPT;
+        }
+    }
+
     @Override
     public ClassificationResultDTO classifyDocument(String content) {
         try {
-            String systemPrompt;
-            if (classificationPromptResource != null && classificationPromptResource.exists()) {
-                systemPrompt = new String(classificationPromptResource.getContentAsByteArray(), StandardCharsets.UTF_8);
-            } else {
-                try {
-                    Resource defaultRes = new org.springframework.core.io.ClassPathResource("prompts/document-classification-prompt.txt");
-                    systemPrompt = new String(defaultRes.getContentAsByteArray(), StandardCharsets.UTF_8);
-                } catch (Exception ex) {
-                    systemPrompt = "Classify the input document into a category with confidence.";
-                }
-            }
-
             // Use only the first 2,000 characters for classification to prevent context exhaustion
-            String snippet = (content != null && content.length() > 2000) 
-                    ? content.substring(0, 2000) 
+            String snippet = (content != null && content.length() > 2000)
+                    ? content.substring(0, 2000)
                     : content;
 
             String rawResponse = chatClient.prompt()
-                    .system(systemPrompt)
+                    .system(cachedPrompt)
                     .user(snippet != null ? snippet : "")
                     .call()
                     .content();
