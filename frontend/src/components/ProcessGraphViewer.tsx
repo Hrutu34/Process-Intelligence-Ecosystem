@@ -408,9 +408,9 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
         </div>
       )}
 
-      {/* VIEW: BPMN.IO CANVAS */}
+      {/* VIEW: BPMN.IO CANVAS - full editor */}
       {viewMode === 'bpmn' && (
-        <BpmnIoCanvas graph={graph} />
+        <BpmnIoCanvas graph={graph} editable />
       )}
 
       {/* VIEW 2: TOPOLOGY TABLE VIEW */}

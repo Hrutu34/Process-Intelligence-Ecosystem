@@ -24,6 +24,7 @@ interface Props {
     xml: string,
     narrative?: ProcessNarrative
   ) => void;
+  onQualityReportUpdated?: (report: ProcessQualityReportDTO | null) => void;
   onProceedToBpmn?: () => void;
 }
 
@@ -35,6 +36,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({
   bpmnXml,
   initialNarrative,
   onProcessUpdated,
+  onQualityReportUpdated,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('NARRATIVE');
   const [narrative, setNarrative] = useState<ProcessNarrative | null>(initialNarrative || null);
@@ -56,6 +58,11 @@ export const ProcessReviewAgent: React.FC<Props> = ({
     if (bpmnXml) setLocalXml(bpmnXml);
     if (knowledge?.processName) setProcessTitle(knowledge.processName);
   }, [graph, bpmnXml, knowledge]);
+
+  // Propagate quality report changes to parent (chat copilot etc.)
+  useEffect(() => {
+    onQualityReportUpdated?.(qualityReport);
+  }, [qualityReport, onQualityReportUpdated]);
 
   // Run or re-run the Executive Summary generation pipeline
   const handleGenerateSummary = async (targetGraph?: CanonicalProcessGraph, title?: string, xml?: string) => {
@@ -589,7 +596,12 @@ export const ProcessReviewAgent: React.FC<Props> = ({
           {activeSubTab === 'DIAGRAM' && (
             <div className="pra-diagram-frame">
               {localGraph ? (
-                <BpmnIoCanvas graph={localGraph} rawXml={localXml} />
+                <BpmnIoCanvas
+                  graph={localGraph}
+                  rawXml={localXml}
+                  editable
+                  onXmlChange={(xml) => setLocalXml(xml)}
+                />
               ) : (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>No BPMN Graph Available</div>
               )}

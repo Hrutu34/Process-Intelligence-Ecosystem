@@ -1,5 +1,7 @@
 package com.pie.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pie.backend.service.BpmnEditService;
 import com.pie.shared.dto.CanonicalProcessGraph;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
 import com.pie.shared.dto.ProcessQualityReportDTO;
@@ -13,7 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/process")
@@ -25,12 +29,18 @@ public class ChatController {
     private static final int MAX_HISTORY_TURNS = 8;
 
     private final ChatClient chatClient;
+    private final BpmnEditService bpmnEditService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("classpath:prompts/chat-prompt.txt")
     private Resource chatPromptResource;
 
-    public ChatController(ChatClient.Builder chatClientBuilder) {
+    @Value("classpath:prompts/chat-edit-prompt.txt")
+    private Resource chatEditPromptResource;
+
+    public ChatController(ChatClient.Builder chatClientBuilder, BpmnEditService bpmnEditService) {
         this.chatClient = chatClientBuilder.build();
+        this.bpmnEditService = bpmnEditService;
     }
 
     @PostMapping("/chat")
@@ -67,15 +77,124 @@ public class ChatController {
     }
 
     private String loadSystemPrompt() {
+        return loadPrompt(chatPromptResource, "prompts/chat-prompt.txt",
+                "You are a BPMN process intelligence copilot. Answer the user's question using the provided context.");
+    }
+
+    private String loadEditPrompt() {
+        return loadPrompt(chatEditPromptResource, "prompts/chat-edit-prompt.txt",
+                "You are a BPMN edit assistant. Respond with a strict JSON object containing 'plan' and 'operations'.");
+    }
+
+    private String loadPrompt(Resource primary, String classpathPath, String fallbackText) {
         try {
-            if (chatPromptResource != null && chatPromptResource.exists()) {
-                return new String(chatPromptResource.getContentAsByteArray(), StandardCharsets.UTF_8);
+            if (primary != null && primary.exists()) {
+                return new String(primary.getContentAsByteArray(), StandardCharsets.UTF_8);
             }
-            Resource fallback = new ClassPathResource("prompts/chat-prompt.txt");
+            Resource fallback = new ClassPathResource(classpathPath);
             return new String(fallback.getContentAsByteArray(), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            return "You are a BPMN process intelligence copilot. Answer the user's question using the provided context.";
+            return fallbackText;
         }
+    }
+
+    @PostMapping("/chat-edit")
+    public ResponseEntity<ChatEditResponse> chatEdit(@RequestBody ChatEditRequest request) {
+        if (request == null || request.question() == null || request.question().isBlank()) {
+            return ResponseEntity.badRequest().body(
+                    new ChatEditResponse("Please describe what you want to change.", List.of(), null, false, "Empty request"));
+        }
+        if (request.context() == null || request.context().bpmnXml() == null || request.context().bpmnXml().isBlank()) {
+            return ResponseEntity.ok(new ChatEditResponse(
+                    "I need a BPMN model loaded before I can make edits. Please import or generate a BPMN first.",
+                    List.of(), null, false, null));
+        }
+
+        try {
+            String systemPrompt = loadEditPrompt();
+            String contextBlock = buildContextBlock(request.context());
+            String historyBlock = buildHistoryBlock(request.history());
+
+            String userMessage = "CONTEXT:\n" + contextBlock
+                    + "\n\nCONVERSATION HISTORY:\n" + historyBlock
+                    + "\n\nUSER REQUEST:\n" + request.question();
+
+            String raw = chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(userMessage)
+                    .call()
+                    .content();
+
+            if (raw == null || raw.isBlank()) {
+                return ResponseEntity.ok(new ChatEditResponse(
+                        "The model returned no response. Please try rephrasing.", List.of(), null, false, "Empty LLM response"));
+            }
+
+            String jsonBlock = extractJson(raw.trim());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parsed = objectMapper.readValue(jsonBlock, Map.class);
+
+            String plan = String.valueOf(parsed.getOrDefault("plan", "Proposed change"));
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> operations = (List<Map<String, Object>>) parsed.getOrDefault("operations", new ArrayList<>());
+
+            String updatedXml = null;
+            boolean applyRequested = request.autoApply();
+            String errorNote = null;
+
+            if (applyRequested && !operations.isEmpty()) {
+                try {
+                    BpmnEditService.EditResult result = bpmnEditService.applyOperations(
+                            request.context().bpmnXml(), operations);
+                    updatedXml = result.xml();
+                    if (!result.failed().isEmpty()) {
+                        errorNote = "Some operations failed: " + String.join("; ", result.failed());
+                    }
+                } catch (Exception applyErr) {
+                    log.error("Applying edit ops failed: {}", applyErr.getMessage(), applyErr);
+                    errorNote = "Failed to apply changes: " + applyErr.getMessage();
+                }
+            }
+
+            return ResponseEntity.ok(new ChatEditResponse(plan, operations, updatedXml, applyRequested, errorNote));
+
+        } catch (Exception e) {
+            log.error("Chat edit call failed: {}", e.getMessage(), e);
+            return ResponseEntity.ok(new ChatEditResponse(
+                    "I could not process that edit request. Make sure Ollama is running and try a more specific instruction.",
+                    List.of(), null, false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/apply-edits")
+    public ResponseEntity<ApplyEditsResponse> applyEdits(@RequestBody ApplyEditsRequest request) {
+        if (request == null || request.bpmnXml() == null || request.bpmnXml().isBlank()) {
+            return ResponseEntity.badRequest().body(new ApplyEditsResponse(null, List.of(), List.of("Missing BPMN XML")));
+        }
+        try {
+            BpmnEditService.EditResult result = bpmnEditService.applyOperations(
+                    request.bpmnXml(), request.operations());
+            return ResponseEntity.ok(new ApplyEditsResponse(result.xml(), result.applied(), result.failed()));
+        } catch (Exception e) {
+            log.error("Apply edits failed: {}", e.getMessage(), e);
+            return ResponseEntity.ok(new ApplyEditsResponse(null, List.of(), List.of(e.getMessage())));
+        }
+    }
+
+    private String extractJson(String raw) {
+        String s = raw.trim();
+        // Strip markdown fences if present
+        if (s.startsWith("```json")) s = s.substring(7);
+        else if (s.startsWith("```")) s = s.substring(3);
+        if (s.endsWith("```")) s = s.substring(0, s.length() - 3);
+        s = s.trim();
+
+        int start = s.indexOf('{');
+        int end = s.lastIndexOf('}');
+        if (start >= 0 && end > start) {
+            return s.substring(start, end + 1);
+        }
+        return s;
     }
 
     private String buildContextBlock(ChatContext ctx) {
@@ -181,4 +300,23 @@ public class ChatController {
     ) {}
 
     public record ChatResponse(String answer) {}
+
+    public record ChatEditRequest(
+            String question,
+            List<ChatMessage> history,
+            ChatContext context,
+            boolean autoApply
+    ) {}
+
+    public record ChatEditResponse(
+            String plan,
+            List<Map<String, Object>> operations,
+            String updatedXml,
+            boolean applied,
+            String error
+    ) {}
+
+    public record ApplyEditsRequest(String bpmnXml, List<Map<String, Object>> operations) {}
+
+    public record ApplyEditsResponse(String updatedXml, List<String> applied, List<String> failed) {}
 }

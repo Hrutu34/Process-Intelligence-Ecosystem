@@ -85,3 +85,76 @@
   opacity: 0.5;
   filter: invert(1);
 }
+
+/* Edit-mode: unsaved-change indicator */
+.bpmn-dirty-dot {
+  color: #ffd93d;
+  font-size: 18px;
+  line-height: 1;
+  margin-left: 6px;
+  animation: bpmn-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes bpmn-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.bpmn-io-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Editor palette / context pad — brighten for dark theme */
+.edit-mode .bpmn-canvas-area .djs-palette {
+  background: rgba(7, 26, 61, 0.95) !important;
+  border: 1px solid rgba(57, 245, 208, 0.3) !important;
+  border-radius: 8px !important;
+  color: #f4f8f4 !important;
+}
+
+.edit-mode .bpmn-canvas-area .djs-palette .entry {
+  color: #eaf6ff !important;
+}
+
+.edit-mode .bpmn-canvas-area .djs-palette .entry:hover {
+  background: rgba(57, 245, 208, 0.15) !important;
+  color: #ffd93d !important;
+}
+
+.edit-mode .bpmn-canvas-area .djs-context-pad .entry {
+  background: rgba(7, 26, 61, 0.98) !important;
+  color: #eaf6ff !important;
+  border: 1px solid rgba(57, 245, 208, 0.3) !important;
+}
+
+.edit-mode .bpmn-canvas-area .djs-context-pad .entry:hover {
+  background: rgba(57, 245, 208, 0.2) !important;
+  color: #ffd93d !important;
+}
+
+.edit-mode .bpmn-canvas-area .djs-popup {
+  background: rgba(7, 26, 61, 0.97) !important;
+  color: #eaf6ff !important;
+  border: 1px solid rgba(57, 245, 208, 0.3) !important;
+}
+
+.edit-mode .bpmn-canvas-area .djs-popup .entry:hover {
+  background: rgba(57, 245, 208, 0.18) !important;
+}
+
+.edit-mode .bpmn-canvas-area .djs-direct-editing-parent input,
+.edit-mode .bpmn-canvas-area .djs-direct-editing-parent textarea {
+  color: #061c3d !important;
+  background: #f4f8f4 !important;
+  border: 1px solid var(--aqua) !important;
+  border-radius: 4px !important;
+  padding: 2px 4px !important;
+}
+
+.edit-mode .bpmn-canvas-area .djs-hover .djs-outline,
+.edit-mode .bpmn-canvas-area .djs-selected .djs-outline {
+  stroke: #ffd93d !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 4 3 !important;
+}

@@ -9,6 +9,7 @@ import { ChatDock } from "./components/ChatDock";
 import type {
   CanonicalProcessGraph,
   ProcessKnowledgeDTO,
+  ProcessQualityReportDTO,
 } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import type { ProcessNarrative } from "./services/bpmnNarrativeGenerator";
 import { CORPUS_SAMPLES } from "./utils/bpmnCorpusSamples";
@@ -24,6 +25,7 @@ function App() {
   const [bpmnXml, setBpmnXml] = useState<string | null>(null);
   const [processGraph, setProcessGraph] = useState<CanonicalProcessGraph | null>(null);
   const [processNarrative, setProcessNarrative] = useState<ProcessNarrative | null>(null);
+  const [qualityReport, setQualityReport] = useState<ProcessQualityReportDTO | null>(null);
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [activeFileCount, setActiveFileCount] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<AgentTab>("01_KNOWLEDGE");
@@ -84,6 +86,7 @@ function App() {
     setBpmnXml(null);
     setProcessGraph(null);
     setProcessNarrative(null);
+    setQualityReport(null);
     setIsExtracting(false);
     setActiveTab("01_KNOWLEDGE");
   };
@@ -252,6 +255,7 @@ function App() {
                     setBpmnXml(x);
                     if (n) setProcessNarrative(n);
                   }}
+                  onQualityReportUpdated={setQualityReport}
                   onProceedToBpmn={() => setActiveTab("03_BPMN")}
                 />
               )}
@@ -436,6 +440,8 @@ function App() {
         bpmnXml={bpmnXml}
         knowledge={extractedData}
         graph={processGraph}
+        qualityReport={qualityReport}
+        onBpmnUpdated={(xml) => setBpmnXml(xml)}
       />
     </div>
   );
