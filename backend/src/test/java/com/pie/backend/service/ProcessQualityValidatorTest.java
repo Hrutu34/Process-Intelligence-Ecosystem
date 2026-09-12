@@ -76,11 +76,11 @@ class ProcessQualityValidatorTest {
 
         assertFalse(report.valid());
         assertTrue(report.issues().stream().anyMatch(i ->
-                "END_EVENT_RULE".equals(i.ruleId()) && "HIGH".equals(i.severity()) && i.issue().contains("Missing End Event")));
+                "MISSING_END_EVENT".equals(i.ruleId()) && "HIGH".equals(i.severity()) && i.issue().contains("Missing End Event")));
     }
 
     @Test
-    @DisplayName("TASK-013: Detects abrupt termination when activity has no outgoing flow to End Event")
+    @DisplayName("TASK-013: Detects dead-end activity that does not connect to any End Event")
     void testAbruptTerminationActivity() {
         CanonicalProcessGraph graph = CanonicalProcessGraph.builder()
                 .graphId("graph-abrupt-end")
@@ -98,7 +98,7 @@ class ProcessQualityValidatorTest {
         ProcessQualityReportDTO report = validator.validateQuality(graph);
 
         assertTrue(report.issues().stream().anyMatch(i ->
-                "END_EVENT_RULE".equals(i.ruleId()) && i.issue().contains("Process ends abruptly without closure")));
+                "DEAD_END_ACTIVITY".equals(i.ruleId()) && i.issue().contains("Dead-end activity")));
     }
 
     @Test

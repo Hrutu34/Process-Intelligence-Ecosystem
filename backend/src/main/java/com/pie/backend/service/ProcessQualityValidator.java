@@ -75,6 +75,12 @@ public class ProcessQualityValidator {
         // 10. Validate Linear Complexity & Over-decomposition (D13)
         validateLinearComplexity(nodes, edges, issues, recommendations);
 
+        // 11. Validate Dangling Sequence Flows (references non-existent nodes)
+        validateDanglingFlows(nodes, edges, issues, recommendations);
+
+        // 12. Validate Reachability - tasks with no path to any end event
+        validateReachabilityToEnd(nodes, edges, issues, recommendations);
+
         // Calculate Quality Score
         int highCount = (int) issues.stream().filter(i -> "HIGH".equalsIgnoreCase(i.severity())).count();
         int medCount = (int) issues.stream().filter(i -> "MEDIUM".equalsIgnoreCase(i.severity())).count();
@@ -171,14 +177,29 @@ public class ProcessQualityValidator {
 
         // Rule 13.1: Missing End Event
         if (endEvents.isEmpty()) {
+            // Identify all terminal activities that would need to reach an end
+            String terminalList = activities.stream()
+                    .filter(a -> edges.stream().noneMatch(e -> e.getFrom().equals(a.getId())
+                            && (e.getEdgeType() == EdgeType.sequence || e.getEdgeType() == EdgeType.conditional)))
+                    .map(GraphNode::getLabel)
+                    .collect(Collectors.joining(", "));
+            String elementHint = activities.stream()
+                    .filter(a -> edges.stream().noneMatch(e -> e.getFrom().equals(a.getId())
+                            && (e.getEdgeType() == EdgeType.sequence || e.getEdgeType() == EdgeType.conditional)))
+                    .map(GraphNode::getId)
+                    .findFirst()
+                    .orElse(null);
+            String detail = terminalList.isBlank()
+                    ? "Every process path must terminate in a valid BPMN End Event."
+                    : "Process has no End Event. Terminal task(s) with no outgoing flow: " + terminalList + ".";
             issues.add(new ValidationIssueDTO(
-                    "END_EVENT_RULE",
+                    "MISSING_END_EVENT",
                     "HIGH",
-                    null,
+                    elementHint,
                     "Missing End Event",
-                    "Every process path must terminate in a valid BPMN End Event or completion condition."
+                    detail + " Add an End Event and connect the terminal task(s) into it."
             ));
-            recommendations.add("Add an explicit End Event (e.g. 'Process Completed' or 'Order Dispatched') to designate successful closure.");
+            recommendations.add("Add an explicit End Event (e.g. 'Process Completed' or 'Order Dispatched') and connect terminal task(s) to it.");
         } else {
             // Check end event in-degree
             for (GraphNode end : endEvents) {
@@ -196,22 +217,23 @@ public class ProcessQualityValidator {
             }
         }
 
-        // Rule 13.2: Abrupt Termination / Dead-End Activities
-        for (GraphNode act : activities) {
-            List<GraphEdge> outgoing = edges.stream()
-                    .filter(e -> e.getFrom().equals(act.getId()) && (e.getEdgeType() == EdgeType.sequence || e.getEdgeType() == EdgeType.conditional))
-                    .toList();
+        // Rule 13.2: Abrupt Termination / Dead-End Activities (only when end events exist elsewhere)
+        if (!endEvents.isEmpty()) {
+            for (GraphNode act : activities) {
+                List<GraphEdge> outgoing = edges.stream()
+                        .filter(e -> e.getFrom().equals(act.getId()) && (e.getEdgeType() == EdgeType.sequence || e.getEdgeType() == EdgeType.conditional))
+                        .toList();
 
-            if (outgoing.isEmpty()) {
-                // If there are end events and this activity does not connect to any, it's an abrupt termination
-                issues.add(new ValidationIssueDTO(
-                        "END_EVENT_RULE",
-                        "HIGH",
-                        act.getId(),
-                        "Process ends abruptly without closure: " + act.getLabel(),
-                        "Activity '" + act.getLabel() + "' has no outgoing sequence flows and is not connected to an End Event."
-                ));
-                recommendations.add("Connect terminal activity '" + act.getLabel() + "' to an End Event or notification step.");
+                if (outgoing.isEmpty()) {
+                    issues.add(new ValidationIssueDTO(
+                            "DEAD_END_ACTIVITY",
+                            "HIGH",
+                            act.getId(),
+                            "Dead-end activity: '" + act.getLabel() + "'",
+                            "Activity '" + act.getLabel() + "' has no outgoing sequence flow and is not connected to any End Event."
+                    ));
+                    recommendations.add("Connect terminal activity '" + act.getLabel() + "' to an End Event or the next process step.");
+                }
             }
         }
     }
@@ -328,7 +350,11 @@ public class ProcessQualityValidator {
 
     private static final Set<String> VAGUE_TASK_LABELS = Set.of(
             "process", "do needful", "handle", "task", "work", "do work",
-            "execute", "perform", "action", "step", "miscellaneous", "etc", "activity"
+            "execute", "perform", "action", "step", "miscellaneous", "etc", "activity",
+            "manage", "deal", "deal with", "do", "run", "operate", "check", "review",
+            "verify", "next step", "todo", "to do", "misc", "other", "stuff", "thing",
+            "start task", "end task", "finish", "complete", "close", "final",
+            "unnamed activity"
     );
 
     /**
@@ -342,9 +368,22 @@ public class ProcessQualityValidator {
                 String label = node.getLabel() != null ? node.getLabel().trim() : "";
                 String norm = label.toLowerCase(Locale.ROOT);
 
+                if (label.isBlank()) {
+                    issues.add(new ValidationIssueDTO(
+                            "TASK_NAME_MISSING",
+                            "MEDIUM",
+                            node.getId(),
+                            "Unnamed task",
+                            "An activity has no name. Every task must carry a verb+object label describing the action."
+                    ));
+                    recommendations.add("Give the unnamed activity a clear verb+object name (e.g. 'Approve invoice').");
+                    continue;
+                }
+
+                int wordCount = label.split("\\s+").length;
                 boolean isVague = VAGUE_TASK_LABELS.contains(norm)
-                        || norm.equals("do needful")
-                        || (norm.length() <= 8 && VAGUE_TASK_LABELS.stream().anyMatch(norm::startsWith));
+                        || (wordCount == 1 && VAGUE_TASK_LABELS.contains(norm))
+                        || (norm.length() <= 10 && VAGUE_TASK_LABELS.stream().anyMatch(v -> norm.equals(v) || norm.startsWith(v + " ")));
 
                 if (isVague) {
                     issues.add(new ValidationIssueDTO(
@@ -352,9 +391,9 @@ public class ProcessQualityValidator {
                             "MEDIUM",
                             node.getId(),
                             "Vague task name: '" + label + "'",
-                            "Task named '" + label + "' is non-actionable, ambiguous, and lacks a clear business object."
+                            "Task named '" + label + "' is non-actionable and ambiguous. Rename to a verb + business object (e.g. 'Approve invoice for payment')."
                     ));
-                    recommendations.add("Rename task '" + label + "' to a concrete verb+object action (e.g. 'Approve invoice for payment' or 'Verify details').");
+                    recommendations.add("Rename task '" + label + "' to a concrete verb+object action.");
                 }
             }
         }
@@ -556,6 +595,95 @@ public class ProcessQualityValidator {
                     "Long unbranched chain suggests over-decomposition of activities; several steps can be consolidated to improve readability."
             ));
             recommendations.add("Consolidate fine-grained sequential steps (e.g. 'Apply fix' + 'Test fix') to streamline the workflow.");
+        }
+    }
+
+    /**
+     * Rule 15.8: Dangling Sequence Flow - flow references a node that does not exist.
+     */
+    public void validateDanglingFlows(List<GraphNode> nodes,
+                                      List<GraphEdge> edges,
+                                      List<ValidationIssueDTO> issues,
+                                      List<String> recommendations) {
+        Set<String> nodeIds = nodes.stream().map(GraphNode::getId).collect(Collectors.toSet());
+
+        for (GraphEdge edge : edges) {
+            if (edge.getEdgeType() != EdgeType.sequence && edge.getEdgeType() != EdgeType.conditional) continue;
+            boolean fromMissing = edge.getFrom() == null || !nodeIds.contains(edge.getFrom());
+            boolean toMissing = edge.getTo() == null || !nodeIds.contains(edge.getTo());
+
+            if (fromMissing || toMissing) {
+                String direction = fromMissing && toMissing
+                        ? "both source and target"
+                        : fromMissing ? "source '" + edge.getFrom() + "'" : "target '" + edge.getTo() + "'";
+                issues.add(new ValidationIssueDTO(
+                        "DANGLING_FLOW",
+                        "HIGH",
+                        edge.getId(),
+                        "Dangling sequence flow: " + edge.getId(),
+                        "Sequence flow '" + edge.getId() + "' references " + direction + " which does not exist in the process."
+                ));
+                recommendations.add("Remove or reconnect the dangling flow '" + edge.getId() + "'.");
+            }
+        }
+    }
+
+    /**
+     * Rule 15.9: Reachability - flag activities that cannot reach any End Event via sequence/conditional flow.
+     * Only runs when end events exist (otherwise MISSING_END_EVENT already fires).
+     */
+    public void validateReachabilityToEnd(List<GraphNode> nodes,
+                                          List<GraphEdge> edges,
+                                          List<ValidationIssueDTO> issues,
+                                          List<String> recommendations) {
+        List<GraphNode> endEvents = nodes.stream()
+                .filter(n -> n.getType() == NodeType.Event
+                        && n.getMetadata() != null
+                        && n.getMetadata().getEventType() == EventType.end)
+                .toList();
+        if (endEvents.isEmpty()) return;
+
+        // Build reverse adjacency (edges pointing INTO a node) using only flow edges
+        Map<String, List<String>> reverseAdj = new HashMap<>();
+        for (GraphEdge e : edges) {
+            if (e.getEdgeType() != EdgeType.sequence && e.getEdgeType() != EdgeType.conditional) continue;
+            reverseAdj.computeIfAbsent(e.getTo(), k -> new ArrayList<>()).add(e.getFrom());
+        }
+
+        // BFS from each end event backwards; union of visited = nodes that can reach an end
+        Set<String> canReachEnd = new HashSet<>();
+        Deque<String> queue = new ArrayDeque<>();
+        for (GraphNode end : endEvents) {
+            queue.push(end.getId());
+            canReachEnd.add(end.getId());
+        }
+        while (!queue.isEmpty()) {
+            String current = queue.pop();
+            for (String predecessor : reverseAdj.getOrDefault(current, List.of())) {
+                if (canReachEnd.add(predecessor)) {
+                    queue.push(predecessor);
+                }
+            }
+        }
+
+        for (GraphNode node : nodes) {
+            if (node.getType() != NodeType.Activity && node.getType() != NodeType.Gateway) continue;
+            if (canReachEnd.contains(node.getId())) continue;
+
+            // Skip if the node is already flagged as fully orphan (no in/out)
+            boolean hasAnyEdge = edges.stream().anyMatch(e ->
+                    (e.getEdgeType() == EdgeType.sequence || e.getEdgeType() == EdgeType.conditional)
+                            && (e.getFrom().equals(node.getId()) || e.getTo().equals(node.getId())));
+            if (!hasAnyEdge) continue;
+
+            issues.add(new ValidationIssueDTO(
+                    "UNREACHABLE_END",
+                    "HIGH",
+                    node.getId(),
+                    "No path to End Event from: '" + node.getLabel() + "'",
+                    "Node '" + node.getLabel() + "' is connected to the flow but has no downstream path to any End Event."
+            ));
+            recommendations.add("Route '" + node.getLabel() + "' through the process so it reaches an End Event.");
         }
     }
 }

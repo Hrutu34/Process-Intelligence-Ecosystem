@@ -59,7 +59,7 @@ class BpmnXmlParserTest {
         ProcessQualityReportDTO report = validator.validateQuality(res.graph());
 
         // D01: Missing end event / abrupt termination
-        assertTrue(report.issues().stream().anyMatch(i -> "END_EVENT_RULE".equals(i.ruleId())), "Must detect missing end event");
+        assertTrue(report.issues().stream().anyMatch(i -> "MISSING_END_EVENT".equals(i.ruleId())), "Must detect missing end event");
         // D02: Vague task name "Process"
         assertTrue(report.issues().stream().anyMatch(i -> "TASK_NAME_QUALITY_RULE".equals(i.ruleId()) && i.issue().contains("Process")), "Must detect vague task 'Process'");
     }
@@ -120,8 +120,10 @@ class BpmnXmlParserTest {
 
         // D07: Missing parallel join
         assertTrue(report.issues().stream().anyMatch(i -> "PARALLEL_SPLIT_JOIN_RULE".equals(i.ruleId())), "Must detect missing parallel join");
-        // D08: Dangling flow
-        assertTrue(report.issues().stream().anyMatch(i -> "END_EVENT_RULE".equals(i.ruleId()) && i.issue().contains("Generate invoice")), "Must detect dangling invoice flow");
+        // D08: Dangling flow / dead-end activity that fails to reach End Event
+        assertTrue(report.issues().stream().anyMatch(i ->
+                ("DEAD_END_ACTIVITY".equals(i.ruleId()) || "UNREACHABLE_END".equals(i.ruleId()))
+                        && i.issue().contains("Generate invoice")), "Must detect dangling invoice flow");
     }
 
     @Test

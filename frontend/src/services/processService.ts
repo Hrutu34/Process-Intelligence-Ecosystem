@@ -273,14 +273,17 @@ class ProcessService {
 
     // Map backend quality issues to frontend ValidationIssue schema
     const validationIssues: ValidationIssue[] = rawIssues.map((iss: any, idx: number) => {
-      const cat = iss.ruleId?.includes('GATEWAY')
+      const rid = iss.ruleId || '';
+      const cat = rid.includes('GATEWAY')
         ? 'Gateways'
-        : iss.ruleId?.includes('EVENT')
+        : rid.includes('END_EVENT') || rid.includes('START_EVENT') || rid.includes('EVENT')
         ? 'Events'
-        : iss.ruleId?.includes('SWIMLANE')
+        : rid.includes('SWIMLANE')
         ? 'Ownership'
-        : iss.ruleId?.includes('TASK')
+        : rid.includes('TASK') || rid.includes('DUPLICATE_ACTIVITY') || rid.includes('DEAD_END_ACTIVITY')
         ? 'Activities'
+        : rid.includes('DANGLING') || rid.includes('UNREACHABLE') || rid.includes('ORPHAN')
+        ? 'Structure'
         : 'Structure';
 
       const sev =
