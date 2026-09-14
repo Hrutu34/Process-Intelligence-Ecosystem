@@ -130,7 +130,7 @@
 .flow-chain {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0;
   padding: 24px 12px;
   min-width: max-content;
 }
@@ -138,13 +138,13 @@
 .flow-step-wrapper {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0;
 }
 
 /* Activity Node Card */
 .node-card {
   position: relative;
-  width: 220px;
+  min-width: 220px; width: auto; max-width: 280px; word-wrap: break-word; word-break: break-word;
   padding: 16px 18px;
   background: linear-gradient(145deg, #092149, #051533);
   border: 1px solid rgba(57, 245, 208, 0.3);
@@ -205,7 +205,7 @@
 /* Gateway Node (Diamond badge / Decision Card) */
 .gateway-card {
   position: relative;
-  width: 180px;
+  min-width: 180px; width: auto; max-width: 240px; word-wrap: break-word; word-break: break-word;
   padding: 16px 14px;
   background: linear-gradient(145deg, #2b2505, #141203);
   border: 1px solid rgba(255, 204, 0, 0.45);
@@ -304,7 +304,7 @@
   color: var(--aqua);
   font-size: 0;
   font-weight: 700;
-  width: 48px;
+  width: 60px;
   height: 12px;
   position: relative;
 }
@@ -312,7 +312,7 @@
 .flow-arrow-line::before {
   content: "";
   display: block;
-  width: 40px;
+  width: 52px;
   height: 2px;
   background: linear-gradient(90deg, rgba(57, 245, 208, 0.4), var(--aqua));
 }

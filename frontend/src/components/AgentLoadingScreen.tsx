@@ -58,7 +58,7 @@ export const AgentLoadingScreen: React.FC<Props> = ({
           <span className="status-dot pulsing" />
           PROCESSING {fileCount} DOCUMENT{fileCount > 1 ? 'S' : ''}
           <span className="status-separator">/</span>
-          LOCAL LLM PIPELINE
+          AGENTIC PIPELINE
         </div>
         <h3>{title}</h3>
         <p className="active-step-text">{steps[currentStepIndex].desc}</p>
