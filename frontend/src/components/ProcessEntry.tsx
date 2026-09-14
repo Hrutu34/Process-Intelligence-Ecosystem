@@ -10,17 +10,37 @@ const ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/xml',
+  'text/xml',
+  // Empty string covers browsers that fail to detect BPMN MIME type; extension check below handles it.
+  '',
 ];
 
+const BPMN_EXTENSIONS = ['.bpmn', '.bpmn20', '.bpmn20.xml', '.xml'];
+
+function isBpmnFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return BPMN_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
+
 type ActiveTab = 'file' | 'text';
+
+export interface BpmnImportPayload {
+  knowledge: ProcessKnowledgeDTO;
+  bpmnXml: string;
+  processName?: string;
+  processId?: string;
+  qualityReport?: unknown;
+}
 
 interface Props {
   onStart: (fileCount: number) => void;
   onSuccess: (data: ProcessKnowledgeDTO) => void;
+  onBpmnImported?: (payload: BpmnImportPayload) => void;
   onError?: (err: string) => void;
 }
 
-export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
+export default function ProcessEntry({ onStart, onSuccess, onBpmnImported, onError }: Props) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('file');
   const [files, setFiles] = useState<File[]>([]);
   const [text, setText] = useState<string>('');
@@ -35,7 +55,9 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
     const currentFiles = files;
 
     Array.from(newFiles).forEach((file: File) => {
-      if (!ALLOWED_TYPES.includes(file.type)) {
+      const acceptedByType = ALLOWED_TYPES.includes(file.type);
+      const acceptedByExtension = isBpmnFile(file);
+      if (!acceptedByType && !acceptedByExtension) {
         setError(`Skipped ${file.name}: Invalid file type.`);
         return;
       }
@@ -104,6 +126,32 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
     onStart(activeTab === 'file' ? files.length : 1);
 
     try {
+      // BPMN direct-import path: if the user uploaded a single .bpmn/.xml file, parse
+      // it on the backend and skip document extraction entirely.
+      if (activeTab === 'file' && files.length === 1 && isBpmnFile(files[0]) && onBpmnImported) {
+        const bpmnFile = files[0];
+        const bpmnForm = new FormData();
+        bpmnForm.append('file', bpmnFile);
+
+        const importRes = await fetch('http://localhost:8080/api/v1/process/import-bpmn-file', {
+          method: 'POST',
+          body: bpmnForm,
+        });
+        if (!importRes.ok) {
+          throw new Error(`BPMN import failed with HTTP ${importRes.status}.`);
+        }
+        const importData = await importRes.json();
+        const xmlText = await bpmnFile.text();
+        onBpmnImported({
+          knowledge: importData.knowledge,
+          bpmnXml: xmlText,
+          processName: importData.processName,
+          processId: importData.processId,
+          qualityReport: importData.qualityReport,
+        });
+        return;
+      }
+
       let response: Response;
 
       if (activeTab === 'file') {
@@ -168,7 +216,7 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.docx,.txt,.xlsx"
+              accept=".pdf,.docx,.txt,.xlsx,.bpmn,.bpmn20,.xml"
               onChange={handleFileSelect}
               style={{ display: 'none' }}
             />
@@ -239,7 +287,7 @@ export default function ProcessEntry({ onStart, onSuccess, onError }: Props) {
                   <div className="upload-icon">+</div>
                   <div className="upload-title">Feed P.I.E. multiple documents.</div>
                   <div className="upload-description">
-                    PDF / DOCX / TXT / XLSX · Drop them here or click to browse
+                    PDF / DOCX / TXT / XLSX / BPMN · Drop them here or click to browse
                   </div>
                 </div>
               )}

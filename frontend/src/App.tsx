@@ -5,6 +5,7 @@ import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent"
 import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
 import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
+import { ChatDock } from "./components/ChatDock";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import { useRef, useState } from "react";
 
@@ -192,6 +193,7 @@ function App() {
                   onProceed={() => setActiveTab("04_REVIEW")}
                   proceedLabel="PROCEED TO PROCESS REVIEW <span>↗</span>"
                   onXmlChange={setCurrentBpmnXml}
+                  externalXml={currentBpmnXml}
                 />
               )}
 
@@ -240,6 +242,12 @@ function App() {
                     <ProcessEntry
                       onStart={handleStartExtraction}
                       onSuccess={handleExtractionSuccess}
+                      onBpmnImported={({ knowledge, bpmnXml }) => {
+                        setExtractedData(knowledge);
+                        setCurrentBpmnXml(bpmnXml);
+                        setIsExtracting(false);
+                        setActiveTab('04_REVIEW');
+                      }}
                       onError={() => setIsExtracting(false)}
                     />
                   )}
@@ -367,6 +375,12 @@ function App() {
           <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
         </div>
       </footer>
+
+      <ChatDock
+        bpmnXml={currentBpmnXml}
+        knowledge={extractedData}
+        onBpmnUpdated={setCurrentBpmnXml}
+      />
     </div>
   );
 }
