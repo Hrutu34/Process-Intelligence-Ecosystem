@@ -48,7 +48,14 @@ export const ChatDock: React.FC<Props> = ({
 }) => {
   const [open, setOpen] = useState<boolean>(false);
   const [mode, setMode] = useState<ChatMode>('ask');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const saved = localStorage.getItem('pie_chat_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('pie_chat_history', JSON.stringify(messages));
+  }, [messages]);
   const [pendingEdit, setPendingEdit] = useState<PendingEdit | null>(null);
   const [input, setInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
