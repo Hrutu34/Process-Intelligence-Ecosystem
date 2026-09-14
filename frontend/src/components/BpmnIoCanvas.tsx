@@ -10,11 +10,12 @@ import './BpmnIoCanvas.css';
 interface Props {
   graph: ProcessGraphDTO;
   knowledge?: ProcessKnowledgeDTO;
+  externalXml?: string | null;
   onXmlChange?: (xml: string) => void;
   onReviewClick?: () => void;
 }
 
-export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, onXmlChange, onReviewClick }) => {
+export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, onXmlChange, onReviewClick }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -31,18 +32,46 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, onXmlChange, o
     }
   }, [xmlString, onXmlChange]);
 
+  const lastEmittedRef = useRef<string>('');
+
   useEffect(() => {
     if (!containerRef.current) return;
     let isMounted = true;
-    
+
     // Initialize Modeler
     const modeler = new BpmnModeler({ container: containerRef.current });
     viewerRef.current = modeler;
 
-    const loadDiagramFromBackend = async () => {
+    const wireChangeListener = () => {
+      const eventBus = modeler.get('eventBus');
+      eventBus?.on('commandStack.changed', async () => {
+        const saved = await modeler.saveXML({ format: true });
+        if (isMounted && saved.xml) {
+          lastEmittedRef.current = saved.xml;
+          setXmlString(saved.xml);
+        }
+      });
+    };
+
+    const importReadyXml = async (xml: string) => {
+      lastEmittedRef.current = xml;
+      setXmlString(xml);
+      await modeler.importXML(xml);
+      wireChangeListener();
+      modeler.get('canvas').zoom('fit-viewport', 'auto');
+    };
+
+    const loadDiagram = async () => {
       try {
         setIsLoading(true);
         setRenderError(null);
+
+        // If parent already has a canonical XML (e.g. chat-applied edit or /import-bpmn upload),
+        // skip the backend generator and render the provided XML directly.
+        if (externalXml && externalXml.trim().length > 0) {
+          await importReadyXml(externalXml);
+          return;
+        }
 
         // Fetch XML natively from the Java Backend Engine
         const response = await fetch('http://localhost:8080/api/v1/process/bpmn/generate', {
@@ -58,18 +87,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, onXmlChange, o
         const xml = await response.text();
         if (!isMounted) return;
 
-        setXmlString(xml);
-
-        // Import generated XML into the canvas
-        await modeler.importXML(xml);
-        
-        const eventBus = modeler.get('eventBus');
-        eventBus?.on('commandStack.changed', async () => {
-          const saved = await modeler.saveXML({ format: true });
-          if (isMounted && saved.xml) setXmlString(saved.xml);
-        });
-        
-        modeler.get('canvas').zoom('fit-viewport', 'auto');
+        await importReadyXml(xml);
       } catch (error: any) {
         if (isMounted) setRenderError(error.message || 'BPMN diagram retrieval or rendering failed');
       } finally {
@@ -77,7 +95,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, onXmlChange, o
       }
     };
 
-    loadDiagramFromBackend();
+    loadDiagram();
 
     return () => {
       isMounted = false;
@@ -85,6 +103,25 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, onXmlChange, o
       viewerRef.current = null;
     };
   }, [graph]);
+
+  // Re-import when parent pushes a new externalXml that we did NOT emit ourselves
+  // (e.g. chat applied an edit while the canvas is already mounted).
+  useEffect(() => {
+    if (!externalXml || !viewerRef.current) return;
+    if (externalXml === lastEmittedRef.current) return;
+    if (externalXml === xmlString) return;
+    viewerRef.current
+      .importXML(externalXml)
+      .then(() => {
+        lastEmittedRef.current = externalXml;
+        setXmlString(externalXml);
+        try {
+          viewerRef.current.get('canvas').zoom('fit-viewport', 'auto');
+        } catch { /* ignore */ }
+      })
+      .catch((e: any) => setRenderError(e.message || 'External BPMN import failed'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalXml]);
 
   const handleZoomIn = () => viewerRef.current?.get('zoomScroll').stepZoom(1);
   const handleZoomOut = () => viewerRef.current?.get('zoomScroll').stepZoom(-1);

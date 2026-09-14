@@ -62,6 +62,15 @@ public class ProcessQualityValidator {
         validateActivityOwnership(nodes, issues, recommendations);
         validateSharedOwnership(nodes, edges, issues, recommendations);
 
+        // 6. Answer-key defect rules (D02, D06, D07, D10, D11, D12, D13) + extras
+        validateTaskNaming(nodes, issues, recommendations);
+        validateParallelGateways(nodes, edges, issues, recommendations);
+        validateGatewayLabels(nodes, issues, recommendations);
+        validateConsecutiveDuplicates(nodes, edges, issues, recommendations);
+        validateSwimlanesAndRoles(nodes, issues, recommendations);
+        validateLinearComplexity(nodes, edges, issues, recommendations);
+        validateDanglingFlows(nodes, edges, issues, recommendations);
+
         int qualityScore = calculateQualityScore(nodes, edges, issues);
         int highCount = (int) issues.stream().filter(i -> "HIGH".equalsIgnoreCase(i.severity())).count();
         boolean isValid = highCount == 0;
@@ -504,6 +513,230 @@ public class ProcessQualityValidator {
                         "Decision point '" + gw.getLabel() + "' only handles the positive/approved path ('" + outgoing.get(0).getLabel() + "'). The rejected or exception path is missing."
                 ));
                 recommendations.add("Add a rejection/exception branch (e.g. 'Rejected' -> 'Notify Requester' or 'Terminate') to '" + gw.getLabel() + "'.");
+            }
+        }
+    }
+
+    private static final Set<String> VAGUE_TASK_LABELS = Set.of(
+            "process", "do needful", "handle", "task", "work", "do work",
+            "execute", "perform", "action", "step", "miscellaneous", "etc", "activity",
+            "manage", "deal", "deal with", "do", "run", "operate",
+            "verify", "next step", "todo", "to do", "misc", "other", "stuff", "thing",
+            "start task", "end task", "finish", "complete", "close", "final",
+            "unnamed activity"
+    );
+
+    public void validateTaskNaming(List<GraphNode> nodes,
+                                   List<ValidationIssueDTO> issues,
+                                   List<String> recommendations) {
+        for (GraphNode node : nodes) {
+            if (node.getType() != NodeType.Activity) continue;
+            String label = node.getLabel() != null ? node.getLabel().trim() : "";
+            String norm = label.toLowerCase(Locale.ROOT);
+
+            if (label.isBlank()) {
+                issues.add(new ValidationIssueDTO(
+                        "TASK_NAME_MISSING",
+                        "MEDIUM",
+                        node.getId(),
+                        "Unnamed task",
+                        "Activity has no name. Every task should carry a verb+object label."
+                ));
+                recommendations.add("Give the unnamed activity a clear verb+object name.");
+                continue;
+            }
+
+            boolean isVague = VAGUE_TASK_LABELS.contains(norm)
+                    || (norm.length() <= 10 && VAGUE_TASK_LABELS.stream()
+                            .anyMatch(v -> norm.equals(v) || norm.startsWith(v + " ")));
+
+            if (isVague) {
+                issues.add(new ValidationIssueDTO(
+                        "TASK_NAME_QUALITY_RULE",
+                        "MEDIUM",
+                        node.getId(),
+                        "Vague task name: '" + label + "'",
+                        "Task '" + label + "' is non-actionable. Rename to a verb + business object (e.g. 'Approve invoice for payment')."
+                ));
+                recommendations.add("Rename task '" + label + "' to a concrete verb+object action.");
+            }
+        }
+    }
+
+    public void validateParallelGateways(List<GraphNode> nodes,
+                                         List<GraphEdge> edges,
+                                         List<ValidationIssueDTO> issues,
+                                         List<String> recommendations) {
+        List<GraphNode> parallelSplits = nodes.stream()
+                .filter(n -> n.getType() == NodeType.Gateway)
+                .filter(n -> {
+                    boolean isParallelType = n.getMetadata() != null && n.getMetadata().getGatewayType() == GatewayType.parallel;
+                    boolean isParallelLabel = n.getLabel() != null && n.getLabel().toLowerCase(Locale.ROOT).contains("parallel");
+                    long outCount = edges.stream()
+                            .filter(this::isProcessFlow)
+                            .filter(e -> e.getFrom().equals(n.getId()))
+                            .count();
+                    return (isParallelType || isParallelLabel) && outCount > 1;
+                })
+                .toList();
+
+        List<GraphNode> parallelJoins = nodes.stream()
+                .filter(n -> n.getType() == NodeType.Gateway)
+                .filter(n -> {
+                    boolean isParallelType = n.getMetadata() != null && n.getMetadata().getGatewayType() == GatewayType.parallel;
+                    long inCount = edges.stream()
+                            .filter(this::isProcessFlow)
+                            .filter(e -> e.getTo().equals(n.getId()))
+                            .count();
+                    return isParallelType && inCount > 1;
+                })
+                .toList();
+
+        for (GraphNode split : parallelSplits) {
+            if (parallelJoins.isEmpty()) {
+                issues.add(new ValidationIssueDTO(
+                        "PARALLEL_SPLIT_JOIN_RULE",
+                        "HIGH",
+                        split.getId(),
+                        "Missing parallel join for split: '" + split.getLabel() + "'",
+                        "Parallel split '" + split.getLabel() + "' has no matching join. Concurrent branches never synchronize."
+                ));
+                recommendations.add("Add a matching parallel join gateway that merges branches before the End Event.");
+            }
+        }
+    }
+
+    public void validateGatewayLabels(List<GraphNode> nodes,
+                                      List<ValidationIssueDTO> issues,
+                                      List<String> recommendations) {
+        for (GraphNode node : nodes) {
+            if (node.getType() != NodeType.Gateway) continue;
+            String label = node.getLabel() != null ? node.getLabel().trim() : "";
+            String norm = label.toLowerCase(Locale.ROOT);
+
+            boolean isUnlabeled = label.isBlank()
+                    || norm.equals("unlabeled")
+                    || norm.startsWith("exclusivegateway")
+                    || norm.equals("gateway")
+                    || norm.equals("decision");
+
+            if (isUnlabeled) {
+                issues.add(new ValidationIssueDTO(
+                        "UNLABELED_GATEWAY_RULE",
+                        "LOW",
+                        node.getId(),
+                        "Unlabeled decision gateway",
+                        "Decision gateway has no descriptive name, hiding the decision criteria."
+                ));
+                recommendations.add("Name the gateway with the question it answers (e.g. 'Approved?').");
+            }
+        }
+    }
+
+    public void validateConsecutiveDuplicates(List<GraphNode> nodes,
+                                              List<GraphEdge> edges,
+                                              List<ValidationIssueDTO> issues,
+                                              List<String> recommendations) {
+        Map<String, GraphNode> activityMap = nodes.stream()
+                .filter(n -> n.getType() == NodeType.Activity)
+                .collect(Collectors.toMap(GraphNode::getId, n -> n, (a, b) -> a));
+
+        Set<String> reportedPairs = new HashSet<>();
+
+        for (GraphEdge edge : edges) {
+            if (edge.getEdgeType() != EdgeType.sequence) continue;
+            GraphNode from = activityMap.get(edge.getFrom());
+            GraphNode to = activityMap.get(edge.getTo());
+            if (from == null || to == null) continue;
+
+            String label1 = from.getLabel().trim().toLowerCase(Locale.ROOT);
+            String label2 = to.getLabel().trim().toLowerCase(Locale.ROOT);
+            if (label1.equals(label2) && !label1.isBlank()) {
+                String pairKey = from.getId() + "--" + to.getId();
+                if (reportedPairs.add(pairKey)) {
+                    issues.add(new ValidationIssueDTO(
+                            "CONSECUTIVE_DUPLICATE_RULE",
+                            "MEDIUM",
+                            to.getId(),
+                            "Duplicate consecutive activity: '" + to.getLabel() + "'",
+                            "Two identical consecutive tasks '" + to.getLabel() + "' add no value."
+                    ));
+                    recommendations.add("Merge consecutive identical '" + to.getLabel() + "' tasks into one activity.");
+                }
+            }
+        }
+    }
+
+    public void validateSwimlanesAndRoles(List<GraphNode> nodes,
+                                          List<ValidationIssueDTO> issues,
+                                          List<String> recommendations) {
+        long roleCount = nodes.stream().filter(n -> n.getType() == NodeType.Role).count();
+
+        Set<String> impliedRoles = new HashSet<>();
+        for (GraphNode node : nodes) {
+            if (node.getType() != NodeType.Activity) continue;
+            String l = node.getLabel().toLowerCase(Locale.ROOT);
+            if (l.contains("service desk") || l.contains("helpdesk")) impliedRoles.add("service desk");
+            if (l.contains("agent") || l.contains("support")) impliedRoles.add("agent");
+            if (l.contains("manager") || l.contains("supervisor")) impliedRoles.add("manager");
+            if (l.contains("finance") || l.contains("accounting")) impliedRoles.add("finance");
+            if (l.contains("employee") || l.contains("requester")) impliedRoles.add("employee");
+        }
+
+        if (roleCount == 0 && impliedRoles.size() >= 2) {
+            issues.add(new ValidationIssueDTO(
+                    "SWIMLANE_GOVERNANCE_RULE",
+                    "MEDIUM",
+                    null,
+                    "Missing swimlanes / role partitions",
+                    "Multiple operational roles (" + String.join(", ", impliedRoles) + ") are implied, but no pool/lanes assign ownership."
+            ));
+            recommendations.add("Introduce a pool with lanes (e.g. " + String.join(", ", impliedRoles) + ") and assign tasks.");
+        }
+    }
+
+    public void validateLinearComplexity(List<GraphNode> nodes,
+                                         List<GraphEdge> edges,
+                                         List<ValidationIssueDTO> issues,
+                                         List<String> recommendations) {
+        List<GraphNode> activities = nodes.stream().filter(n -> n.getType() == NodeType.Activity).toList();
+        List<GraphNode> gateways = nodes.stream().filter(n -> n.getType() == NodeType.Gateway).toList();
+
+        if (activities.size() >= 7 && gateways.isEmpty()) {
+            issues.add(new ValidationIssueDTO(
+                    "LINEAR_COMPLEXITY_RULE",
+                    "LOW",
+                    null,
+                    "Excessive linear complexity: " + activities.size() + " consecutive steps without branching",
+                    "Long unbranched chain suggests over-decomposition. Consolidate related steps."
+            ));
+            recommendations.add("Consolidate fine-grained sequential steps to streamline the workflow.");
+        }
+    }
+
+    public void validateDanglingFlows(List<GraphNode> nodes,
+                                      List<GraphEdge> edges,
+                                      List<ValidationIssueDTO> issues,
+                                      List<String> recommendations) {
+        Set<String> nodeIds = nodes.stream().map(GraphNode::getId).collect(Collectors.toSet());
+
+        for (GraphEdge edge : edges) {
+            if (!isProcessFlow(edge)) continue;
+            boolean fromMissing = edge.getFrom() == null || !nodeIds.contains(edge.getFrom());
+            boolean toMissing = edge.getTo() == null || !nodeIds.contains(edge.getTo());
+
+            if (fromMissing || toMissing) {
+                String direction = fromMissing && toMissing
+                        ? "both source and target"
+                        : fromMissing ? "source '" + edge.getFrom() + "'" : "target '" + edge.getTo() + "'";
+                issues.add(new ValidationIssueDTO(
+                        "DANGLING_FLOW",
+                        "HIGH",
+                        edge.getId(),
+                        "Dangling sequence flow: " + edge.getId(),
+                        "Sequence flow '" + edge.getId() + "' references " + direction + " which does not exist."
+                ));
+                recommendations.add("Remove or reconnect the dangling flow '" + edge.getId() + "'.");
             }
         }
     }
