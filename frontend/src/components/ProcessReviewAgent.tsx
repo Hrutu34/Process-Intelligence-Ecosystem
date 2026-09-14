@@ -55,6 +55,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasFetched = React.useRef(false);
+  const [showWalkthroughModal, setShowWalkthroughModal] = useState(false);
 
   React.useEffect(() => {
     if (bpmnXml) {
@@ -188,39 +189,95 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
               <h4>Process Summary</h4>
               <p>{report.summary}</p>
             </div>
-            {report.participants && report.participants.length > 0 && (
-              <div className="issues-section">
-                <h4>Participants</h4>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {report.participants.map((p, idx) => (
-                    <span key={idx} style={{ background: 'rgba(88, 170, 205, 0.1)', border: '1px solid rgba(88, 170, 205, 0.3)', padding: '4px 12px', borderRadius: '16px', fontSize: '13px', color: 'var(--aqua)' }}>{p}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {report.steps && report.steps.length > 0 && (
-              <div className="recommendations-section">
-                <h4>Process Steps</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {report.steps.map((step) => (
-                    <div key={step.sequence} style={{ background: 'rgba(57, 245, 208, 0.05)', padding: '12px 16px', borderRadius: '8px', borderLeft: '3px solid var(--aqua)' }}>
-                      <strong style={{ color: 'var(--aqua)' }}>{step.sequence}. {step.name}</strong>
-                      <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: '14px' }}>{step.description}</p>
+            
+            <div style={{ padding: '20px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <button 
+                className="yellow-button" 
+                style={{ width: '100%', padding: '14px', borderRadius: '8px', fontSize: '14px', letterSpacing: '1px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+                onClick={() => setShowWalkthroughModal(true)}
+              >
+                <span>🚀 VIEW PROCESS WALKTHROUGH</span>
+              </button>
+            </div>
+
+            {/* Walkthrough Modal Overlay */}
+            {showWalkthroughModal && (
+              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: 'var(--card-bg)', width: '90vw', maxWidth: '1000px', height: '85vh', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                  
+                  {/* Modal Header */}
+                  <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                    <div>
+                      <p style={{ margin: '0 0 4px', color: 'var(--aqua)', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase' }}>Interactive Journey</p>
+                      <h2 style={{ margin: 0, color: 'var(--white)' }}>Process Walkthrough</h2>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {report.decisions && report.decisions.length > 0 && (
-              <div className="recommendations-section">
-                <h4>Key Decisions & Approvals</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {report.decisions.map((dec, idx) => (
-                    <div key={idx} style={{ background: 'rgba(198, 255, 0, 0.08)', padding: '12px 16px', borderRadius: '8px', borderLeft: '3px solid var(--electric)' }}>
-                      <strong style={{ color: 'var(--electric)' }}>{dec.name}</strong>
-                      <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: '14px' }}>{dec.description}</p>
+                    <button 
+                      onClick={() => setShowWalkthroughModal(false)}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: '24px', cursor: 'pointer', padding: '8px' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Modal Body - Creative Flow */}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '40px' }}>
+                    
+                    {/* Participants Row */}
+                    {report.participants && report.participants.length > 0 && (
+                      <div style={{ marginBottom: '40px', textAlign: 'center' }}>
+                        <h4 style={{ color: 'var(--muted)', letterSpacing: '1px', marginBottom: '16px' }}>KEY PARTICIPANTS</h4>
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                          {report.participants.map((p, idx) => (
+                            <span key={idx} style={{ background: 'rgba(88, 170, 205, 0.1)', border: '1px solid rgba(88, 170, 205, 0.3)', padding: '6px 16px', borderRadius: '24px', fontSize: '14px', color: 'var(--aqua)', boxShadow: '0 4px 12px rgba(88, 170, 205, 0.1)' }}>
+                              👤 {p}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Timeline Flow */}
+                    <div style={{ position: 'relative', maxWidth: '800px', margin: '0 auto', padding: '20px 0' }}>
+                      <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '2px', background: 'linear-gradient(to bottom, var(--aqua) 0%, var(--electric) 100%)', transform: 'translateX(-50%)', opacity: 0.3 }} />
+                      
+                      {report.steps?.map((step, idx) => {
+                        const isLeft = idx % 2 === 0;
+                        return (
+                          <div key={idx} style={{ display: 'flex', justifyContent: isLeft ? 'flex-start' : 'flex-end', width: '100%', marginBottom: '40px', position: 'relative' }}>
+                            <div style={{ position: 'absolute', left: '50%', top: '24px', width: '16px', height: '16px', borderRadius: '50%', background: 'var(--bg-color)', border: '4px solid var(--aqua)', transform: 'translate(-50%, -50%)', zIndex: 2 }} />
+                            
+                            <div style={{ width: '45%', display: 'flex', justifyContent: isLeft ? 'flex-end' : 'flex-start' }}>
+                              <div style={{ background: 'rgba(57, 245, 208, 0.03)', border: '1px solid rgba(57, 245, 208, 0.2)', padding: '24px', borderRadius: '16px', width: '100%', position: 'relative', textAlign: isLeft ? 'right' : 'left' }}>
+                                <div style={{ position: 'absolute', top: '-14px', [isLeft ? 'right' : 'left']: '24px', background: 'var(--aqua)', color: '#000', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+                                  STEP {step.sequence}
+                                </div>
+                                <h3 style={{ margin: '12px 0 8px', color: 'var(--white)', fontSize: '18px' }}>{step.name}</h3>
+                                <p style={{ margin: 0, color: 'var(--soft-white)', fontSize: '14px', lineHeight: 1.6 }}>{step.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
+
+                    {/* Decisions Section at bottom */}
+                    {report.decisions && report.decisions.length > 0 && (
+                      <div style={{ marginTop: '60px', paddingTop: '40px', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
+                        <h4 style={{ color: 'var(--electric)', letterSpacing: '1px', marginBottom: '24px', textAlign: 'center' }}>CRITICAL DECISION GATES</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                          {report.decisions.map((dec, idx) => (
+                            <div key={idx} style={{ background: 'rgba(198, 255, 0, 0.05)', padding: '24px', borderRadius: '12px', border: '1px solid rgba(198, 255, 0, 0.2)', position: 'relative' }}>
+                              <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)' }}>
+                                <div style={{ width: 24, height: 24, background: 'var(--electric)', transform: 'rotate(45deg)', borderRadius: '4px' }} />
+                              </div>
+                              <h4 style={{ margin: '16px 0 8px', color: 'var(--electric)', textAlign: 'center', fontSize: '16px' }}>{dec.name}</h4>
+                              <p style={{ margin: 0, color: 'var(--muted)', fontSize: '14px', textAlign: 'center', lineHeight: 1.5 }}>{dec.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

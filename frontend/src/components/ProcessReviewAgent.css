@@ -1,6 +1,6 @@
 .process-review-agent {
   width: 100%;
-  padding: 0;
+  padding: 20px;
 }
 
 .review-report-card {
@@ -10,7 +10,7 @@
   box-shadow: 12px 14px 30px rgba(1, 10, 25, 0.55),
               -8px -8px 20px rgba(31, 72, 117, 0.3),
               inset 1px 1px rgba(255, 255, 255, 0.08);
-  padding: 32px;
+  padding: 24px;
   color: var(--soft-white);
 }
 

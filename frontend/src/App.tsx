@@ -199,8 +199,8 @@ function App() {
               )}
 
               {activeTab === "04_REVIEW" && (
-                  <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-                    <div style={{ flex: 1, borderRight: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', gap: '24px', height: 'calc(100vh - 200px)', overflow: 'hidden' }}>
+                    <div style={{ flex: 1,  }}>
                       <ProcessGraphViewer
                         knowledge={extractedData}
                         defaultView="bpmn"
@@ -209,7 +209,7 @@ function App() {
                         highlightedElementId={highlightedElement}
                       />
                     </div>
-                    <div style={{ width: '450px', flexShrink: 0, overflowY: 'auto', background: 'var(--card-bg)' }}>
+                    <div style={{ width: '450px', flexShrink: 0, overflowY: 'auto', background: 'var(--bg-color)',  }}>
                       <ProcessReviewAgent 
                         bpmnXml={currentBpmnXml} 
                         onHighlightIssue={setHighlightedElement} 
