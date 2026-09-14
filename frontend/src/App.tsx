@@ -18,7 +18,7 @@ function App() {
   const [activeFileCount, setActiveFileCount] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<AgentTab>("01_KNOWLEDGE");
   const [currentBpmnXml, setCurrentBpmnXml] = useState<string | null>(null);
-  const [highlightedElement, setHighlightedElement] = useState<string | null>(null);
+  const [highlightedElement, setHighlightedElement] = useState<{id: string, color: string} | null>(null);
 
   const agents = [
     {
@@ -207,14 +207,15 @@ function App() {
                         onProceed={() => setActiveTab("04_REVIEW")}
                         onXmlChange={setCurrentBpmnXml}
                         externalXml={currentBpmnXml}
-                        highlightedElementId={highlightedElement}
+                        highlightedElementId={highlightedElement?.id}
+                        highlightColor={highlightedElement?.color}
                         minimalLayout={true}
                       />
                     </div>
                     <div className="custom-scrollbar" style={{ width: '400px', flexShrink: 0, position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', borderRadius: '18px' }}>
                       <ProcessReviewAgent 
                         bpmnXml={currentBpmnXml} 
-                        onHighlightIssue={setHighlightedElement} 
+                        onHighlightIssue={(id, color) => setHighlightedElement(id ? { id, color: color || '#ff6b6b' } : null)} 
                       />
                     </div>
                   </div>

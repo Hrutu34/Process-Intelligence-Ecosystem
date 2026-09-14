@@ -4,7 +4,7 @@ import './ProcessReviewAgent.css';
 import { AgentLoadingScreen } from './AgentLoadingScreen';
 
 interface Props {
-  onHighlightIssue?: (elementId: string | null) => void;
+  onHighlightIssue?: (elementId: string | null, color?: string) => void;
   bpmnXml: string | null;
 }
 
@@ -321,7 +321,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
                       {expandedFindings && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
                           {quality.issues.filter(i => (i.severity || '').toUpperCase() === 'HIGH').map((iss, idx) => (
-                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(255, 107, 107, 0.08)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid #ff6b6b' }}>
+                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null, '#ff6b6b')} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(255, 107, 107, 0.08)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid #ff6b6b' }}>
                               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
                                 <strong style={{ color: 'var(--white)', fontSize: 13 }}>{iss.ruleId}</strong>
                                 {iss.elementId && (
@@ -349,7 +349,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
                       {expandedRisks && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
                           {quality.issues.filter(i => (i.severity || '').toUpperCase() === 'MEDIUM' || (i.severity || '').toUpperCase() === 'LOW').map((iss, idx) => (
-                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(251, 212, 55, 0.08)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid #fbd437' }}>
+                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null, '#fbd437')} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(251, 212, 55, 0.08)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid #fbd437' }}>
                               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
                                 <strong style={{ color: 'var(--white)', fontSize: 13 }}>{iss.ruleId}</strong>
                                 {iss.elementId && (
@@ -377,7 +377,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
                       {expandedSuggestions && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
                           {quality.issues.filter(i => i.suggestion).map((iss, idx) => (
-                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(57, 245, 208, 0.05)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid var(--aqua)' }}>
+                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null, '#39f5d0')} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(57, 245, 208, 0.05)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid var(--aqua)' }}>
                               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
                                 <strong style={{ color: 'var(--aqua)', fontSize: 13 }}>Suggested Fix</strong>
                                 {iss.elementId && (
