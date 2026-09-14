@@ -4,6 +4,7 @@ import type {
   ProcessGraphDTO,
   ProcessQualityReportDTO,
 } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import { TypingMarkdown } from './TypingMarkdown';
 import { chatService, type ChatMessage, type EditOperation } from '../services/chatService';
 import './ChatDock.css';
 
@@ -312,7 +313,9 @@ export const ChatDock: React.FC<Props> = ({
             {messages.map((m, idx) => (
               <div key={idx} className={`chat-msg chat-msg-${m.role}`}>
                 <div className="chat-msg-role">{m.role === 'user' ? 'You' : 'Copilot'}</div>
-                <div className="chat-msg-content">{m.content}</div>
+                <div className="chat-msg-content">
+                    <TypingMarkdown content={m.content} isStreaming={m.role === 'assistant' && idx === messages.length - 1} speed={10} />
+                  </div>
               </div>
             ))}
 
