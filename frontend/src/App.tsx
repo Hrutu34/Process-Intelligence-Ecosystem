@@ -3,7 +3,9 @@ import ProcessEntry from "./components/ProcessEntry";
 import { ProcessKnowledgeReview } from "./components/ProcessKnowledgeReview";
 import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent";
 import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
+import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
+import { ChatDock } from "./components/ChatDock";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import { useRef, useState } from "react";
 
@@ -15,6 +17,8 @@ function App() {
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [activeFileCount, setActiveFileCount] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<AgentTab>("01_KNOWLEDGE");
+  const [currentBpmnXml, setCurrentBpmnXml] = useState<string | null>(null);
+  const [highlightedElement, setHighlightedElement] = useState<{id: string, color: string} | null>(null);
 
   const agents = [
     {
@@ -187,22 +191,35 @@ function App() {
                 <ProcessGraphViewer
                   knowledge={extractedData}
                   defaultView="bpmn"
-                  onProceedToBpmn={() => setActiveTab("04_REVIEW")}
+                  onProceed={() => setActiveTab("04_REVIEW")}
+                  proceedLabel="PROCEED TO PROCESS REVIEW <span>↗</span>"
+                  onXmlChange={setCurrentBpmnXml}
+                  externalXml={currentBpmnXml}
                 />
               )}
 
               {activeTab === "04_REVIEW" && (
-                <div className="agent-placeholder-card">
-                  <span className="agent-icon">✦</span>
-                  <h3>Agent 04: Process Review & Translation Agent</h3>
-                  <p>
-                    Translates technical BPMN XML back into clear executive summaries and audit reports.
-                  </p>
-                  <button className="yellow-button" type="button" onClick={() => alert("Agent 04 ready to run!")}>
-                    GENERATE EXECUTIVE SUMMARY <span>↗</span>
-                  </button>
-                </div>
-              )}
+                  <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <ProcessGraphViewer
+                        knowledge={extractedData}
+                        defaultView="bpmn"
+                        onProceed={() => setActiveTab("04_REVIEW")}
+                        onXmlChange={setCurrentBpmnXml}
+                        externalXml={currentBpmnXml}
+                        highlightedElementId={highlightedElement?.id}
+                        highlightColor={highlightedElement?.color}
+                        minimalLayout={true}
+                      />
+                    </div>
+                    <div className="custom-scrollbar" style={{ width: '400px', flexShrink: 0, position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', borderRadius: '18px' }}>
+                      <ProcessReviewAgent 
+                        bpmnXml={currentBpmnXml} 
+                        onHighlightIssue={(id, color) => setHighlightedElement(id ? { id, color: color || '#ff6b6b' } : null)} 
+                      />
+                    </div>
+                  </div>
+                )}
             </div>
           </section>
         ) : (
@@ -245,6 +262,12 @@ function App() {
                     <ProcessEntry
                       onStart={handleStartExtraction}
                       onSuccess={handleExtractionSuccess}
+                      onBpmnImported={({ knowledge, bpmnXml }) => {
+                        setExtractedData(knowledge);
+                        setCurrentBpmnXml(bpmnXml);
+                        setIsExtracting(false);
+                        setActiveTab('04_REVIEW');
+                      }}
                       onError={() => setIsExtracting(false)}
                     />
                   )}
@@ -372,6 +395,12 @@ function App() {
           <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
         </div>
       </footer>
+
+      <ChatDock
+        bpmnXml={currentBpmnXml}
+        knowledge={extractedData}
+        onBpmnUpdated={setCurrentBpmnXml}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 package com.pie.backend.controller;
 
+import com.pie.backend.service.BpmnXmlParser;
 import com.pie.backend.service.DocumentIngestionService;
 import com.pie.backend.service.AiProcessQualityService;
 import com.pie.backend.service.BpmnDomainModelMapper;
@@ -29,12 +30,14 @@ public class ProcessController {
     private final BpmnDomainModelMapper bpmnMapper;
     private final BpmnXmlGenerationService bpmnXmlService;
     private final com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService;
+    private final com.pie.backend.service.AiProcessReviewService aiProcessReviewService;
+    private final BpmnXmlParser bpmnParser;
 
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator) {
-        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null);
+        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null, null, null);
     }
 
     @Autowired
@@ -45,7 +48,9 @@ public class ProcessController {
             AiProcessQualityService aiQualityService,
             BpmnDomainModelMapper bpmnMapper,
             BpmnXmlGenerationService bpmnXmlService,
-            com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService) {
+            com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService,
+            com.pie.backend.service.AiProcessReviewService aiProcessReviewService,
+            BpmnXmlParser bpmnParser) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
         this.qualityValidator = qualityValidator;
@@ -53,6 +58,8 @@ public class ProcessController {
         this.bpmnMapper = bpmnMapper;
         this.bpmnXmlService = bpmnXmlService;
         this.aiBpmnRefinementService = aiBpmnRefinementService;
+        this.aiProcessReviewService = aiProcessReviewService;
+        this.bpmnParser = bpmnParser;
     }
 
     @PostMapping("/extract-text")
@@ -106,6 +113,69 @@ public class ProcessController {
         return ResponseEntity.ok(report);
     }
 
+    @PostMapping("/review/summary")
+    public ResponseEntity<?> generateReviewSummary(@RequestBody TextPayload payload) {
+        if (aiProcessReviewService == null) {
+            return ResponseEntity.internalServerError().build();
+        }
+        try {
+            return ResponseEntity.ok(aiProcessReviewService.generateSummary(payload.content()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error generating review summary.");
+        }
+    }
+
+    @PostMapping("/import-bpmn")
+    public ResponseEntity<BpmnImportResponseDTO> importBpmnXml(@RequestBody BpmnXmlPayload payload) {
+        if (bpmnParser == null) return ResponseEntity.internalServerError().build();
+        try {
+            var parseResult = bpmnParser.parse(payload.xml());
+            ProcessQualityReportDTO qualityReport = qualityValidator.validateQuality(parseResult.graph());
+            return ResponseEntity.ok(new BpmnImportResponseDTO(
+                    parseResult.graph(),
+                    parseResult.knowledge(),
+                    parseResult.processName(),
+                    parseResult.processId(),
+                    qualityReport
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping(value = "/import-bpmn-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BpmnImportResponseDTO> importBpmnFile(@RequestParam("file") MultipartFile file) {
+        if (bpmnParser == null) return ResponseEntity.internalServerError().build();
+        try {
+            String xmlContent = new String(file.getBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            var parseResult = bpmnParser.parse(xmlContent);
+            ProcessQualityReportDTO qualityReport = qualityValidator.validateQuality(parseResult.graph());
+            return ResponseEntity.ok(new BpmnImportResponseDTO(
+                    parseResult.graph(),
+                    parseResult.knowledge(),
+                    parseResult.processName(),
+                    parseResult.processId(),
+                    qualityReport
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     public record TextPayload(String content) {
+    }
+
+    public record BpmnXmlPayload(String xml) {
+    }
+
+    public record BpmnImportResponseDTO(
+            ProcessGraphDTO graph,
+            ProcessKnowledgeDTO knowledge,
+            String processName,
+            String processId,
+            ProcessQualityReportDTO qualityReport
+    ) {
     }
 }

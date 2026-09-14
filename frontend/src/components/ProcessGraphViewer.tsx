@@ -11,8 +11,14 @@ import './ProcessGraphViewer.css';
 
 interface Props {
   knowledge: ProcessKnowledgeDTO;
-  onProceedToBpmn?: () => void;
+  onProceed?: () => void;
+  proceedLabel?: string;
   defaultView?: 'visual' | 'bpmn' | 'topology' | 'json';
+  onXmlChange?: (xml: string) => void;
+  externalXml?: string | null;
+  highlightedElementId?: string | null;
+  highlightColor?: string;
+  minimalLayout?: boolean;
 }
 
 type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
@@ -20,7 +26,7 @@ type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
 const processGraphCache = new Map<string, ProcessGraphDTO>();
 const processGraphRequestCache = new Map<string, Promise<ProcessGraphDTO>>();
 
-export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn, defaultView = 'visual' }) => {
+export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proceedLabel = 'PROCEED <span>↗</span>', defaultView = 'visual', onXmlChange, externalXml, highlightedElementId, highlightColor, minimalLayout }) => {
   const knowledgeKey = JSON.stringify(knowledge);
   const [graph, setGraph] = useState<ProcessGraphDTO | null>(
     () => processGraphCache.get(knowledgeKey) || null,
@@ -135,7 +141,8 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
   return (
     <div className="graph-viewer-container">
       {/* Header Bar */}
-      <div className="graph-header-bar">
+      {!minimalLayout && (
+        <div className="graph-header-bar">
         <div className="graph-title-group">
           <div className="status-pill">
             <span className="status-dot" />
@@ -195,6 +202,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
           </button>
         </div>
       </div>
+      )}
 
       {/* VIEW 1: VISUAL DIAGRAM FLOW */}
       {viewMode === 'visual' && (
@@ -419,15 +427,14 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
               </div>
             )}
 
-            {onProceedToBpmn && (
+            {onProceed && (
               <button
                 type="button"
                 className="yellow-button"
                 style={{ marginTop: 'auto' }}
-                onClick={onProceedToBpmn}
-              >
-                PROCEED TO BPMN MODELLING <span>↗</span>
-              </button>
+                onClick={onProceed}
+                dangerouslySetInnerHTML={{ __html: proceedLabel }}
+              />
             )}
           </div>
         </div>
@@ -435,7 +442,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceedToBpmn
 
       {/* VIEW: BPMN.IO CANVAS */}
       {viewMode === 'bpmn' && (
-        <BpmnIoCanvas graph={graph} />
+        <BpmnIoCanvas graph={graph} externalXml={externalXml} highlightedNodeId={highlightedElementId} highlightColor={highlightColor} onXmlChange={onXmlChange} onReviewClick={onProceed} />
       )}
 
       {/* VIEW 2: TOPOLOGY TABLE VIEW */}

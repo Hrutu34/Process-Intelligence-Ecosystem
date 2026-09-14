@@ -10,9 +10,14 @@ import './BpmnIoCanvas.css';
 interface Props {
   graph: ProcessGraphDTO;
   knowledge?: ProcessKnowledgeDTO;
+  externalXml?: string | null;
+  onXmlChange?: (xml: string) => void;
+  onReviewClick?: () => void;
+  highlightedNodeId?: string | null;
+  highlightColor?: string;
 }
 
-export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
+export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, onXmlChange, onReviewClick, highlightedNodeId, highlightColor = '#ff6b6b' }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -24,17 +29,51 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (onXmlChange && xmlString) {
+      onXmlChange(xmlString);
+    }
+  }, [xmlString, onXmlChange]);
+
+  const lastEmittedRef = useRef<string>('');
+
+  useEffect(() => {
     if (!containerRef.current) return;
     let isMounted = true;
-    
+
     // Initialize Modeler
     const modeler = new BpmnModeler({ container: containerRef.current });
     viewerRef.current = modeler;
 
-    const loadDiagramFromBackend = async () => {
+    const wireChangeListener = () => {
+      const eventBus = modeler.get('eventBus');
+      eventBus?.on('commandStack.changed', async () => {
+        const saved = await modeler.saveXML({ format: true });
+        if (isMounted && saved.xml) {
+          lastEmittedRef.current = saved.xml;
+          setXmlString(saved.xml);
+        }
+      });
+    };
+
+    const importReadyXml = async (xml: string) => {
+      lastEmittedRef.current = xml;
+      setXmlString(xml);
+      await modeler.importXML(xml);
+      wireChangeListener();
+      modeler.get('canvas').zoom('fit-viewport', 'auto');
+    };
+
+    const loadDiagram = async () => {
       try {
         setIsLoading(true);
         setRenderError(null);
+
+        // If parent already has a canonical XML (e.g. chat-applied edit or /import-bpmn upload),
+        // skip the backend generator and render the provided XML directly.
+        if (externalXml && externalXml.trim().length > 0) {
+          await importReadyXml(externalXml);
+          return;
+        }
 
         // Fetch XML natively from the Java Backend Engine
         const response = await fetch('http://localhost:8080/api/v1/process/bpmn/generate', {
@@ -50,18 +89,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
         const xml = await response.text();
         if (!isMounted) return;
 
-        setXmlString(xml);
-
-        // Import generated XML into the canvas
-        await modeler.importXML(xml);
-        
-        const eventBus = modeler.get('eventBus');
-        eventBus?.on('commandStack.changed', async () => {
-          const saved = await modeler.saveXML({ format: true });
-          if (isMounted && saved.xml) setXmlString(saved.xml);
-        });
-        
-        modeler.get('canvas').zoom('fit-viewport', 'auto');
+        await importReadyXml(xml);
       } catch (error: any) {
         if (isMounted) setRenderError(error.message || 'BPMN diagram retrieval or rendering failed');
       } finally {
@@ -69,7 +97,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
       }
     };
 
-    loadDiagramFromBackend();
+    loadDiagram();
 
     return () => {
       isMounted = false;
@@ -77,6 +105,79 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
       viewerRef.current = null;
     };
   }, [graph]);
+
+  // Re-import when parent pushes a new externalXml that we did NOT emit ourselves
+  // (e.g. chat applied an edit while the canvas is already mounted).
+  useEffect(() => {
+    if (!externalXml || !viewerRef.current) return;
+    if (externalXml === lastEmittedRef.current) return;
+    if (externalXml === xmlString) return;
+    viewerRef.current
+      .importXML(externalXml)
+      .then(() => {
+        lastEmittedRef.current = externalXml;
+        setXmlString(externalXml);
+        try {
+          viewerRef.current.get('canvas').zoom('fit-viewport', 'auto');
+        } catch { /* ignore */ }
+      })
+      .catch((e: any) => setRenderError(e.message || 'External BPMN import failed'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalXml]);
+
+  
+  useEffect(() => {
+    if (!viewerRef.current || !highlightedNodeId) return;
+    const canvas = viewerRef.current.get('canvas');
+    const registry = viewerRef.current.get('elementRegistry');
+    
+    // Attempt to clear previous markers
+    const elements = registry.getAll();
+    elements.forEach((e: any) => {
+      try {
+        canvas.removeMarker(e.id, 'highlight-defect');
+      } catch (e) {}
+    });
+
+    if (highlightedNodeId && registry.get(highlightedNodeId)) {
+      try {
+        // We add a dynamic style tag for the highlight color if it changes
+        let styleEl = document.getElementById('bpmn-dynamic-highlight');
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'bpmn-dynamic-highlight';
+          document.head.appendChild(styleEl);
+        }
+        styleEl.innerHTML = `
+          .highlight-defect:not(.djs-connection) .djs-visual > :nth-child(1) {
+            stroke: ${highlightColor} !important;
+            stroke-width: 3px !important;
+            fill: ${highlightColor}33 !important;
+          }
+          .highlight-defect.djs-connection .djs-visual > :nth-child(1) {
+            stroke: ${highlightColor} !important;
+            stroke-width: 3px !important;
+          }
+        `;
+        canvas.addMarker(highlightedNodeId, 'highlight-defect');
+        
+        // Scroll into view
+        const gfx = registry.get(highlightedNodeId);
+        if (gfx) {
+           const viewbox = canvas.viewbox();
+           // Center on element
+           canvas.viewbox({
+             x: gfx.x - viewbox.width / 2 + gfx.width / 2,
+             y: gfx.y - viewbox.height / 2 + gfx.height / 2,
+             width: viewbox.width,
+             height: viewbox.height
+           });
+        }
+      } catch (e) {
+        console.warn('Failed to highlight element', e);
+      }
+    }
+  }, [highlightedNodeId, highlightColor, xmlString]);
 
   const handleZoomIn = () => viewerRef.current?.get('zoomScroll').stepZoom(1);
   const handleZoomOut = () => viewerRef.current?.get('zoomScroll').stepZoom(-1);
@@ -140,7 +241,10 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge }) => {
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
           <button type="button" className="btn-ghost" onClick={handleCopyXml}>{copied ? 'Copied XML' : 'Copy XML'}</button>
-          <button type="button" className="yellow-button" onClick={handleDownloadXml} disabled={isLoading || !!renderError}>DOWNLOAD .BPMN <span>↓</span></button>
+          <button type="button" className="btn-ghost" onClick={handleDownloadXml} disabled={isLoading || !!renderError}>DOWNLOAD .BPMN <span>↓</span></button>
+          {onReviewClick && (
+            <button type="button" className="yellow-button" onClick={onReviewClick} disabled={isLoading || !!renderError}>REVIEW BPMN <span>↗</span></button>
+          )}
         </div>
       </div>
       
