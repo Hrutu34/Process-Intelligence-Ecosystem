@@ -36,3 +36,4 @@ export const TypingMarkdown: React.FC<Props> = ({ content, isStreaming, speed = 
     </div>
   );
 };
+
