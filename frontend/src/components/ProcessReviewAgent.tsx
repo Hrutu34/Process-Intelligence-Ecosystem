@@ -140,12 +140,12 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
   if (loading) {
     return (
       <AgentLoadingScreen
-        title="Process Review Agent"
+        title={"Process Review\nAgent"}
         mascot="👀"
         steps={[
           { title: 'Parsing BPMN', desc: 'Analyzing diagram structure and gateways...', weight: 2000 },
-          { title: 'Semantic Translation', desc: 'Translating BPMN nodes to business language...', weight: 4000 },
-          { title: 'Synthesizing Summary', desc: 'Generating detailed executive overview...', weight: 3000 },
+          { title: 'Semantic Analysis', desc: 'Translating BPMN nodes to business language...', weight: 4000 },
+          { title: 'Summarizing', desc: 'Generating detailed executive overview...', weight: 3000 },
         ]}
       />
     );
@@ -199,7 +199,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
                 style={{ width: '100%', padding: '14px', borderRadius: '8px', fontSize: '14px', letterSpacing: '1px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
                 onClick={() => setShowWalkthroughModal(true)}
               >
-                <span>🚀 VIEW PROCESS WALKTHROUGH</span>
+                <span>VIEW PROCESS WALKTHROUGH</span>
               </button>
             </div>
 

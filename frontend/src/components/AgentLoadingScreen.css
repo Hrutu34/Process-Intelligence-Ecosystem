@@ -63,6 +63,7 @@
 }
 
 .loading-header h3 {
+  white-space: pre-line;
   font-size: 24px;
   margin: 8px 0 8px;
   color: var(--white);
@@ -121,6 +122,11 @@
 }
 
 .step-label {
+  white-space: pre-line;
+  text-align: center;
+  line-height: 1.4;
+  max-width: 90px;
+  margin-top: 4px;
   font-family: var(--mono);
   font-size: 10px;
   color: var(--dim);
@@ -232,6 +238,7 @@
 }
 
 .loading-header h3 {
+  white-space: pre-line;
   font-size: 24px;
   margin: 8px 0 8px;
   color: var(--white);
@@ -290,6 +297,11 @@
 }
 
 .step-label {
+  white-space: pre-line;
+  text-align: center;
+  line-height: 1.4;
+  max-width: 90px;
+  margin-top: 4px;
   font-family: var(--mono);
   font-size: 10px;
   color: var(--dim);
