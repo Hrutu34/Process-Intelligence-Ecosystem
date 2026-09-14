@@ -16,6 +16,7 @@ interface Props {
   defaultView?: 'visual' | 'bpmn' | 'topology' | 'json';
   onXmlChange?: (xml: string) => void;
   externalXml?: string | null;
+  highlightedElementId?: string | null;
 }
 
 type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
@@ -23,7 +24,7 @@ type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
 const processGraphCache = new Map<string, ProcessGraphDTO>();
 const processGraphRequestCache = new Map<string, Promise<ProcessGraphDTO>>();
 
-export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proceedLabel = 'PROCEED <span>↗</span>', defaultView = 'visual', onXmlChange, externalXml }) => {
+export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proceedLabel = 'PROCEED <span>↗</span>', defaultView = 'visual', onXmlChange, externalXml, highlightedElementId }) => {
   const knowledgeKey = JSON.stringify(knowledge);
   const [graph, setGraph] = useState<ProcessGraphDTO | null>(
     () => processGraphCache.get(knowledgeKey) || null,
@@ -437,7 +438,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proc
 
       {/* VIEW: BPMN.IO CANVAS */}
       {viewMode === 'bpmn' && (
-        <BpmnIoCanvas graph={graph} externalXml={externalXml} onXmlChange={onXmlChange} onReviewClick={onProceed} />
+        <BpmnIoCanvas graph={graph} externalXml={externalXml} highlightedNodeId={highlightedElementId} onXmlChange={onXmlChange} onReviewClick={onProceed} />
       )}
 
       {/* VIEW 2: TOPOLOGY TABLE VIEW */}

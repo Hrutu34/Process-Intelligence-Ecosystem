@@ -21,7 +21,7 @@ Guidelines:
 
 Output your response as a JSON object with the following structure:
 {
-  "processName": "(Name of the process)",
+  "processName": "(Short, crisp, and relevant title for the process, max 3-4 words)",
   "summary": "(The main text of the summary combining the requested details)",
   "participants": ["Participant 1", "Participant 2"],
   "steps": [

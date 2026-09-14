@@ -18,6 +18,7 @@ function App() {
   const [activeFileCount, setActiveFileCount] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<AgentTab>("01_KNOWLEDGE");
   const [currentBpmnXml, setCurrentBpmnXml] = useState<string | null>(null);
+  const [highlightedElement, setHighlightedElement] = useState<string | null>(null);
 
   const agents = [
     {
@@ -198,8 +199,24 @@ function App() {
               )}
 
               {activeTab === "04_REVIEW" && (
-                <ProcessReviewAgent bpmnXml={currentBpmnXml} />
-              )}
+                  <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, borderRight: '1px solid var(--border)' }}>
+                      <ProcessGraphViewer
+                        knowledge={extractedData}
+                        defaultView="bpmn"
+                        onXmlChange={setCurrentBpmnXml}
+                        externalXml={currentBpmnXml}
+                        highlightedElementId={highlightedElement}
+                      />
+                    </div>
+                    <div style={{ width: '450px', flexShrink: 0, overflowY: 'auto', background: 'var(--card-bg)' }}>
+                      <ProcessReviewAgent 
+                        bpmnXml={currentBpmnXml} 
+                        onHighlightIssue={setHighlightedElement} 
+                      />
+                    </div>
+                  </div>
+                )}
             </div>
           </section>
         ) : (

@@ -261,7 +261,7 @@ public class BpmnXmlParser {
                 List.of()
         );
 
-        log.info("Successfully parsed BPMN XML [{}]: {} nodes, {} edges", processId, nodeMap.size(), edges.size());
+        log.debug("Successfully parsed BPMN XML [{}]: {} nodes, {} edges", processId, nodeMap.size(), edges.size());
 
         return new BpmnParseResult(graph, knowledge, processName, processId);
     }

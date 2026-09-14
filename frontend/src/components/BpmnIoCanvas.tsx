@@ -13,9 +13,11 @@ interface Props {
   externalXml?: string | null;
   onXmlChange?: (xml: string) => void;
   onReviewClick?: () => void;
+  highlightedNodeId?: string | null;
+  highlightColor?: string;
 }
 
-export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, onXmlChange, onReviewClick }) => {
+export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, onXmlChange, onReviewClick, highlightedNodeId, highlightColor = '#ff6b6b' }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -122,6 +124,60 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, o
       .catch((e: any) => setRenderError(e.message || 'External BPMN import failed'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalXml]);
+
+  
+  useEffect(() => {
+    if (!viewerRef.current || !highlightedNodeId) return;
+    const canvas = viewerRef.current.get('canvas');
+    const registry = viewerRef.current.get('elementRegistry');
+    
+    // Attempt to clear previous markers
+    const elements = registry.getAll();
+    elements.forEach((e: any) => {
+      try {
+        canvas.removeMarker(e.id, 'highlight-defect');
+      } catch (e) {}
+    });
+
+    if (highlightedNodeId && registry.get(highlightedNodeId)) {
+      try {
+        // We add a dynamic style tag for the highlight color if it changes
+        let styleEl = document.getElementById('bpmn-dynamic-highlight');
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'bpmn-dynamic-highlight';
+          document.head.appendChild(styleEl);
+        }
+        styleEl.innerHTML = `
+          .highlight-defect:not(.djs-connection) .djs-visual > :nth-child(1) {
+            stroke: ${highlightColor} !important;
+            stroke-width: 3px !important;
+            fill: ${highlightColor}33 !important;
+          }
+          .highlight-defect.djs-connection .djs-visual > :nth-child(1) {
+            stroke: ${highlightColor} !important;
+            stroke-width: 3px !important;
+          }
+        `;
+        canvas.addMarker(highlightedNodeId, 'highlight-defect');
+        
+        // Scroll into view
+        const gfx = registry.get(highlightedNodeId);
+        if (gfx) {
+           const viewbox = canvas.viewbox();
+           // Center on element
+           canvas.viewbox({
+             x: gfx.x - viewbox.width / 2 + gfx.width / 2,
+             y: gfx.y - viewbox.height / 2 + gfx.height / 2,
+             width: viewbox.width,
+             height: viewbox.height
+           });
+        }
+      } catch (e) {
+        console.warn('Failed to highlight element', e);
+      }
+    }
+  }, [highlightedNodeId, highlightColor, xmlString]);
 
   const handleZoomIn = () => viewerRef.current?.get('zoomScroll').stepZoom(1);
   const handleZoomOut = () => viewerRef.current?.get('zoomScroll').stepZoom(-1);

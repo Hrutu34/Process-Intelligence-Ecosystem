@@ -75,7 +75,7 @@ public class ProcessQualityValidator {
         int highCount = (int) issues.stream().filter(i -> "HIGH".equalsIgnoreCase(i.severity())).count();
         boolean isValid = highCount == 0;
 
-        log.info("Quality validation completed for [{}]: score={}, issues={}, recommendations={}",
+        log.debug("Quality validation completed for [{}]: score={}, issues={}, recommendations={}",
                 graph.getGraphId(), qualityScore, issues.size(), recommendations.size());
 
         return new ProcessQualityReportDTO(isValid, qualityScore, issues, recommendations);
