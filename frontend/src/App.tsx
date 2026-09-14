@@ -199,17 +199,19 @@ function App() {
               )}
 
               {activeTab === "04_REVIEW" && (
-                  <div style={{ display: 'flex', gap: '24px', height: 'calc(100vh - 200px)', overflow: 'hidden' }}>
-                    <div style={{ flex: 1,  }}>
+                  <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <ProcessGraphViewer
                         knowledge={extractedData}
                         defaultView="bpmn"
+                        onProceed={() => setActiveTab("04_REVIEW")}
                         onXmlChange={setCurrentBpmnXml}
                         externalXml={currentBpmnXml}
                         highlightedElementId={highlightedElement}
+                        minimalLayout={true}
                       />
                     </div>
-                    <div style={{ width: '450px', flexShrink: 0, overflowY: 'auto', background: 'var(--bg-color)',  }}>
+                    <div className="custom-scrollbar" style={{ width: '400px', flexShrink: 0, position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', borderRadius: '18px' }}>
                       <ProcessReviewAgent 
                         bpmnXml={currentBpmnXml} 
                         onHighlightIssue={setHighlightedElement} 

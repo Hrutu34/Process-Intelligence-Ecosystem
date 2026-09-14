@@ -56,6 +56,9 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
   const [error, setError] = useState<string | null>(null);
   const hasFetched = React.useRef(false);
   const [showWalkthroughModal, setShowWalkthroughModal] = useState(false);
+  const [expandedFindings, setExpandedFindings] = useState(true);
+  const [expandedRisks, setExpandedRisks] = useState(false);
+  const [expandedSuggestions, setExpandedSuggestions] = useState(false);
 
   React.useEffect(() => {
     if (bpmnXml) {
@@ -306,65 +309,89 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
                 </div>
 
                 {/* Validation Findings */}
-                {quality.issues?.filter(i => (i.severity || '').toUpperCase() === 'HIGH').length > 0 && (
-                  <div className="recommendations-section">
-                    <h4 style={{ color: '#ff6b6b' }}>Validation Findings (High Priority)</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {quality.issues.filter(i => (i.severity || '').toUpperCase() === 'HIGH').map((iss, idx) => (
-                        <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(255, 107, 107, 0.08)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid #ff6b6b' }}>
-                          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
-                            <strong style={{ color: 'var(--white)', fontSize: 13 }}>{iss.ruleId}</strong>
-                            {iss.elementId && (
-                              <span style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 11 }}>• {iss.elementId}</span>
-                            )}
-                          </div>
-                          <p style={{ margin: 0, color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.5 }}>{iss.issue}</p>
+                  {quality.issues?.filter(i => (i.severity || '').toUpperCase() === 'HIGH').length > 0 && (
+                    <div className="recommendations-section">
+                      <h4 
+                        style={{ color: '#ff6b6b', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', margin: 0, padding: '12px 0', borderBottom: '1px solid rgba(255, 107, 107, 0.2)' }}
+                        onClick={() => setExpandedFindings(!expandedFindings)}
+                      >
+                        <span>Validation Findings (High Priority)</span>
+                        <span style={{ fontSize: '12px', transform: expandedFindings ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                      </h4>
+                      {expandedFindings && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+                          {quality.issues.filter(i => (i.severity || '').toUpperCase() === 'HIGH').map((iss, idx) => (
+                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(255, 107, 107, 0.08)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid #ff6b6b' }}>
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
+                                <strong style={{ color: 'var(--white)', fontSize: 13 }}>{iss.ruleId}</strong>
+                                {iss.elementId && (
+                                  <span style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 11 }}>• {iss.elementId}</span>
+                                )}
+                              </div>
+                              <p style={{ margin: 0, color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.5 }}>{iss.issue}</p>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Risks & Bottlenecks */}
-                {quality.issues?.filter(i => (i.severity || '').toUpperCase() === 'MEDIUM' || (i.severity || '').toUpperCase() === 'LOW').length > 0 && (
-                  <div className="recommendations-section">
-                    <h4 style={{ color: '#fbd437' }}>Risks & Bottlenecks</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {quality.issues.filter(i => (i.severity || '').toUpperCase() === 'MEDIUM' || (i.severity || '').toUpperCase() === 'LOW').map((iss, idx) => (
-                        <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(251, 212, 55, 0.08)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid #fbd437' }}>
-                          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
-                            <strong style={{ color: 'var(--white)', fontSize: 13 }}>{iss.ruleId}</strong>
-                            {iss.elementId && (
-                              <span style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 11 }}>• {iss.elementId}</span>
-                            )}
-                          </div>
-                          <p style={{ margin: 0, color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.5 }}>{iss.issue}</p>
+                  {quality.issues?.filter(i => (i.severity || '').toUpperCase() === 'MEDIUM' || (i.severity || '').toUpperCase() === 'LOW').length > 0 && (
+                    <div className="recommendations-section">
+                      <h4 
+                        style={{ color: '#fbd437', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', margin: 0, padding: '12px 0', borderBottom: '1px solid rgba(251, 212, 55, 0.2)' }}
+                        onClick={() => setExpandedRisks(!expandedRisks)}
+                      >
+                        <span>Risks & Bottlenecks</span>
+                        <span style={{ fontSize: '12px', transform: expandedRisks ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                      </h4>
+                      {expandedRisks && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+                          {quality.issues.filter(i => (i.severity || '').toUpperCase() === 'MEDIUM' || (i.severity || '').toUpperCase() === 'LOW').map((iss, idx) => (
+                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(251, 212, 55, 0.08)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid #fbd437' }}>
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
+                                <strong style={{ color: 'var(--white)', fontSize: 13 }}>{iss.ruleId}</strong>
+                                {iss.elementId && (
+                                  <span style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 11 }}>• {iss.elementId}</span>
+                                )}
+                              </div>
+                              <p style={{ margin: 0, color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.5 }}>{iss.issue}</p>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Improvement Suggestions */}
-                {quality.issues?.some(i => i.suggestion) && (
-                  <div className="recommendations-section">
-                    <h4 style={{ color: 'var(--aqua)' }}>Improvement Suggestions</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {quality.issues.filter(i => i.suggestion).map((iss, idx) => (
-                        <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(57, 245, 208, 0.05)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid var(--aqua)' }}>
-                          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
-                            <strong style={{ color: 'var(--aqua)', fontSize: 13 }}>Suggested Fix</strong>
-                            {iss.elementId && (
-                              <span style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 11 }}>for {iss.elementId}</span>
-                            )}
-                          </div>
-                          <p style={{ margin: 0, color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.5 }}>{iss.suggestion}</p>
+                  {quality.issues?.some(i => i.suggestion) && (
+                    <div className="recommendations-section">
+                      <h4 
+                        style={{ color: 'var(--aqua)', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', margin: 0, padding: '12px 0', borderBottom: '1px solid rgba(57, 245, 208, 0.2)' }}
+                        onClick={() => setExpandedSuggestions(!expandedSuggestions)}
+                      >
+                        <span>Improvement Suggestions</span>
+                        <span style={{ fontSize: '12px', transform: expandedSuggestions ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                      </h4>
+                      {expandedSuggestions && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+                          {quality.issues.filter(i => i.suggestion).map((iss, idx) => (
+                            <div key={idx} className="issue-card" onClick={() => onHighlightIssue && onHighlightIssue(iss.elementId || null)} style={{ cursor: onHighlightIssue && iss.elementId ? 'pointer' : 'default',  background: 'rgba(57, 245, 208, 0.05)', padding: '12px 14px', borderRadius: '8px', borderLeft: '3px solid var(--aqua)' }}>
+                              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
+                                <strong style={{ color: 'var(--aqua)', fontSize: 13 }}>Suggested Fix</strong>
+                                {iss.elementId && (
+                                  <span style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 11 }}>for {iss.elementId}</span>
+                                )}
+                              </div>
+                              <p style={{ margin: 0, color: 'var(--soft-white)', fontSize: 13, lineHeight: 1.5 }}>{iss.suggestion}</p>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </div>
-                )}
-              </>
+                  )}
+                </>
             )}
           </div>
         </div>
