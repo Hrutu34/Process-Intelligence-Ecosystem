@@ -102,13 +102,13 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
   if (loading) {
     return (
       <AgentLoadingScreen
+        mascotImage="/mascots/BlueBerryPie.png"
         title="Blueberry Pie (Intelligence) in Progress"
-        mascot="◉"
         steps={[
-          { title: 'Building Graph', desc: '🫐 Blueberry Pie: Building the process graph...', weight: 1800 },
-          { title: 'Validating Rules', desc: '🫐 Blueberry Pie: Checking boundaries, gateways & dead ends...', weight: 3000 },
-          { title: 'Analyzing Semantics', desc: '🫐 Blueberry Pie: Reviewing process quality and evidence...', weight: 5000 },
-          { title: 'Generating Report', desc: '🫐 Blueberry Pie: Preparing findings and recommendations...', weight: 2200 },
+          { title: 'Building Graph', desc: 'Blueberry Pie: Building the process graph...', weight: 1800 },
+          { title: 'Validating Rules', desc: 'Blueberry Pie: Checking boundaries, gateways & dead ends...', weight: 3000 },
+          { title: 'Analyzing Semantics', desc: 'Blueberry Pie: Reviewing process quality and evidence...', weight: 5000 },
+          { title: 'Generating Report', desc: 'Blueberry Pie: Preparing findings and recommendations...', weight: 2200 },
         ]}
       />
     );
@@ -149,7 +149,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         <div className="pi-header-info">
           <div className="status-pill">
             <span className="status-dot" />
-            🫐 BLUEBERRY PIE / PROCESS INTELLIGENCE
+            BLUEBERRY PIE / PROCESS INTELLIGENCE
             <span className="status-separator">/</span>
             {issues.length === 0 ? 'CLEAN MODEL' : `${issues.length} GAPS DETECTED`}
           </div>
@@ -248,7 +248,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         <div className="pi-recommendations-card">
           <div className="pi-rec-header">
             <span>💡</span>
-            <h4>🫐 Blueberry Pie Recommended Fixes</h4>
+            <h4>Blueberry Pie Recommended Fixes</h4>
           </div>
           <ul className="pi-rec-list">
             {report.recommendations.map((rec, i) => (

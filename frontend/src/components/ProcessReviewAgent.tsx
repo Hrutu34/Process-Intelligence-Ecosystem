@@ -140,8 +140,8 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
   if (loading) {
     return (
       <AgentLoadingScreen
-        title={"🥧 Pecan Pie\n(Review) in Progress"}
-        mascot="🥧"
+        mascotImage="/mascots/PecanPie.png"
+        title={"Pecan Pie\n(Review) in Progress"}
         steps={[
           { title: 'Parsing BPMN', desc: 'Analyzing diagram structure and gateways...', weight: 2000 },
           { title: 'Semantic Analysis', desc: 'Translating BPMN nodes to business language...', weight: 4000 },
@@ -155,8 +155,8 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
     <div className="process-review-agent">
       {!report && (
         <div className="agent-placeholder-card">
-          <span className="agent-icon">🥧</span>
-          <h3>🥧 Pecan Pie: Process Review & Translation Agent</h3>
+          <img src="/mascots/PecanPie.png" alt="Pecan Pie" className="agent-icon" style={{width: 48, height: 48, objectFit: "contain", marginBottom: 12}} />
+          <h3>Pecan Pie: Process Review & Translation Agent</h3>
           <p>
             Translates technical BPMN XML back into clear executive summaries and audit reports.
           </p>

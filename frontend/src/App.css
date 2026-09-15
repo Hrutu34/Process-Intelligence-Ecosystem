@@ -232,10 +232,10 @@ a {
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 20px;
+  gap: 14px;
+  font-size: 24px;
   font-weight: 700;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
 }
 
 .logo-mark {

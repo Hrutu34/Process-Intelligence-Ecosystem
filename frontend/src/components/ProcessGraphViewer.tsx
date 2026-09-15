@@ -106,8 +106,8 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proc
   if (loading) {
     return (
       <AgentLoadingScreen
-        title="🍒 Cherry Pie (Modelling) in Progress"
-        mascot="⌘"
+        mascotImage="/mascots/CherryPie.png"
+        title="Cherry Pie (Modelling) in Progress"
         steps={[
           { title: 'Nodes', desc: 'Cherry Pie: Creating activities, events & gateways...', weight: 1800 },
           { title: 'Flows', desc: 'Cherry Pie: Connecting sequence and conditional paths...', weight: 3000 },

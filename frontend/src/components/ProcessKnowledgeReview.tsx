@@ -130,7 +130,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '20px' }}>📄</span>
-                <h3 style={{ margin: 0 }}>🍎 Apple Pie: Classified Documents</h3>
+                <h3 style={{ margin: 0 }}>Apple Pie: Classified Documents</h3>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span className="badge">{displayDocs.length}</span>

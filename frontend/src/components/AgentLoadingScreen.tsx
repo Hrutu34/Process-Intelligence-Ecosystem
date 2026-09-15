@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import './AgentLoadingScreen.css';
 
 interface Props {
+  mascotImage?: string;
   fileCount?: number;
   title?: string;
-  mascot?: string;
   steps?: StepItem[];
   theme?: 'aqua' | 'yellow' | 'coral';
 }
@@ -17,16 +17,16 @@ interface StepItem {
 
 const BASE_STEPS: StepItem[] = [
   { title: 'Ingestion', desc: 'Parsing document streams & reading raw text...', weight: 2500 },
-  { title: 'Classification', desc: '🍎 Apple Pie: Classifying document type & calibrating confidence...', weight: 5000 },
-  { title: 'Extraction', desc: '🍎 Apple Pie: Extracting activities, actors, systems & gateways...', weight: 9000 },
-  { title: 'Conflict Audit', desc: '🍎 Apple Pie: Comparing files & isolating discrepancies...', weight: 8000 },
+  { title: 'Classification', desc: 'Classifying document type & calibrating confidence...', weight: 5000 },
+  { title: 'Extraction', desc: 'Extracting activities, actors, systems & gateways...', weight: 9000 },
+  { title: 'Conflict Audit', desc: 'Comparing files & isolating discrepancies...', weight: 8000 },
   { title: 'Normalization', desc: 'Pruning duplicates, validating JSON & sealing DTO graph...', weight: 4000 },
 ];
 
 export const AgentLoadingScreen: React.FC<Props> = ({
   fileCount = 1,
   title = 'Apple Pie (Extraction) in Progress',
-  mascot = '🍎',
+  mascotImage = '/mascots/ApplePie.png',
   steps = BASE_STEPS,
   theme = 'aqua',
 }) => {
@@ -50,7 +50,15 @@ export const AgentLoadingScreen: React.FC<Props> = ({
     <div className={`agent-loading-card theme-${theme}`}>
       <div className="loading-orbit">
         <div className="inner-pulse" />
-        <span className="agent-mascot pulsing">{mascot}</span>
+        {mascotImage ? (
+          <img src={mascotImage} alt="Agent Mascot" className="agent-mascot-img pulsing" />
+        ) : (
+          <svg viewBox="0 0 100 100" className="grok-mascot">
+            <rect className="grok-outer" x="15" y="15" width="70" height="70" rx="16" fill="none" stroke="currentColor" strokeWidth="4" />
+            <circle className="grok-inner" cx="50" cy="50" r="12" fill="currentColor" />
+            <path className="grok-scanner" d="M 5 50 L 95 50" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" />
+          </svg>
+        )}
       </div>
 
       <div className="loading-header">

@@ -23,28 +23,28 @@ function App() {
   const agents = [
     {
       number: "01",
-      icon: "🍎",
+      icon: "/mascots/ApplePie.png",
       title: "Apple Pie (Extraction)",
       description: "Turns messy documents, policies, and tribal knowledge into structured process intelligence.",
       accent: "aqua",
     },
     {
       number: "02",
-      icon: "🫐",
+      icon: "/mascots/BlueBerryPie.png",
       title: "Blueberry Pie (Intelligence)",
       description: "Finds gaps, dead ends, missing owners, contradictions, and hidden process risks.",
       accent: "yellow",
     },
     {
       number: "03",
-      icon: "🍒",
+      icon: "/mascots/CherryPie.png",
       title: "Cherry Pie (BPMN)",
       description: "Transforms validated process knowledge into clean, editable BPMN 2.0 models.",
       accent: "aqua",
     },
     {
       number: "04",
-      icon: "🥧",
+      icon: "/mascots/PecanPie.png",
       title: "Pecan Pie (Review)",
       description: "Turns complex process diagrams back into language your business actually understands.",
       accent: "yellow",
@@ -98,7 +98,12 @@ function App() {
               }
             }}
           >
-            <span className="logo-mark">🥧</span>
+            <img 
+              src="/mascots/Pie.png" 
+              alt="PIE Logo" 
+              className="logo-img"
+              style={{width: 50, height: 50, objectFit: 'cover', borderRadius: '50%', boxShadow: '0 0 15px rgba(34, 197, 94, 0.25)'}} 
+            />
             <span>Pie</span>
           </a>
 
@@ -152,7 +157,7 @@ function App() {
                   className={`agent-tab ${activeTab === "01_KNOWLEDGE" ? "active" : ""}`}
                   onClick={() => setActiveTab("01_KNOWLEDGE")}
                 >
-                  <span>🍎 Apple Pie</span>
+                  <span>Apple Pie</span>
                   {tabStatus("01_KNOWLEDGE")}
                 </button>
 
@@ -161,7 +166,7 @@ function App() {
                   className={`agent-tab ${activeTab === "02_INTELLIGENCE" ? "active" : ""}`}
                   onClick={() => setActiveTab("02_INTELLIGENCE")}
                 >
-                  <span>🫐 Blueberry Pie</span>
+                  <span>Blueberry Pie</span>
                   {tabStatus("02_INTELLIGENCE")}
                 </button>
 
@@ -170,7 +175,7 @@ function App() {
                   className={`agent-tab ${activeTab === "03_BPMN" ? "active" : ""}`}
                   onClick={() => setActiveTab("03_BPMN")}
                 >
-                  <span>🍒 Cherry Pie</span>
+                  <span>Cherry Pie</span>
                   {tabStatus("03_BPMN")}
                 </button>
 
@@ -179,7 +184,7 @@ function App() {
                   className={`agent-tab ${activeTab === "04_REVIEW" ? "active" : ""}`}
                   onClick={() => setActiveTab("04_REVIEW")}
                 >
-                  <span>🥧 Pecan Pie</span>
+                  <span>Pecan Pie</span>
                   {tabStatus("04_REVIEW")}
                 </button>
               </div>
@@ -270,7 +275,11 @@ function App() {
                 {/* Ingestion Dropzone OR Animated Stepper Loading */}
                 <div ref={processEntryRef} className="process-entry-wrapper">
                   {isExtracting ? (
-                    <AgentLoadingScreen fileCount={activeFileCount} />
+                    <AgentLoadingScreen 
+                      fileCount={activeFileCount} 
+                      title="Apple Pie (Extraction) in Progress"
+                      mascotImage="/mascots/ApplePie.png"
+                    />
                   ) : (
                     <ProcessEntry
                       onStart={handleStartExtraction}
@@ -312,7 +321,7 @@ function App() {
                     <article className={`agent-card ${agent.accent}`} key={agent.number}>
                       <div className="agent-header">
                         <span className="agent-index">{agent.number}</span>
-                        <span className="agent-icon">{agent.icon}</span>
+                        <img src={agent.icon} alt={agent.title} className="agent-icon" style={{width: 64, height: 64, objectFit: "cover", borderRadius: "50%"}} />
                       </div>
 
                       <div className="agent-content">
@@ -393,7 +402,7 @@ function App() {
                       <strong>↗</strong>
                     </button>
                   </div>
-                  <div className="pie-mark">🥧</div>
+                  <div className="pie-mark"></div>
                 </div>
               </div>
             </section>
@@ -403,7 +412,7 @@ function App() {
 
       <footer className="footer">
         <div className="container footer-inner">
-          <span>🥧 Pie</span>
+          <span>Pie</span>
           <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
           <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
         </div>

@@ -28,7 +28,7 @@ const AGENTS: AgentCard[] = [
   },
   {
     number: "03",
-    title: "🍒 Cherry Pie (Modelling)",
+    title: "Cherry Pie (Modelling)",
     description: "Constructs semantic XML and visual process graphs from normalized knowledge.",
     icon: "⌘",
     accent: "yellow",
@@ -131,7 +131,11 @@ export const LandingPage: React.FC<Props> = ({
             {/* Ingestion Dropzone OR Animated Stepper Loading */}
             <div ref={processEntryRef} className="process-entry-wrapper">
               {isExtracting ? (
-                <AgentLoadingScreen fileCount={activeFileCount} />
+                <AgentLoadingScreen 
+                  fileCount={activeFileCount} 
+                  title="Apple Pie (Extraction) in Progress"
+                  mascotImage="/mascots/ApplePie.png"
+                />
               ) : (
                 <ProcessEntry
                   onStart={handleStartExtraction}
@@ -255,7 +259,7 @@ export const LandingPage: React.FC<Props> = ({
 
       <footer className="footer">
         <div className="container footer-inner">
-          <span>🥧 P.I.E.</span>
+          <span>P.I.E.</span>
           <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
           <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
         </div>

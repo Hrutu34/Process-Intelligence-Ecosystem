@@ -390,3 +390,44 @@
 .theme-yellow .active-step-text {
   color: var(--yellow);
 }
+.grok-mascot {
+  width: 50px;
+  height: 50px;
+  color: var(--accent-a);
+  filter: drop-shadow(0 0 10px rgba(57, 245, 208, 0.4));
+}
+.theme-yellow .grok-mascot {
+  color: #fbd437;
+  filter: drop-shadow(0 0 10px rgba(251, 212, 55, 0.4));
+}
+.theme-coral .grok-mascot {
+  color: #ff6b6b;
+  filter: drop-shadow(0 0 10px rgba(255, 107, 107, 0.4));
+}
+
+.grok-outer {
+  animation: grok-spin 6s linear infinite;
+  transform-origin: 50% 50%;
+}
+.grok-inner {
+  animation: grok-pulse 1.5s ease-in-out infinite alternate;
+  transform-origin: 50% 50%;
+}
+.grok-scanner {
+  animation: grok-scan 1.5s linear infinite alternate;
+}
+
+@keyframes grok-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes grok-pulse {
+  0% { transform: scale(0.6); opacity: 0.5; }
+  100% { transform: scale(1.4); opacity: 1; }
+}
+@keyframes grok-scan {
+  0% { transform: translateY(-30px); }
+  100% { transform: translateY(30px); }
+}
+
+.agent-mascot-img { width: 56px; height: 56px; object-fit: cover; border-radius: 50%; }
