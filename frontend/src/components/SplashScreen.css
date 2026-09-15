@@ -1,0 +1,272 @@
+/* =====================================================
+   SPLASH SCREEN — cinematic boot sequence
+   ===================================================== */
+
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: radial-gradient(1200px 700px at 50% 35%, #0b2417 0%, #071510 55%, #04100b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.splash-screen.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(1.03);
+}
+
+/* --- cinematic overlays -------------------------------------------- */
+
+.splash-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, transparent 42%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.splash-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -140px;
+  height: 120px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(34, 197, 94, 0.06), transparent);
+  animation: splash-scan 5s linear infinite;
+}
+
+@keyframes splash-scan {
+  0% { top: -140px; }
+  100% { top: 110%; }
+}
+
+.splash-corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 2px solid rgba(34, 197, 94, 0.45);
+  pointer-events: none;
+}
+
+.splash-corner.tl { top: 26px; left: 26px; border-right: 0; border-bottom: 0; }
+.splash-corner.tr { top: 26px; right: 26px; border-left: 0; border-bottom: 0; }
+.splash-corner.bl { bottom: 26px; left: 26px; border-right: 0; border-top: 0; }
+.splash-corner.br { bottom: 26px; right: 26px; border-left: 0; border-top: 0; }
+
+/* --- HUD controls --------------------------------------------------- */
+
+.splash-mute-toggle {
+  position: absolute;
+  top: 30px;
+  right: 74px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  color: var(--text, #eafff0);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.splash-mute-toggle:hover {
+  border-color: rgba(34, 197, 94, 0.8);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.25);
+  transform: translateY(-1px);
+}
+
+.splash-skip {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--text-dim, #9fc2ac);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.splash-skip span {
+  color: var(--accent-a, #22c55e);
+  transition: transform 0.25s ease;
+}
+
+.splash-skip:hover {
+  border-color: rgba(34, 197, 94, 0.6);
+  color: var(--text, #eafff0);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.2);
+}
+
+.splash-skip:hover span {
+  transform: translateX(3px);
+}
+
+/* --- bottom HUD overlay ------------------------------------------------ */
+
+.splash-overlay {
+  position: absolute;
+  bottom: clamp(48px, 8vh, 96px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+  padding: 28px 20px 0;
+}
+
+/* soft glow behind the text block so it reads cleanly over the stars */
+.splash-overlay::before {
+  content: '';
+  position: absolute;
+  inset: -30px -60px -50px;
+  z-index: -1;
+  background: radial-gradient(55% 90% at 50% 60%, rgba(4, 16, 11, 0.88) 0%, rgba(4, 16, 11, 0.45) 55%, transparent 100%);
+  pointer-events: none;
+}
+
+.splash-title {
+  font-family: var(--display, "Space Grotesk", sans-serif);
+  font-size: clamp(44px, 6.5vw, 72px);
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  margin: 0;
+  letter-spacing: 4px;
+  background: linear-gradient(180deg, #eafff0 30%, #86efac 70%, #22c55e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 24px rgba(34, 197, 94, 0.35));
+  animation: splash-title-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes splash-title-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- progress --------------------------------------------------------- */
+
+.splash-loading-bar {
+  width: min(420px, 72vw);
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.18), inset 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.splash-progress {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #15803d, #22c55e 55%, #84cc16);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
+  transition: width 0.12s linear;
+}
+
+.splash-progress-readout {
+  font-family: var(--mono, "DM Mono", monospace);
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--accent-a, #22c55e);
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+/* --- boot sequence log ------------------------------------------------- */
+
+.splash-boot-log {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 100px;
+  margin-top: 2px;
+  font-family: var(--mono, "DM Mono", monospace);
+}
+
+.splash-boot-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--text-dimmer, #6f9481);
+  opacity: 0;
+  transform: translateY(6px);
+  animation: boot-line-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.splash-boot-line.done {
+  animation: none;
+  opacity: 0.55;
+  transform: none;
+}
+
+.splash-boot-line.active .splash-boot-text {
+  color: var(--accent-a, #22c55e);
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+.splash-boot-line.active .splash-boot-marker {
+  color: var(--accent-a, #22c55e);
+  animation: boot-marker-blink 0.9s steps(2, start) infinite;
+}
+
+.splash-boot-line.done .splash-boot-marker {
+  color: var(--accent-a, #22c55e);
+  opacity: 0.8;
+}
+
+@keyframes boot-line-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes boot-marker-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+@media (max-width: 640px) {
+  .splash-boot-log {
+    display: none;
+  }
+  .splash-mute-toggle {
+    top: auto;
+    bottom: 30px;
+    left: 30px;
+    right: auto;
+  }
+  .splash-title {
+    font-size: 56px;
+  }
+}
+
+
+

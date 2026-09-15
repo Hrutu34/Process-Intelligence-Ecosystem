@@ -5,6 +5,7 @@ import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent"
 import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
 import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
+import { SplashScreen } from "./components/SplashScreen";
 import { ChatDock } from "./components/ChatDock";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import { useRef, useState } from "react";
@@ -19,6 +20,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<AgentTab>("01_KNOWLEDGE");
   const [currentBpmnXml, setCurrentBpmnXml] = useState<string | null>(null);
   const [highlightedElement, setHighlightedElement] = useState<{id: string, color: string} | null>(null);
+  const [showSplash, setShowSplash] = useState(true);
 
   const agents = [
     {
@@ -82,8 +84,10 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <div className="noise" />
+    <>
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      <div className="app">
+        <div className="noise" />
 
       {/* Navigation */}
       <header className="header">
@@ -426,6 +430,7 @@ function App() {
         />
       )}
     </div>
+    </>
   );
 }
 
