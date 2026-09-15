@@ -59,3 +59,4 @@ export DB_USER=postgres
 export DB_PASS=yourpassword
 export GEMINI_API_KEY=your_gemini_api_key
 ```
+
