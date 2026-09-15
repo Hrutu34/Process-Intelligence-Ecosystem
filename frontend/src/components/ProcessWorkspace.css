@@ -82,7 +82,7 @@
 }
 
 .ws-tab-btn:hover {
-  background: rgba(16, 50, 99, 0.4);
+  background: var(--surface-weak);
   color: var(--text);
 }
 
@@ -107,7 +107,7 @@
 
 .quality-meter-card {
   padding: 24px;
-  background: linear-gradient(135deg, rgba(57, 245, 208, 0.08), rgba(9, 33, 73, 0.7));
+  background: linear-gradient(135deg, rgba(57, 245, 208, 0.08), var(--surface-weak));
   border: 1px solid var(--border);
   border-radius: 16px;
   display: flex;
@@ -132,7 +132,7 @@
 
 .insight-card {
   padding: 16px 20px;
-  background: rgba(4, 18, 45, 0.7);
+  background: var(--bg-0);
   border: 1px solid var(--border);
   border-left: 4px solid var(--accent-a);
   border-radius: 12px;
@@ -280,14 +280,14 @@
 
 .chat-bubble.user {
   align-self: flex-end;
-  background: rgba(16, 50, 99, 0.8);
+  background: var(--surface-weak);
   border: 1px solid var(--border);
   color: var(--text);
 }
 
 .chat-bubble.ai {
   align-self: flex-start;
-  background: rgba(4, 18, 45, 0.9);
+  background: var(--bg-0);
   border: 1px solid var(--border);
   color: var(--text-dim);
 }
@@ -328,7 +328,7 @@
 .ai-chat-input {
   flex: 1;
   padding: 10px 16px;
-  background: rgba(4, 18, 45, 0.8);
+  background: var(--bg-0);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text);

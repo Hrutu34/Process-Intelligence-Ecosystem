@@ -189,7 +189,7 @@
 }
 
 .bpmn-canvas-area text {
-  fill: #f4f8f4 !important;
+  fill: var(--text) !important;
   font-family: 'Space Grotesk', sans-serif !important;
   font-size: 12px !important;
 }

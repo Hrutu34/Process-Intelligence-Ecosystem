@@ -130,7 +130,7 @@
 
 .btn-secondary-large {
   padding: 16px 32px;
-  background: rgba(16, 50, 99, 0.6);
+  background: var(--surface-weak);
   color: var(--text);
   font-size: 15px;
   font-weight: 600;
@@ -141,7 +141,7 @@
 }
 
 .btn-secondary-large:hover {
-  background: rgba(16, 50, 99, 0.9);
+  background: var(--surface-weak);
   border-color: var(--accent-a);
   color: var(--accent-a);
 }
@@ -169,7 +169,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  background: rgba(9, 33, 73, 0.7);
+  background: var(--surface-weak);
   border: 1px solid var(--border);
   border-radius: 12px;
   font-size: 13px;
@@ -268,5 +268,5 @@
   gap: 16px;
   font-size: 13px;
   color: var(--text-dimmer);
-  background: rgba(4, 18, 45, 0.95);
+  background: var(--bg-0);
 }

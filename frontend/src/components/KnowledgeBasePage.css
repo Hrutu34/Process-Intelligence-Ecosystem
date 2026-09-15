@@ -65,7 +65,7 @@
 }
 
 .kb-tab-btn:hover {
-  background: rgba(16, 50, 99, 0.4);
+  background: var(--surface-weak);
   color: var(--text);
 }
 

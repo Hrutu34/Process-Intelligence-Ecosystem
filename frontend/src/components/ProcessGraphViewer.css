@@ -71,7 +71,7 @@
 .graph-view-tabs {
   display: flex;
   gap: 8px;
-  background: rgba(4, 18, 45, 0.8);
+  background: var(--bg-0);
   padding: 4px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -374,7 +374,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  background: rgba(16, 50, 99, 0.4);
+  background: var(--surface-weak);
   border: 1px solid rgba(198, 255, 0, 0.25);
   border-radius: 10px;
   color: var(--text);
@@ -461,7 +461,7 @@
 
 .inspector-field .value-box {
   padding: 8px 12px;
-  background: rgba(4, 18, 45, 0.7);
+  background: var(--bg-0);
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 13px;

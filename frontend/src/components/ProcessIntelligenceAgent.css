@@ -221,7 +221,7 @@
 }
 
 .pi-filter-btn {
-  background: rgba(16, 50, 99, 0.4);
+  background: var(--surface-weak);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text-dim);
