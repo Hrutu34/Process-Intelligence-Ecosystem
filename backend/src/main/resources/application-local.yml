@@ -17,6 +17,11 @@ spring:
       chat:
         options:
           model: llama3.2:3b
-          options:
-            num-predict: 4096
-            temperature: 0.1
+          temperature: 0.1
+          num-predict: 4096
+          num-ctx: 8192
+    openai:
+      enabled: false
+    google:
+      genai:
+        enabled: false

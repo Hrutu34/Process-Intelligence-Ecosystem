@@ -3,13 +3,21 @@ spring:
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASS}
+    driverClassName: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: validate
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   ai:
-    gemini:
-      api-key: ${GEMINI_API_KEY}
-      chat:
-        options:
-          model: gemini-2.5-flash
+    ollama:
+      enabled: false
+    openai:
+      enabled: false
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: gemini-3.5-flash
+            temperature: 0.1
+            max-tokens: 2048

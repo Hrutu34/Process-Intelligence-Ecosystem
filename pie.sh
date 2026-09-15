@@ -123,14 +123,14 @@ run_tests() {
 
 choose_profile() {
   echo -e "${YELLOW}Select the environment profile to run:${NC}"
-  echo "1) Local (H2 In-Memory DB - Instant start, no Docker)"
-  echo "2) E2E   (Local Docker PostgreSQL - Production parity)"
-  echo "3) Prod  (Cloud Database - Connects to Render)"
+  echo "1) Local   (H2 DB + Ollama - Instant start)"
+  echo "2) Staging (PostgreSQL + LLMaaS API Key)"
+  echo "3) Prod    (Cloud DB + Gemini API Key)"
   
   read -p "Enter choice [1-3] (Default: 1): " choice
 
   case $choice in
-    2) PROFILE="e2e" ;;
+    2) PROFILE="staging" ;;
     3) PROFILE="prod" ;;
     *) PROFILE="local" ;;
   esac
@@ -145,9 +145,9 @@ start_all() {
 
   echo -e "${YELLOW}--- Starting P.I.E. Ecosystem (Profile: $PROFILE) ---${NC}"
 
-  if [ "$PROFILE" = "e2e" ]; then
-    echo -e "${YELLOW}[1/3] Starting Database (Docker PostgreSQL)...${NC}"
-    docker-compose up -d
+  if [ "$PROFILE" = "staging" ]; then
+    echo -e "${YELLOW}[1/3] Starting Database (Docker PostgreSQL if local staging)...${NC}"
+    docker-compose up -d 2>/dev/null || true
   else
     echo -e "${YELLOW}[1/3] Skipping Docker (Using H2 or Cloud DB)...${NC}"
   fi

@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/pie_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
+    driverClassName: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  ai:
+    ollama:
+      enabled: false
+    google:
+      genai:
+        enabled: false
+    openai:
+      api-key: ${LLMAAS_API_KEY:placeholder_key}
+      base-url: ${LLMAAS_BASE_URL:https://api.openai.com/v1}
+      chat:
+        options:
+          model: ${LLMAAS_MODEL:gpt-4o-mini}
+          temperature: 0.1
+          max-tokens: 2048
