@@ -1,12 +1,9 @@
 .process-entry {
   margin-top: 55px;
-  background: linear-gradient(145deg, #103263, #071a3d);
-  border: 1px solid rgba(88, 170, 205, 0.2);
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 18px;
-  box-shadow: 12px 14px 30px rgba(1, 10, 25, 0.55), 
-              -8px -8px 20px rgba(31, 72, 117, 0.3), 
-              inset 1px 1px rgba(255, 255, 255, 0.08), 
-              inset -1px -1px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -14,15 +11,15 @@
 
 .entry-tabs {
   display: flex;
-  border-bottom: 1px solid rgba(116, 183, 220, 0.16);
-  background: rgba(4, 18, 45, 0.4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-weak);
 }
 
 .entry-tabs button {
   flex: 1;
   background: transparent;
   border: none;
-  color: var(--dim);
+  color: var(--text-dim);
   padding: 18px;
   font-family: var(--mono);
   font-size: 11px;
@@ -32,13 +29,13 @@
 }
 
 .entry-tabs button:hover {
-  color: var(--soft-white);
+  color: var(--text);
 }
 
 .entry-tabs button.active {
-  color: var(--aqua);
-  background: rgba(57, 245, 208, 0.05);
-  box-shadow: inset 0 -2px var(--aqua);
+  color: var(--accent-a);
+  background: rgba(34, 197, 94, 0.05);
+  box-shadow: inset 0 -2px var(--accent-a);
 }
 
 .entry-content {
@@ -46,24 +43,24 @@
 }
 
 .drop-zone {
-  border: 2px dashed rgba(57, 245, 208, 0.2);
+  border: 2px dashed var(--border);
   border-radius: 12px;
   padding: 50px 20px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: rgba(7, 26, 61, 0.4);
+  background: var(--surface-weak);
 }
 
 .drop-zone.dragging {
-  border-color: var(--aqua);
-  background: rgba(57, 245, 208, 0.08);
+  border-color: var(--accent-a);
+  background: rgba(34, 197, 94, 0.08);
   transform: scale(1.02);
 }
 
 .drop-zone.has-file {
   border-style: solid;
-  border-color: rgba(116, 183, 220, 0.3);
+  border-color: var(--accent-a);
   cursor: default;
 }
 
@@ -80,7 +77,7 @@
   align-items: center;
   justify-content: center;
   gap: 15px;
-  color: var(--aqua);
+  color: var(--accent-a);
   font-weight: 500;
 }
 
@@ -89,19 +86,19 @@
 }
 
 .file-name {
-  color: var(--white);
+  color: var(--text);
 }
 
 .file-size {
-  color: var(--dim);
+  color: var(--text-dim);
   font-family: var(--mono);
   font-size: 11px;
 }
 
 .remove-file {
   background: transparent;
-  border: 1px solid var(--dim);
-  color: var(--dim);
+  border: 1px solid var(--text-dim);
+  color: var(--text-dim);
   border-radius: 50%;
   width: 26px;
   height: 26px;
@@ -113,18 +110,18 @@
 }
 
 .remove-file:hover {
-  border-color: #ff4757;
-  color: #ff4757;
+  border-color: var(--danger);
+  color: var(--danger);
   transform: rotate(90deg);
 }
 
 .text-zone textarea {
   width: 100%;
   min-height: 190px;
-  background: rgba(4, 18, 45, 0.6);
-  border: 1px solid rgba(88, 170, 205, 0.2);
+  background: var(--surface-weak);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  color: var(--white);
+  color: var(--text);
   padding: 20px;
   font-family: var(--display);
   font-size: 15px;
@@ -135,12 +132,12 @@
 }
 
 .text-zone textarea:focus {
-  border-color: var(--aqua);
-  box-shadow: 0 0 15px rgba(57, 245, 208, 0.1);
+  border-color: var(--accent-a);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.1);
 }
 
 .error-message {
-  color: #ff4757;
+  color: var(--danger);
   padding: 0 30px 15px;
   font-family: var(--mono);
   font-size: 11px;
@@ -168,10 +165,10 @@
   width: 100%;
   min-height: 250px;
   background: transparent;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border: 1px dashed var(--border);
   border-radius: 8px;
   padding: 20px;
-  color: #ffffff;
+  color: var(--text);
   font-family: inherit;
   font-size: 1rem;
   resize: vertical;
@@ -180,8 +177,8 @@
 }
 
 .process-textarea:focus {
-  border-color: #ccff00; /* P.I.E. Yellow accent */
-  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--accent-b); /* P.I.E. Yellow accent */
+  background: var(--surface-weak);
 }
 
 /* 2. Empty Drop Zone Fix (Centers the text and icon) */
@@ -197,14 +194,14 @@
 
 .upload-icon {
   font-size: 2.5rem;
-  color: #ccff00;
+  color: var(--accent-b);
   margin-bottom: 12px;
   font-weight: 300;
 }
 
 .upload-description {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-dim);
   margin-top: 8px;
 }
 
@@ -220,15 +217,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
-  color: #fff;
+  color: var(--text);
 }
 
 .add-more-button {
-  background: rgba(204, 255, 0, 0.1);
-  border: 1px solid #ccff00;
-  color: #ccff00;
+  background: var(--surface-weak);
+  border: 1px solid var(--accent-b);
+  color: var(--accent-b);
   padding: 5px 12px;
   border-radius: 4px;
   cursor: pointer;
@@ -238,8 +235,8 @@
 }
 
 .add-more-button:hover {
-  background: #ccff00;
-  color: #000;
+  background: var(--accent-b);
+  color: var(--bg-0);
 }
 
 .file-list {
@@ -256,7 +253,7 @@
   width: 6px;
 }
 .file-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--surface-border);
   border-radius: 4px;
 }
 
@@ -264,8 +261,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-weak);
+  border: 1px solid var(--border);
   padding: 12px 15px;
   border-radius: 6px;
 }
@@ -286,13 +283,13 @@
 }
 
 .file-name {
-  color: #fff;
+  color: var(--text);
   font-size: 0.9rem;
   font-weight: 500;
 }
 
 .file-size {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-dim);
   font-size: 0.75rem;
   margin-top: 2px;
 }
@@ -300,7 +297,7 @@
 .remove-file-button {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-dimmer);
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
@@ -308,5 +305,5 @@
 }
 
 .remove-file-button:hover {
-  color: #ff4444;
+  color: var(--danger);
 }

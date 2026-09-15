@@ -285,7 +285,7 @@ export default function ProcessEntry({ onStart, onSuccess, onBpmnImported, onErr
               ) : (
                 <div className="empty-drop-zone">
                   <div className="upload-icon">+</div>
-                  <div className="upload-title">Feed P.I.E. multiple documents.</div>
+                  <div className="upload-title">Feed Pie multiple documents.</div>
                   <div className="upload-description">
                     PDF / DOCX / TXT / XLSX / BPMN · Drop them here or click to browse
                   </div>
@@ -299,7 +299,7 @@ export default function ProcessEntry({ onStart, onSuccess, onBpmnImported, onErr
               className="process-textarea"
               value={text}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
-              placeholder="Describe the process you want P.I.E. to analyze..."
+              placeholder="Describe the process you want Pie to analyze..."
               rows={12}
             />
           </div>

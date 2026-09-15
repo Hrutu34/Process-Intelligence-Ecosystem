@@ -23,29 +23,29 @@ function App() {
   const agents = [
     {
       number: "01",
-      icon: "🧠",
-      title: "Knowledge Extraction",
+      icon: "🍎",
+      title: "Apple Pie (Extraction)",
       description: "Turns messy documents, policies, and tribal knowledge into structured process intelligence.",
       accent: "aqua",
     },
     {
       number: "02",
-      icon: "◉",
-      title: "Process Intelligence",
+      icon: "🫐",
+      title: "Blueberry Pie (Intelligence)",
       description: "Finds gaps, dead ends, missing owners, contradictions, and hidden process risks.",
       accent: "yellow",
     },
     {
       number: "03",
-      icon: "⌘",
-      title: "BPMN Modelling",
+      icon: "🍒",
+      title: "Cherry Pie (BPMN)",
       description: "Transforms validated process knowledge into clean, editable BPMN 2.0 models.",
       accent: "aqua",
     },
     {
       number: "04",
-      icon: "✦",
-      title: "Process Review",
+      icon: "🥧",
+      title: "Pecan Pie (Review)",
       description: "Turns complex process diagrams back into language your business actually understands.",
       accent: "yellow",
     },
@@ -73,6 +73,14 @@ function App() {
     </span>
   );
 
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+  };
+
   return (
     <div className="app">
       <div className="noise" />
@@ -90,8 +98,8 @@ function App() {
               }
             }}
           >
-            <span className="logo-mark">π</span>
-            <span>P.I.E.</span>
+            <span className="logo-mark">🥧</span>
+            <span>Pie</span>
           </a>
 
           <div className="nav-center">
@@ -100,14 +108,19 @@ function App() {
             <span>v0.1</span>
           </div>
 
-          <a
-            href="https://github.com/Hrutu34"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="github"
-          >
-            GitHub ↗
-          </a>
+          <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle Theme">
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
+            <a
+              href="https://github.com/Hrutu34"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="github"
+            >
+              GitHub ↗
+            </a>
+          </div>
         </div>
       </header>
 
@@ -139,7 +152,7 @@ function App() {
                   className={`agent-tab ${activeTab === "01_KNOWLEDGE" ? "active" : ""}`}
                   onClick={() => setActiveTab("01_KNOWLEDGE")}
                 >
-                  <span>🧠 01 Knowledge Extraction</span>
+                  <span>🍎 Apple Pie</span>
                   {tabStatus("01_KNOWLEDGE")}
                 </button>
 
@@ -148,7 +161,7 @@ function App() {
                   className={`agent-tab ${activeTab === "02_INTELLIGENCE" ? "active" : ""}`}
                   onClick={() => setActiveTab("02_INTELLIGENCE")}
                 >
-                  <span>◉ 02 Process Intelligence</span>
+                  <span>🫐 Blueberry Pie</span>
                   {tabStatus("02_INTELLIGENCE")}
                 </button>
 
@@ -157,7 +170,7 @@ function App() {
                   className={`agent-tab ${activeTab === "03_BPMN" ? "active" : ""}`}
                   onClick={() => setActiveTab("03_BPMN")}
                 >
-                  <span>⌘ 03 BPMN Modelling</span>
+                  <span>🍒 Cherry Pie</span>
                   {tabStatus("03_BPMN")}
                 </button>
 
@@ -166,7 +179,7 @@ function App() {
                   className={`agent-tab ${activeTab === "04_REVIEW" ? "active" : ""}`}
                   onClick={() => setActiveTab("04_REVIEW")}
                 >
-                  <span>✦ 04 Process Review</span>
+                  <span>🥧 Pecan Pie</span>
                   {tabStatus("04_REVIEW")}
                 </button>
               </div>
@@ -249,7 +262,7 @@ function App() {
                 </h1>
 
                 <p className="hero-copy">
-                  P.I.E. transforms unstructured business knowledge into
+                  Pie transforms unstructured business knowledge into
                   <span> validated processes</span>, editable
                   <span> BPMN 2.0 models</span>, and explanations your team can actually use.
                 </p>
@@ -280,7 +293,7 @@ function App() {
               <div className="container">
                 <div className="section-intro">
                   <div>
-                    <div className="section-number">02 / THE ENGINE</div>
+                    <div className="section-number">02 / THE BAKERY</div>
                     <h2>
                       Four agents.
                       <br />
@@ -289,7 +302,7 @@ function App() {
                   </div>
 
                   <p>
-                    P.I.E. transforms unstructured business knowledge into validated processes, editable BPMN 2.0 models,
+                    Pie transforms unstructured business knowledge into validated processes, editable BPMN 2.0 models,
                     and explanations your team can actually use.
                   </p>
                 </div>
@@ -334,7 +347,7 @@ function App() {
                 <div className="statement-card">
                   <div className="statement-top">
                     <span>03</span>
-                    <span>WHY P.I.E.?</span>
+                    <span>WHY PIE?</span>
                     <span>✦</span>
                   </div>
 
@@ -380,7 +393,7 @@ function App() {
                       <strong>↗</strong>
                     </button>
                   </div>
-                  <div className="pie-mark">π</div>
+                  <div className="pie-mark">🥧</div>
                 </div>
               </div>
             </section>
@@ -390,7 +403,7 @@ function App() {
 
       <footer className="footer">
         <div className="container footer-inner">
-          <span>🥧 P.I.E.</span>
+          <span>🥧 Pie</span>
           <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
           <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
         </div>
