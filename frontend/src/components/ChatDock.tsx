@@ -4,6 +4,7 @@ import type {
   ProcessGraphDTO,
   ProcessQualityReportDTO,
 } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import { TypingMarkdown } from './TypingMarkdown';
 import { chatService, type ChatMessage, type EditOperation } from '../services/chatService';
 import './ChatDock.css';
 
@@ -48,7 +49,14 @@ export const ChatDock: React.FC<Props> = ({
 }) => {
   const [open, setOpen] = useState<boolean>(false);
   const [mode, setMode] = useState<ChatMode>('ask');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const saved = localStorage.getItem('pie_chat_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('pie_chat_history', JSON.stringify(messages));
+  }, [messages]);
   const [pendingEdit, setPendingEdit] = useState<PendingEdit | null>(null);
   const [input, setInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -305,7 +313,9 @@ export const ChatDock: React.FC<Props> = ({
             {messages.map((m, idx) => (
               <div key={idx} className={`chat-msg chat-msg-${m.role}`}>
                 <div className="chat-msg-role">{m.role === 'user' ? 'You' : 'Copilot'}</div>
-                <div className="chat-msg-content">{m.content}</div>
+                <div className="chat-msg-content">
+                    <TypingMarkdown content={m.content} isStreaming={m.role === 'assistant' && idx === messages.length - 1} speed={10} />
+                  </div>
               </div>
             ))}
 

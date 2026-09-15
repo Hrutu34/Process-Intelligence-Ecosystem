@@ -396,11 +396,13 @@ function App() {
         </div>
       </footer>
 
-      <ChatDock
-        bpmnXml={currentBpmnXml}
-        knowledge={extractedData}
-        onBpmnUpdated={setCurrentBpmnXml}
-      />
+      {currentBpmnXml && (
+        <ChatDock
+          bpmnXml={currentBpmnXml}
+          knowledge={extractedData}
+          onBpmnUpdated={setCurrentBpmnXml}
+        />
+      )}
     </div>
   );
 }
