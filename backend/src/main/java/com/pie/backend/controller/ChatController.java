@@ -3,6 +3,8 @@ package com.pie.backend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pie.backend.service.BpmnEditService;
 import com.pie.backend.service.BpmnXmlParser;
+import com.pie.backend.service.BpmnXmlGenerationService;
+import com.pie.backend.service.BpmnDomainModelMapper;
 import com.pie.backend.service.ProcessQualityValidator;
 import com.pie.shared.dto.ProcessGraphDTO;
 import com.pie.shared.dto.ProcessKnowledgeDTO;
@@ -34,6 +36,8 @@ public class ChatController {
     private final BpmnEditService bpmnEditService;
     private final BpmnXmlParser bpmnParser;
     private final ProcessQualityValidator qualityValidator;
+    private final BpmnXmlGenerationService generationService;
+    private final BpmnDomainModelMapper bpmnMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("classpath:prompts/chat-prompt.txt")
@@ -45,11 +49,15 @@ public class ChatController {
     public ChatController(ChatClient.Builder chatClientBuilder,
                           BpmnEditService bpmnEditService,
                           BpmnXmlParser bpmnParser,
-                          ProcessQualityValidator qualityValidator) {
+                          ProcessQualityValidator qualityValidator,
+                          BpmnXmlGenerationService generationService,
+                          BpmnDomainModelMapper bpmnMapper) {
         this.chatClient = chatClientBuilder.build();
         this.bpmnEditService = bpmnEditService;
         this.bpmnParser = bpmnParser;
         this.qualityValidator = qualityValidator;
+        this.generationService = generationService;
+        this.bpmnMapper = bpmnMapper;
     }
 
     /**
@@ -194,7 +202,8 @@ public class ChatController {
                 try {
                     BpmnEditService.EditResult result = bpmnEditService.applyOperations(
                             request.context().bpmnXml(), operations);
-                    updatedXml = result.xml();
+                    var parsedGraph = bpmnParser.parse(result.xml());
+                    updatedXml = generationService.generate(bpmnMapper.map(parsedGraph.graph()));
                     if (!result.failed().isEmpty()) {
                         errorNote = "Some operations failed: " + String.join("; ", result.failed());
                     }
@@ -222,7 +231,9 @@ public class ChatController {
         try {
             BpmnEditService.EditResult result = bpmnEditService.applyOperations(
                     request.bpmnXml(), request.operations());
-            return ResponseEntity.ok(new ApplyEditsResponse(result.xml(), result.applied(), result.failed()));
+            var parsedGraph = bpmnParser.parse(result.xml());
+            String updatedXml = generationService.generate(bpmnMapper.map(parsedGraph.graph()));
+            return ResponseEntity.ok(new ApplyEditsResponse(updatedXml, result.applied(), result.failed()));
         } catch (Exception e) {
             log.error("Apply edits failed: {}", e.getMessage(), e);
             return ResponseEntity.ok(new ApplyEditsResponse(null, List.of(), List.of(e.getMessage())));
