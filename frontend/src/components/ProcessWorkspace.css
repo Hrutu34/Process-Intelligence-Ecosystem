@@ -14,8 +14,8 @@
   flex-wrap: wrap;
   gap: 16px;
   padding: 20px 28px;
-  background: linear-gradient(150deg, #092149, #051533);
-  border: 1px solid rgba(116, 183, 220, 0.2);
+  background: linear-gradient(150deg, var(--surface-weak), var(--bg-0));
+  border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
@@ -32,13 +32,13 @@
   gap: 8px;
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-dimmer);
 }
 
 .workspace-title-group h2 {
   font-size: 24px;
   font-weight: 700;
-  color: var(--white);
+  color: var(--text);
   letter-spacing: -0.5px;
 }
 
@@ -60,7 +60,7 @@
 .workspace-tabs-strip {
   display: flex;
   gap: 8px;
-  border-bottom: 1px solid rgba(116, 183, 220, 0.15);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 8px;
   overflow-x: auto;
 }
@@ -73,7 +73,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 10px;
-  color: var(--muted);
+  color: var(--text-dimmer);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -83,13 +83,13 @@
 
 .ws-tab-btn:hover {
   background: rgba(16, 50, 99, 0.4);
-  color: var(--white);
+  color: var(--text);
 }
 
 .ws-tab-btn.active {
   background: rgba(57, 245, 208, 0.12);
-  border-color: rgba(57, 245, 208, 0.3);
-  color: var(--aqua);
+  border-color: var(--border);
+  color: var(--accent-a);
 }
 
 /* Tab 1: Overview Styles */
@@ -108,7 +108,7 @@
 .quality-meter-card {
   padding: 24px;
   background: linear-gradient(135deg, rgba(57, 245, 208, 0.08), rgba(9, 33, 73, 0.7));
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  border: 1px solid var(--border);
   border-radius: 16px;
   display: flex;
   justify-content: space-between;
@@ -120,7 +120,7 @@
 .quality-meter-score {
   font-size: 48px;
   font-weight: 800;
-  color: var(--aqua);
+  color: var(--accent-a);
   font-family: var(--mono);
 }
 
@@ -133,8 +133,8 @@
 .insight-card {
   padding: 16px 20px;
   background: rgba(4, 18, 45, 0.7);
-  border: 1px solid rgba(116, 183, 220, 0.15);
-  border-left: 4px solid var(--aqua);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent-a);
   border-radius: 12px;
 }
 
@@ -156,7 +156,7 @@
 .insight-title {
   font-weight: 600;
   font-size: 14px;
-  color: var(--white);
+  color: var(--text);
 }
 
 .insight-impact {
@@ -164,20 +164,20 @@
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 4px;
-  background: rgba(116, 183, 220, 0.12);
-  color: var(--soft-white);
+  background: var(--border);
+  color: var(--text-dim);
 }
 
 .insight-desc {
   font-size: 13px;
-  color: var(--soft-white);
+  color: var(--text-dim);
   line-height: 1.5;
   margin-bottom: 8px;
 }
 
 .insight-suggestion {
   font-size: 12px;
-  color: var(--aqua);
+  color: var(--accent-a);
   background: rgba(57, 245, 208, 0.08);
   padding: 6px 12px;
   border-radius: 6px;
@@ -193,8 +193,8 @@
 
 .validation-card {
   padding: 20px 24px;
-  background: linear-gradient(150deg, #092149, #051533);
-  border: 1px solid rgba(116, 183, 220, 0.2);
+  background: linear-gradient(150deg, var(--surface-weak), var(--bg-0));
+  border: 1px solid var(--border);
   border-radius: 14px;
   display: flex;
   justify-content: space-between;
@@ -212,7 +212,7 @@
 }
 
 .validation-card.resolved {
-  border-left: 4px solid var(--aqua);
+  border-left: 4px solid var(--accent-a);
   opacity: 0.7;
 }
 
@@ -244,7 +244,7 @@
 
 .ai-chat-box {
   padding: 24px;
-  background: linear-gradient(160deg, #081d42, #04122d);
+  background: linear-gradient(160deg, var(--surface-weak), var(--bg-0));
   border: 1px solid rgba(57, 245, 208, 0.25);
   border-radius: 18px;
   display: flex;
@@ -257,7 +257,7 @@
   align-items: center;
   gap: 12px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(116, 183, 220, 0.15);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 16px;
 }
 
@@ -281,19 +281,19 @@
 .chat-bubble.user {
   align-self: flex-end;
   background: rgba(16, 50, 99, 0.8);
-  border: 1px solid rgba(116, 183, 220, 0.3);
-  color: var(--white);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
 .chat-bubble.ai {
   align-self: flex-start;
   background: rgba(4, 18, 45, 0.9);
-  border: 1px solid rgba(57, 245, 208, 0.2);
-  color: var(--soft-white);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
 }
 
 .chat-bubble.ai strong {
-  color: var(--aqua);
+  color: var(--accent-a);
 }
 
 .chat-suggestions {
@@ -309,33 +309,33 @@
   background: rgba(57, 245, 208, 0.1);
   border: 1px solid rgba(57, 245, 208, 0.25);
   border-radius: 12px;
-  color: var(--aqua);
+  color: var(--accent-a);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .suggestion-pill:hover {
-  background: rgba(57, 245, 208, 0.2);
+  background: var(--border);
 }
 
 .ai-chat-input-row {
   display: flex;
   gap: 10px;
   padding-top: 14px;
-  border-top: 1px solid rgba(116, 183, 220, 0.15);
+  border-top: 1px solid var(--border);
 }
 
 .ai-chat-input {
   flex: 1;
   padding: 10px 16px;
   background: rgba(4, 18, 45, 0.8);
-  border: 1px solid rgba(116, 183, 220, 0.25);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  color: var(--white);
+  color: var(--text);
   font-size: 13px;
 }
 
 .ai-chat-input:focus {
   outline: none;
-  border-color: var(--aqua);
+  border-color: var(--accent-a);
 }

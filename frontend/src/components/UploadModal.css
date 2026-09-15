@@ -3,8 +3,8 @@
 .upload-modal-card {
   width: 100%;
   max-width: 680px;
-  background: linear-gradient(160deg, #092149, #051533);
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  background: linear-gradient(160deg, var(--surface-weak), var(--bg-0));
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 32px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
@@ -16,7 +16,7 @@
 .upload-tabs {
   display: flex;
   gap: 10px;
-  border-bottom: 1px solid rgba(116, 183, 220, 0.15);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 12px;
 }
 
@@ -25,7 +25,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
-  color: var(--muted);
+  color: var(--text-dimmer);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -34,8 +34,8 @@
 
 .upload-tab-btn.active {
   background: rgba(57, 245, 208, 0.12);
-  border-color: rgba(57, 245, 208, 0.3);
-  color: var(--aqua);
+  border-color: var(--border);
+  color: var(--accent-a);
 }
 
 .dropzone-area {
@@ -43,14 +43,14 @@
   border-radius: 14px;
   padding: 36px 20px;
   text-align: center;
-  background: rgba(4, 18, 45, 0.6);
+  background: var(--bg-0);
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
 .dropzone-area:hover {
   background: rgba(57, 245, 208, 0.06);
-  border-color: var(--aqua);
+  border-color: var(--accent-a);
 }
 
 /* Stepper Progress Screen */
@@ -66,18 +66,18 @@
   align-items: center;
   gap: 14px;
   padding: 12px 16px;
-  background: rgba(4, 18, 45, 0.6);
-  border: 1px solid rgba(116, 183, 220, 0.15);
+  background: var(--bg-0);
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 
 .stepper-item.active {
-  border-color: var(--aqua);
+  border-color: var(--accent-a);
   background: rgba(57, 245, 208, 0.08);
 }
 
 .stepper-item.done {
-  border-color: rgba(57, 245, 208, 0.3);
+  border-color: var(--border);
 }
 
 .step-indicator {
@@ -93,7 +93,7 @@
 }
 
 .step-indicator.done {
-  background: var(--aqua);
+  background: var(--accent-a);
   color: var(--navy-950);
 }
 
@@ -104,6 +104,6 @@
 }
 
 .step-indicator.waiting {
-  background: rgba(116, 183, 220, 0.2);
-  color: var(--muted);
+  background: var(--border);
+  color: var(--text-dimmer);
 }

@@ -5,7 +5,7 @@
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  background: #020a1a;
+  background: var(--bg-0);
   border: 1px solid rgba(57, 245, 208, 0.25);
   border-radius: 18px;
   overflow: hidden;
@@ -30,14 +30,14 @@
   align-items: center;
   gap: 12px;
   padding: 10px 20px 14px;
-  border-top: 1px solid rgba(116, 183, 220, 0.15);
-  background: rgba(7, 26, 61, 0.72);
+  border-top: 1px solid var(--border);
+  background: var(--bg-0);
 }
 
 .bpmn-confirm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(2, 10, 26, 0.85);
+  background: var(--bg-0);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -49,8 +49,8 @@
 .bpmn-confirm-card {
   width: 100%;
   max-width: 480px;
-  background: linear-gradient(160deg, #092149, #051533);
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  background: linear-gradient(160deg, var(--surface-weak), var(--bg-0));
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 32px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
@@ -62,17 +62,17 @@
 .bpmn-confirm-card h3 {
   font-size: 20px;
   font-weight: 700;
-  color: var(--white);
+  color: var(--text);
 }
 
 .bpmn-confirm-card p {
-  color: var(--muted);
+  color: var(--text-dimmer);
   font-size: 14px;
   line-height: 1.65;
 }
 
 .bpmn-confirm-card p strong {
-  color: var(--white);
+  color: var(--text);
 }
 
 .bpmn-confirm-actions {
@@ -119,8 +119,8 @@
   flex-wrap: wrap;
   gap: 12px;
   padding: 14px 20px;
-  background: rgba(7, 26, 61, 0.9);
-  border-bottom: 1px solid rgba(116, 183, 220, 0.15);
+  background: var(--bg-0);
+  border-bottom: 1px solid var(--border);
 }
 
 .bpmn-io-info {
@@ -132,9 +132,9 @@
 .bpmn-badge {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--aqua);
+  color: var(--accent-a);
   background: rgba(57, 245, 208, 0.12);
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  border: 1px solid var(--border);
   padding: 4px 10px;
   border-radius: 6px;
 }
@@ -148,7 +148,7 @@
 .bpmn-canvas-area {
   width: 100%;
   height: 520px;
-  background: radial-gradient(circle at 50% 50%, rgba(10, 35, 75, 0.6), #020a1a);
+  background: radial-gradient(circle at 50% 50%, var(--surface-weak), var(--bg-0));
   position: relative;
 }
 
@@ -165,15 +165,15 @@
 
 .bpmn-canvas-area .djs-shape .djs-visual rect,
 .bpmn-canvas-area .djs-shape .djs-visual polygon {
-  stroke: var(--aqua) !important;
+  stroke: var(--accent-a) !important;
   stroke-width: 1.8px !important;
-  fill: #061c3d !important;
+  fill: var(--surface-weak) !important;
 }
 
 .bpmn-canvas-area .djs-shape .djs-visual circle {
   stroke: var(--electric) !important;
   stroke-width: 2px !important;
-  fill: #061c3d !important;
+  fill: var(--surface-weak) !important;
 }
 
 /* Gateway inner markers (exclusive X, parallel +) — keep them visible on the dark theme.
@@ -184,7 +184,7 @@
 }
 
 .bpmn-canvas-area .djs-connection .djs-visual path {
-  stroke: #74b7dc !important;
+  stroke: var(--accent-a) !important;
   stroke-width: 2px !important;
 }
 
@@ -202,14 +202,14 @@
 /* Keep bpmn-js editing tools legible inside the P.I.E. visual system. */
 .bpmn-canvas-area .djs-palette,
 .bpmn-canvas-area .djs-context-pad .entry {
-  background: rgba(7, 26, 61, 0.96) !important;
+  background: var(--bg-0) !important;
   border: 1px solid rgba(57, 245, 208, 0.35) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 .bpmn-canvas-area .djs-palette .entry,
 .bpmn-canvas-area .djs-context-pad .entry {
-  color: var(--aqua) !important;
+  color: var(--accent-a) !important;
 }
 
 .bpmn-canvas-area .djs-palette .entry:hover,

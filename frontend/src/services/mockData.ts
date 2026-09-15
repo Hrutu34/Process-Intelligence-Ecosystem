@@ -106,7 +106,7 @@ If rejected at any step, Employee is notified.`,
         timestamp: 'Today, 4:32 PM',
         summary: 'Initial automated extraction from Travel_Process_SOP.pdf',
         qualityScore: 68,
-        author: 'P.I.E. Knowledge Extraction Agent',
+        author: 'Pie Apple Pie (Extraction)',
       }
     ],
     knowledge: {
@@ -285,7 +285,7 @@ If rejected at any step, Employee is notified.`,
         timestamp: 'Today, 2:15 PM',
         summary: 'Initial extraction from Employee_Onboarding_Policy.docx',
         qualityScore: 78,
-        author: 'P.I.E. Extraction Agent',
+        author: 'Pie Extraction Agent',
       }
     ],
     knowledge: {

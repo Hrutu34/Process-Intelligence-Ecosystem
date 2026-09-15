@@ -39,7 +39,7 @@
 .chat-dock-panel {
   width: min(420px, calc(100vw - 48px));
   height: min(600px, calc(100vh - 120px));
-  background: rgba(15, 17, 22, 0.98);
+  background: var(--panel);
   border: 1px solid rgba(255, 217, 61, 0.25);
   border-radius: 16px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
@@ -120,13 +120,13 @@
 }
 
 .chat-dock-icon-btn.chat-dock-download {
-  background: rgba(78, 217, 224, 0.15);
-  border-color: rgba(78, 217, 224, 0.35);
-  color: #4ed9e0;
+  background: rgba(57, 245, 208, 0.15);
+  border-color: rgba(57, 245, 208, 0.15);
+  color: var(--accent-a);
 }
 
 .chat-dock-icon-btn.chat-dock-download:hover {
-  background: rgba(78, 217, 224, 0.28);
+  background: rgba(57, 245, 208, 0.15);
 }
 
 .chat-dock-mode-tabs {
@@ -141,7 +141,7 @@
   flex: 1;
   padding: 6px 10px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 6px;
   color: rgba(241, 241, 242, 0.6);
   font-size: 12px;
@@ -217,7 +217,7 @@
 .chat-dock-btn-ghost {
   background: rgba(255, 255, 255, 0.04);
   color: rgba(241, 241, 242, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--surface-border);
 }
 
 .chat-dock-btn-ghost:hover {
@@ -239,7 +239,7 @@
 }
 
 .chat-dock-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-border);
   border-radius: 3px;
 }
 
@@ -317,9 +317,9 @@
 }
 
 .chat-msg-user .chat-msg-content {
-  background: rgba(78, 217, 224, 0.12);
-  border: 1px solid rgba(78, 217, 224, 0.25);
-  color: #e6fbfd;
+  background: rgba(57, 245, 208, 0.15);
+  border: 1px solid rgba(57, 245, 208, 0.15);
+  color: var(--text);
   align-self: flex-end;
 }
 
@@ -329,7 +329,7 @@
 
 .chat-msg-assistant .chat-msg-content {
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   color: #f1f1f2;
 }
 
@@ -381,7 +381,7 @@
   flex: 1;
   resize: none;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   border-radius: 8px;
   color: #f1f1f2;
   padding: 8px 10px;

@@ -321,7 +321,7 @@ function App() {
                       </div>
 
                       <div className="agent-footer">
-                        <span>AGENT {agent.number}</span>
+                        <span>PIE {agent.number}</span>
                         <span>0{index + 1} ———→</span>
                       </div>
                     </article>

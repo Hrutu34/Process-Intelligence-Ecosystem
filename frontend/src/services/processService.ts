@@ -179,7 +179,7 @@ class ProcessService {
           timestamp: 'Just now',
           summary: `Initial extraction and canonical graph construction from ${sourceDocName}`,
           qualityScore: 88,
-          author: 'P.I.E. Autonomous Discovery Agent',
+          author: 'Pie Autonomous Discovery Agent',
         }
       ],
       knowledge,

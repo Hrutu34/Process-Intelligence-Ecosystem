@@ -3,7 +3,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(2, 10, 26, 0.85);
+  background: var(--bg-0);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -15,8 +15,8 @@
 .history-modal-card {
   width: 100%;
   max-width: 620px;
-  background: linear-gradient(160deg, #092149, #051533);
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  background: linear-gradient(160deg, var(--surface-weak), var(--bg-0));
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 32px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
@@ -29,14 +29,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(116, 183, 220, 0.15);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 14px;
 }
 
 .history-modal-header h3 {
   font-size: 20px;
   font-weight: 700;
-  color: var(--white);
+  color: var(--text);
 }
 
 .version-timeline {
@@ -51,8 +51,8 @@
   display: flex;
   gap: 16px;
   padding: 16px;
-  background: rgba(4, 18, 45, 0.6);
-  border: 1px solid rgba(116, 183, 220, 0.15);
+  background: var(--bg-0);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -60,9 +60,9 @@
   font-family: var(--mono);
   font-size: 14px;
   font-weight: 700;
-  color: var(--aqua);
+  color: var(--accent-a);
   background: rgba(57, 245, 208, 0.12);
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  border: 1px solid var(--border);
   padding: 4px 10px;
   border-radius: 8px;
   height: fit-content;
@@ -76,5 +76,5 @@
 
 .version-meta {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-dimmer);
 }

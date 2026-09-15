@@ -17,16 +17,16 @@ interface StepItem {
 
 const BASE_STEPS: StepItem[] = [
   { title: 'Ingestion', desc: 'Parsing document streams & reading raw text...', weight: 2500 },
-  { title: 'Classification', desc: 'Agent 01: Classifying document type & calibrating confidence...', weight: 5000 },
-  { title: 'Extraction', desc: 'Agent 01: Extracting activities, actors, systems & gateways...', weight: 9000 },
-  { title: 'Conflict Audit', desc: 'Agent 01: Comparing files & isolating discrepancies...', weight: 8000 },
+  { title: 'Classification', desc: '🍎 Apple Pie: Classifying document type & calibrating confidence...', weight: 5000 },
+  { title: 'Extraction', desc: '🍎 Apple Pie: Extracting activities, actors, systems & gateways...', weight: 9000 },
+  { title: 'Conflict Audit', desc: '🍎 Apple Pie: Comparing files & isolating discrepancies...', weight: 8000 },
   { title: 'Normalization', desc: 'Pruning duplicates, validating JSON & sealing DTO graph...', weight: 4000 },
 ];
 
 export const AgentLoadingScreen: React.FC<Props> = ({
   fileCount = 1,
-  title = 'Knowledge Extraction Agent in Progress',
-  mascot = '🧠',
+  title = 'Apple Pie (Extraction) in Progress',
+  mascot = '🍎',
   steps = BASE_STEPS,
   theme = 'aqua',
 }) => {

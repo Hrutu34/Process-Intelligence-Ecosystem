@@ -52,7 +52,7 @@ export const SettingsPage: React.FC<Props> = ({ onResetDemoData }) => {
         </div>
       </div>
 
-      {/* Extraction Agent Configuration */}
+      {/* Apple Pie (Extraction) Configuration */}
       <div className="settings-section">
         <div className="settings-section-header">
           <h3>Extraction & Reasoning Agent Settings</h3>

@@ -1,13 +1,13 @@
 .agent-loading-card {
   padding: 55px 30px;
-  background: linear-gradient(145deg, #103263, #071a3d);
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  box-shadow: 15px 18px 35px rgba(1, 10, 25, 0.6),
+  box-shadow: 15px 18px 35px rgba(0, 0, 0, 0.15),
               0 0 30px rgba(57, 245, 208, 0.08);
   margin-top: 40px;
   width: 100%;
@@ -27,7 +27,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px dashed var(--aqua);
+  border: 2px dashed var(--accent-a);
   animation: rotateOrbit 6s linear infinite;
 }
 
@@ -66,12 +66,12 @@
   white-space: pre-line;
   font-size: 24px;
   margin: 8px 0 8px;
-  color: var(--white);
+  color: var(--text);
   letter-spacing: -0.5px;
 }
 
 .active-step-text {
-  color: var(--aqua);
+  color: var(--accent-a);
   font-family: var(--mono);
   font-size: 13px;
   letter-spacing: 0.5px;
@@ -109,16 +109,16 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #061735;
-  border: 1px solid rgba(116, 183, 220, 0.25);
+  background: var(--surface-weak);
+  border: 1px solid var(--border);
   display: grid;
   place-items: center;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
-  color: var(--dim);
+  color: var(--text-dimmer);
   transition: all 0.35s ease;
-  box-shadow: 4px 4px 10px rgba(1, 10, 25, 0.5);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .step-label {
@@ -129,7 +129,7 @@
   margin-top: 4px;
   font-family: var(--mono);
   font-size: 10px;
-  color: var(--dim);
+  color: var(--text-dimmer);
   letter-spacing: 0.5px;
   transition: color 0.3s ease;
   white-space: nowrap;
@@ -137,37 +137,37 @@
 
 /* Active State */
 .step-node.active .step-circle {
-  border-color: var(--aqua);
-  color: var(--aqua);
-  background: #08264d;
-  box-shadow: 0 0 16px rgba(57, 245, 208, 0.5), inset 0 0 8px rgba(57, 245, 208, 0.3);
+  border-color: var(--accent-a);
+  color: var(--accent-a);
+  background: var(--surface-weak);
+  box-shadow: 0 0 16px rgba(57, 245, 208, 0.5), inset 0 0 8px var(--border);
   transform: scale(1.1);
 }
 
 .step-node.active .step-label {
-  color: var(--aqua);
+  color: var(--accent-a);
   font-weight: 600;
 }
 
 /* Completed Validation Checkmark State */
 .step-node.completed .step-circle {
-  background: var(--aqua);
-  color: #04122d;
-  border-color: var(--aqua);
+  background: var(--accent-a);
+  color: var(--bg-0);
+  border-color: var(--accent-a);
   font-size: 14px;
   font-weight: bold;
   box-shadow: 0 0 14px rgba(57, 245, 208, 0.4);
 }
 
 .step-node.completed .step-label {
-  color: var(--soft-white);
+  color: var(--text-dim);
 }
 
 /* Progress Lines Between Nodes */
 .step-line {
   flex: 1;
   height: 2px;
-  background: rgba(116, 183, 220, 0.15);
+  background: var(--border);
   margin: 0 8px;
   margin-bottom: 22px; /* Align with center of the circle */
   position: relative;
@@ -175,14 +175,14 @@
 }
 .agent-loading-card {
   padding: 55px 30px;
-  background: linear-gradient(145deg, #103263, #071a3d);
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  box-shadow: 15px 18px 35px rgba(1, 10, 25, 0.6),
+  box-shadow: 15px 18px 35px rgba(0, 0, 0, 0.15),
               0 0 30px rgba(57, 245, 208, 0.08);
   margin-top: 40px;
   width: 100%;
@@ -202,7 +202,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px dashed var(--aqua);
+  border: 2px dashed var(--accent-a);
   animation: rotateOrbit 6s linear infinite;
 }
 
@@ -241,12 +241,12 @@
   white-space: pre-line;
   font-size: 24px;
   margin: 8px 0 8px;
-  color: var(--white);
+  color: var(--text);
   letter-spacing: -0.5px;
 }
 
 .active-step-text {
-  color: var(--aqua);
+  color: var(--accent-a);
   font-family: var(--mono);
   font-size: 13px;
   letter-spacing: 0.5px;
@@ -284,16 +284,16 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #061735;
-  border: 1px solid rgba(116, 183, 220, 0.25);
+  background: var(--surface-weak);
+  border: 1px solid var(--border);
   display: grid;
   place-items: center;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
-  color: var(--dim);
+  color: var(--text-dimmer);
   transition: all 0.35s ease;
-  box-shadow: 4px 4px 10px rgba(1, 10, 25, 0.5);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .step-label {
@@ -304,7 +304,7 @@
   margin-top: 4px;
   font-family: var(--mono);
   font-size: 10px;
-  color: var(--dim);
+  color: var(--text-dimmer);
   letter-spacing: 0.5px;
   transition: color 0.3s ease;
   white-space: nowrap;
@@ -312,37 +312,37 @@
 
 /* Active State */
 .step-node.active .step-circle {
-  border-color: var(--aqua);
-  color: var(--aqua);
-  background: #08264d;
-  box-shadow: 0 0 16px rgba(57, 245, 208, 0.5), inset 0 0 8px rgba(57, 245, 208, 0.3);
+  border-color: var(--accent-a);
+  color: var(--accent-a);
+  background: var(--surface-weak);
+  box-shadow: 0 0 16px rgba(57, 245, 208, 0.5), inset 0 0 8px var(--border);
   transform: scale(1.1);
 }
 
 .step-node.active .step-label {
-  color: var(--aqua);
+  color: var(--accent-a);
   font-weight: 600;
 }
 
 /* Completed Validation Checkmark State */
 .step-node.completed .step-circle {
-  background: var(--aqua);
-  color: #04122d;
-  border-color: var(--aqua);
+  background: var(--accent-a);
+  color: var(--bg-0);
+  border-color: var(--accent-a);
   font-size: 14px;
   font-weight: bold;
   box-shadow: 0 0 14px rgba(57, 245, 208, 0.4);
 }
 
 .step-node.completed .step-label {
-  color: var(--soft-white);
+  color: var(--text-dim);
 }
 
 /* Progress Lines Between Nodes */
 .step-line {
   flex: 1;
   height: 2px;
-  background: rgba(116, 183, 220, 0.15);
+  background: var(--border);
   margin: 0 8px;
   margin-bottom: 22px; /* Align with center of the circle */
   position: relative;
@@ -350,7 +350,7 @@
 }
 
 .step-line.filled {
-  background: var(--aqua);
+  background: var(--accent-a);
   box-shadow: 0 0 8px rgba(57, 245, 208, 0.4);
 }
 
@@ -365,7 +365,7 @@
 
 .theme-yellow.agent-loading-card { 
   border-color: rgba(251, 191, 36, 0.3); 
-  box-shadow: 15px 18px 35px rgba(1, 10, 25, 0.6), 0 0 30px rgba(251, 191, 36, 0.08); 
+  box-shadow: 15px 18px 35px rgba(0, 0, 0, 0.15), 0 0 30px rgba(251, 191, 36, 0.08); 
 } 
 .theme-yellow .inner-pulse { border-color: var(--yellow); } 
 .theme-yellow h3 { color: var(--yellow); }

@@ -14,28 +14,28 @@ interface AgentCard {
 const AGENTS: AgentCard[] = [
   {
     number: "01",
-    title: "Knowledge Extraction Agent",
+    title: "Apple Pie (Extraction)",
     description: "Ingests raw business documents and extracts structured process knowledge.",
     icon: "🧠",
     accent: "aqua",
   },
   {
     number: "02",
-    title: "Process Intelligence Agent",
+    title: "Blueberry Pie (Intelligence)",
     description: "Validates completeness, flags ambiguities, and resolves conflicts.",
     icon: "◉",
     accent: "blue",
   },
   {
     number: "03",
-    title: "BPMN 2.0 Modelling Agent",
+    title: "🍒 Cherry Pie (Modelling)",
     description: "Constructs semantic XML and visual process graphs from normalized knowledge.",
     icon: "⌘",
     accent: "yellow",
   },
   {
     number: "04",
-    title: "Process Review Agent",
+    title: "Pecan Pie (Review)",
     description: "Translates technical process models back into clear business explanations.",
     icon: "✦",
     accent: "white",

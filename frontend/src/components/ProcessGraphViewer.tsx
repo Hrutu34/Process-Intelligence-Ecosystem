@@ -106,13 +106,13 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proc
   if (loading) {
     return (
       <AgentLoadingScreen
-        title="BPMN Modelling Agent in Progress"
+        title="🍒 Cherry Pie (Modelling) in Progress"
         mascot="⌘"
         steps={[
-          { title: 'Nodes', desc: 'Agent 03: Creating activities, events & gateways...', weight: 1800 },
-          { title: 'Flows', desc: 'Agent 03: Connecting sequence and conditional paths...', weight: 3000 },
-          { title: 'Owners', desc: 'Agent 03: Linking roles, systems & data artifacts...', weight: 2600 },
-          { title: 'Model', desc: 'Agent 03: Preparing the editable BPMN view...', weight: 2200 },
+          { title: 'Nodes', desc: 'Cherry Pie: Creating activities, events & gateways...', weight: 1800 },
+          { title: 'Flows', desc: 'Cherry Pie: Connecting sequence and conditional paths...', weight: 3000 },
+          { title: 'Owners', desc: 'Cherry Pie: Linking roles, systems & data artifacts...', weight: 2600 },
+          { title: 'Model', desc: 'Cherry Pie: Preparing the editable BPMN view...', weight: 2200 },
         ]}
       />
     );
