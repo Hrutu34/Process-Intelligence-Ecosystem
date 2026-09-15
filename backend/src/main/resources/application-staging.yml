@@ -10,10 +10,13 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   ai:
     ollama:
-      enabled: false
+      chat:
+        enabled: false
     google:
       genai:
-        enabled: false
+        api-key: dummy_key_to_satisfy_client_init
+        chat:
+          enabled: false
     openai:
       api-key: ${LLMAAS_API_KEY:placeholder_key}
       base-url: ${LLMAAS_BASE_URL:https://api.openai.com/v1}

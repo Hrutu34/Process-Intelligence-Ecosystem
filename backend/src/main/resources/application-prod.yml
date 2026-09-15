@@ -10,9 +10,12 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   ai:
     ollama:
-      enabled: false
+      chat:
+        enabled: false
     openai:
-      enabled: false
+      api-key: dummy_key_to_satisfy_client_init
+      chat:
+        enabled: false
     google:
       genai:
         api-key: ${GEMINI_API_KEY}
