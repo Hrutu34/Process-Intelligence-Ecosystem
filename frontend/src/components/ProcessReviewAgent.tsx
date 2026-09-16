@@ -54,23 +54,25 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const hasFetched = React.useRef(false);
+  const lastFetchedXml = React.useRef<string | null>(null);
   const [showWalkthroughModal, setShowWalkthroughModal] = useState(false);
   const [expandedFindings, setExpandedFindings] = useState(true);
   const [expandedRisks, setExpandedRisks] = useState(false);
   const [expandedSuggestions, setExpandedSuggestions] = useState(false);
 
   React.useEffect(() => {
-    if (bpmnXml) {
-      if (reportCache.has(bpmnXml)) {
-        setReport(reportCache.get(bpmnXml)!);
-      } else if (!report && !loading && !error && !hasFetched.current) {
-        hasFetched.current = true;
-        handleGenerateSummary();
-      }
-      // Always try to load defects — cheap deterministic call.
-      loadQuality(bpmnXml);
+    if (!bpmnXml) return;
+    if (reportCache.has(bpmnXml)) {
+      setReport(reportCache.get(bpmnXml)!);
+      lastFetchedXml.current = bpmnXml;
+    } else if (lastFetchedXml.current !== bpmnXml && !loading) {
+      lastFetchedXml.current = bpmnXml;
+      setReport(null);
+      setError(null);
+      handleGenerateSummary();
     }
+    loadQuality(bpmnXml);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bpmnXml]);
 
   const loadQuality = async (xml: string) => {
@@ -132,7 +134,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
     if (bpmnXml) {
       reportCache.delete(bpmnXml);
     }
-    hasFetched.current = false;
+    lastFetchedXml.current = null;
     setReport(null);
     handleGenerateSummary();
   };
@@ -163,7 +165,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
           {error && (
             <div style={{ marginTop: '20px' }}>
               <p className="error-text">{error}</p>
-              <button className="yellow-button" onClick={() => { hasFetched.current = false; handleGenerateSummary(); }}>
+              <button className="yellow-button" onClick={() => { lastFetchedXml.current = null; handleGenerateSummary(); }}>
                 RETRY GENERATION
               </button>
             </div>

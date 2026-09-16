@@ -38,10 +38,14 @@ interface Props {
   onSuccess: (data: ProcessKnowledgeDTO) => void;
   onBpmnImported?: (payload: BpmnImportPayload) => void;
   onError?: (err: string) => void;
+  initialTab?: ActiveTab;
 }
 
-export default function ProcessEntry({ onStart, onSuccess, onBpmnImported, onError }: Props) {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('file');
+export default function ProcessEntry({ onStart, onSuccess, onBpmnImported, onError, initialTab }: Props) {
+  const [activeTab, setActiveTab] = useState<ActiveTab>(initialTab ?? 'file');
+  React.useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [files, setFiles] = useState<File[]>([]);
   const [text, setText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
