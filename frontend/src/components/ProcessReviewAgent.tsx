@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import './ProcessReviewAgent.css';
-
+import { createPortal } from 'react-dom';
 import { AgentLoadingScreen } from './AgentLoadingScreen';
+import { trackerStore } from '../services/trackerStore';
+import './ProcessReviewAgent.css';
 
 interface Props {
   onHighlightIssue?: (elementId: string | null, color?: string) => void;
@@ -65,6 +66,8 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
     if (reportCache.has(bpmnXml)) {
       setReport(reportCache.get(bpmnXml)!);
       lastFetchedXml.current = bpmnXml;
+      trackerStore.setStageComplete('PROCESS_REVIEW', 'BPMN review loaded from cache.');
+      setTimeout(() => trackerStore.setStageComplete('FINAL_OUTPUT', 'Workflow complete.'), 500);
     } else if (lastFetchedXml.current !== bpmnXml && !loading) {
       lastFetchedXml.current = bpmnXml;
       setReport(null);
@@ -102,6 +105,7 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
     }
 
     setLoading(true);
+    trackerStore.setStageActive('PROCESS_REVIEW', 'Analyzing BPMN semantics and layout...');
     setError(null);
 
     try {
@@ -121,8 +125,14 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
         reportCache.set(bpmnXml, data);
       }
       setReport(data);
+      trackerStore.setStageComplete('PROCESS_REVIEW', 'BPMN review complete.');
+      // Also mark final output as ready since this is the last agent!
+      setTimeout(() => {
+        trackerStore.setStageComplete('FINAL_OUTPUT', 'Workflow complete.');
+      }, 500);
     } catch (err: any) {
       setError(err.message || "An error occurred during review generation.");
+      trackerStore.updateState({ failedStage: 'PROCESS_REVIEW', statusMessage: 'Failed to review BPMN.' });
     } finally {
       setLoading(false);
     }
@@ -206,28 +216,29 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
             </div>
 
             {/* Walkthrough Modal Overlay */}
-            {showWalkthroughModal && (
-              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ background: 'var(--card-bg)', width: '90vw', maxWidth: '1000px', height: '85vh', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+            {showWalkthroughModal && createPortal(
+              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(15px)', zIndex: 99999, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                   
                   {/* Modal Header */}
-                  <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                  <div style={{ padding: '24px 40px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-1)', flexShrink: 0 }}>
                     <div>
                       <p style={{ margin: '0 0 4px', color: 'var(--aqua)', fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase' }}>Interactive Journey</p>
-                      <h2 style={{ margin: 0, color: 'var(--white)' }}>Process Walkthrough</h2>
+                      <h2 style={{ margin: 0, color: 'var(--white)', fontSize: '24px' }}>Process Walkthrough</h2>
                     </div>
                     <button 
                       onClick={() => setShowWalkthroughModal(false)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: '24px', cursor: 'pointer', padding: '8px' }}
+                      style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'var(--white)', width: '40px', height: '40px', borderRadius: '50%', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      ✕
+                      ✕ 
                     </button>
                   </div>
 
                   {/* Modal Body - Creative Flow */}
-                  <div style={{ flex: 1, overflowY: 'auto', padding: '40px' }}>
-                    
-                    {/* Participants Row */}
+                  <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '60px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: '100%', maxWidth: '1000px' }}>
+                      
+                      {/* Participants Row */}
                     {report.participants && report.participants.length > 0 && (
                       <div style={{ marginBottom: '40px', textAlign: 'center' }}>
                         <h4 style={{ color: 'var(--muted)', letterSpacing: '1px', marginBottom: '16px' }}>KEY PARTICIPANTS</h4>
@@ -282,9 +293,11 @@ export const ProcessReviewAgent: React.FC<Props> = ({ bpmnXml, onHighlightIssue 
                         </div>
                       </div>
                     )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
 
             {quality && (

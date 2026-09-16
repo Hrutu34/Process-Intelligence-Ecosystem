@@ -5,7 +5,7 @@ import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent"
 import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
 import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
-import { AgentExecutionTracker, type TrackerState } from "./components/AgentExecutionTracker";
+import { AgentExecutionTracker } from "./components/AgentExecutionTracker";
 import { SplashScreen } from "./components/SplashScreen";
 import { ChatDock } from "./components/ChatDock";
 import BpmnImageViewer from "./components/BpmnImageViewer";
@@ -15,6 +15,7 @@ import WhatIsBpmn from "./components/WhatIsBpmn";
 import TextToDiagramGenAnim from "./components/TextToDiagramGenAnim";
 import DiagramToSummaryGenAnim from "./components/DiagramToSummaryGenAnim";
 import { historyStore, type HistoryEntry } from "./services/historyStore";
+import { trackerStore, useTrackerStore } from "./services/trackerStore";
 import vwgdsLogo from "./assets/vwgds-logo.png";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import { useCallback, useEffect, useState } from "react";
@@ -33,37 +34,21 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [entryMode, setEntryMode] = useState<EntryMode>("text-to-diagram");
   const [view, setView] = useState<"landing" | "ingest">("landing");
-  const [trackerState, setTrackerState] = useState<TrackerState | null>(null);
+  const trackerState = useTrackerStore();
   const [isTrackerHovered, setIsTrackerHovered] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!isExtracting) {
-       setTrackerState(null);
-       return;
-    }
+    if (!isExtracting) return;
     
-    setTrackerState({
-      currentStage: 'INPUT_RECEIVED',
-      completedStages: [],
-      failedStage: null,
-      statusMessage: 'Reading input and validating format...',
-      progressPercentage: 10
-    });
+    trackerStore.setStageActive('INPUT_RECEIVED', 'Reading input and validating format...');
     
     const sequence = [
-      { delay: 1000, state: { currentStage: 'CLASSIFYING', completedStages: ['INPUT_RECEIVED'], statusMessage: 'Classifying document...', progressPercentage: 20 } },
-      { delay: 2500, state: { currentStage: 'KNOWLEDGE_EXTRACTION', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING'], statusMessage: 'Extracting process knowledge...', progressPercentage: 35 } },
-      { delay: 5000, state: { currentStage: 'BUILD_GRAPH', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION'], statusMessage: 'Building process graph...', progressPercentage: 50 } },
-      { delay: 8000, state: { currentStage: 'PROCESS_INTELLIGENCE', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION', 'BUILD_GRAPH'], statusMessage: 'Detecting missing events and ownership gaps...', progressPercentage: 65 } },
-      { delay: 11000, state: { currentStage: 'BPMN_MODELLING', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION', 'BUILD_GRAPH', 'PROCESS_INTELLIGENCE'], statusMessage: 'Generating BPMN...', progressPercentage: 80 } },
-      { delay: 14000, state: { currentStage: 'PROCESS_REVIEW', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION', 'BUILD_GRAPH', 'PROCESS_INTELLIGENCE', 'BPMN_MODELLING'], statusMessage: 'Reviewing BPMN...', progressPercentage: 90 } },
-      { delay: 17000, state: { currentStage: 'FINAL_OUTPUT', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION', 'BUILD_GRAPH', 'PROCESS_INTELLIGENCE', 'BPMN_MODELLING', 'PROCESS_REVIEW'], statusMessage: 'Preparing final output...', progressPercentage: 98 } }
+      { delay: 1000, fn: () => trackerStore.setStageActive('CLASSIFYING', 'Classifying document...') },
+      { delay: 2500, fn: () => trackerStore.setStageActive('KNOWLEDGE_EXTRACTION', 'Extracting process knowledge...') },
+      { delay: 5000, fn: () => trackerStore.setStageComplete('KNOWLEDGE_EXTRACTION', 'Knowledge extraction complete. Ready for intelligence.') }
     ];
     
-    const timers = sequence.map(step => 
-       setTimeout(() => setTrackerState(prev => prev ? { ...prev, ...step.state } : null), step.delay)
-    );
-    
+    const timers = sequence.map(step => setTimeout(step.fn, step.delay));
     return () => timers.forEach(clearTimeout);
   }, [isExtracting]);
 
@@ -596,15 +581,7 @@ function App() {
 
               {isTrackerHovered && (
                 <div className="tracker-popup-container">
-                  <AgentExecutionTracker 
-                    state={trackerState || {
-                      currentStage: 'INPUT_RECEIVED',
-                      completedStages: [],
-                      failedStage: null,
-                      statusMessage: 'System idle. Waiting for input.',
-                      progressPercentage: 0
-                    }} 
-                  />
+                  <AgentExecutionTracker state={trackerState} />
                 </div>
               )}
             </div>

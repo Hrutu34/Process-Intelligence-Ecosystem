@@ -5,6 +5,7 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import type { ProcessGraphDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import type { ProcessKnowledgeDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import { trackerStore } from '../services/trackerStore';
 import './BpmnIoCanvas.css';
 
 interface Props {
@@ -75,6 +76,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, o
           return;
         }
 
+        trackerStore.setStageActive('BPMN_MODELLING', 'Generating BPMN XML from graph...');
         // Fetch XML natively from the Java Backend Engine
         const response = await fetch('http://localhost:8080/api/v1/process/bpmn/generate', {
           method: 'POST',
@@ -90,8 +92,10 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, o
         if (!isMounted) return;
 
         await importReadyXml(xml);
+        trackerStore.setStageComplete('BPMN_MODELLING', 'BPMN modelling complete.');
       } catch (error: any) {
         if (isMounted) setRenderError(error.message || 'BPMN diagram retrieval or rendering failed');
+        trackerStore.updateState({ failedStage: 'BPMN_MODELLING', statusMessage: 'Failed to generate BPMN.' });
       } finally {
         if (isMounted) setIsLoading(false);
       }

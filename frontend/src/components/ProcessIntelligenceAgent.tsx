@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { ProcessKnowledgeDTO, ProcessQualityReportDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import { AgentLoadingScreen } from './AgentLoadingScreen';
+import { trackerStore } from '../services/trackerStore';
 import './ProcessIntelligenceAgent.css';
 
 interface Props {
@@ -88,11 +89,17 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
       if (cachedReport) {
         setReport(cachedReport);
         setLoading(false);
+        trackerStore.setStageComplete('PROCESS_INTELLIGENCE', 'Analysis retrieved from cache.');
         return;
       }
     }
 
     setLoading(true);
+    // Simulate Stage 4 (Building Graph) first since the backend validate endpoint does both
+    trackerStore.setStageActive('BUILD_GRAPH', 'Building topological process graph...');
+    setTimeout(() => {
+      trackerStore.setStageActive('PROCESS_INTELLIGENCE', 'Detecting missing events and ownership gaps...');
+    }, 1000);
     setError(null);
 
     let request = qualityRequestCache.get(knowledgeKey);
@@ -114,12 +121,14 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         qualityReportCache.set(knowledgeKey, data);
         setReport(data);
         setLoading(false);
+        trackerStore.setStageComplete('PROCESS_INTELLIGENCE', 'Process logic validation complete.');
       })
       .catch((err) => {
         qualityRequestCache.delete(knowledgeKey);
         console.error('Process validation failed:', err);
         setError(err.message || 'Failed to analyze process gaps');
         setLoading(false);
+        trackerStore.updateState({ failedStage: 'PROCESS_INTELLIGENCE', statusMessage: 'Failed to analyze gaps.' });
       });
   };
 
