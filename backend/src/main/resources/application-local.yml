@@ -21,7 +21,11 @@ spring:
           num-predict: 4096
           num-ctx: 8192
     openai:
-      enabled: false
+      api-key: dummy_key_to_satisfy_client_init
+      chat:
+        enabled: false
     google:
       genai:
-        enabled: false
+        api-key: dummy_key_to_satisfy_client_init
+        chat:
+          enabled: false

@@ -19,6 +19,7 @@ interface MetricCardProps {
   tone: 'aqua' | 'yellow' | 'red';
   visual?: 'ring' | 'bar';
   index?: number;
+  info?: string;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({
@@ -29,11 +30,28 @@ const MetricCard: React.FC<MetricCardProps> = ({
   tone,
   visual = 'ring',
   index = 0,
+  info,
 }) => {
   const boundedProgress = Math.max(0, Math.min(100, progress));
+  const [showInfo, setShowInfo] = useState(false);
   return (
     <div className="pi-stat-card" style={{ animationDelay: `${index * 0.08}s` }}>
-      <span className="pi-stat-label">{label}</span>
+      <div className="pi-stat-label-row">
+        <span className="pi-stat-label">{label}</span>
+        {info && (
+          <button
+            type="button"
+            className="pi-info-btn"
+            aria-label={`About ${label}`}
+            title={info}
+            onClick={(e) => { e.stopPropagation(); setShowInfo((v) => !v); }}
+            onBlur={() => setShowInfo(false)}
+          >
+            i
+            {showInfo && <span className="pi-info-tooltip">{info}</span>}
+          </button>
+        )}
+      </div>
       <div className="pi-stat-main">
         <div className={`pi-metric-visual ${visual} tone-${tone}`} style={{ '--metric-progress': `${boundedProgress}%` } as React.CSSProperties}>
           {visual === 'ring' ? <span>{value}</span> : <span className="pi-metric-bar" />}
@@ -43,6 +61,16 @@ const MetricCard: React.FC<MetricCardProps> = ({
       <span className="pi-stat-sub">{sublabel}</span>
     </div>
   );
+};
+
+const METRIC_INFO: Record<string, string> = {
+  Activities: "Number of discrete process steps or actions extracted from your source documents. Higher counts mean richer process detail.",
+  Actors: "Distinct people, roles, or departments identified as performing work. Missing actors often indicate ownership gaps.",
+  Gateways: "Decision points where the flow branches (Yes/No, parallel, exclusive). Zero gateways = strictly linear process.",
+  "Model Quality": "Overall structural score (0–100). Considers boundary correctness, gateway completeness, and coverage. ≥80 is production-ready.",
+  "High Severity": "Critical defects: broken paths, missing start/end events, dangling gateways. Fix before publishing the BPMN.",
+  "Medium Severity": "Ambiguous logic: unnamed tasks, uncovered gateway branches, unclear actor assignments. Review before sign-off.",
+  Recommendations: "Actionable suggestions from Blueberry Pie to improve clarity, coverage, or compliance of your process model.",
 };
 
 export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceedToBpmn }) => {
@@ -102,13 +130,13 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
   if (loading) {
     return (
       <AgentLoadingScreen
-        title="Process Intelligence Agent in Progress"
-        mascot="◉"
+        mascotImage="/mascots/BlueBerryPie.png"
+        title="Blueberry Pie (Intelligence) in Progress"
         steps={[
-          { title: 'Building Graph', desc: 'Agent 02: Building the process graph...', weight: 1800 },
-          { title: 'Validating Rules', desc: 'Agent 02: Checking boundaries, gateways & dead ends...', weight: 3000 },
-          { title: 'Analyzing Semantics', desc: 'Agent 02: Reviewing process quality and evidence...', weight: 5000 },
-          { title: 'Generating Report', desc: 'Agent 02: Preparing findings and recommendations...', weight: 2200 },
+          { title: 'Building Graph', desc: 'Blueberry Pie: Building the process graph...', weight: 1800 },
+          { title: 'Validating Rules', desc: 'Blueberry Pie: Checking boundaries, gateways & dead ends...', weight: 3000 },
+          { title: 'Analyzing Semantics', desc: 'Blueberry Pie: Reviewing process quality and evidence...', weight: 5000 },
+          { title: 'Generating Report', desc: 'Blueberry Pie: Preparing findings and recommendations...', weight: 2200 },
         ]}
       />
     );
@@ -149,7 +177,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         <div className="pi-header-info">
           <div className="status-pill">
             <span className="status-dot" />
-            AGENT 02 / PROCESS INTELLIGENCE
+            BLUEBERRY PIE / PROCESS INTELLIGENCE
             <span className="status-separator">/</span>
             {issues.length === 0 ? 'CLEAN MODEL' : `${issues.length} GAPS DETECTED`}
           </div>
@@ -169,13 +197,13 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
 
       {/* KPI Stats Bar */}
       <div className="pi-stats-grid">
-        <MetricCard index={0} label="Activities" value={activitiesCount} progress={activitiesCount / maxEntityCount * 100} tone="aqua" sublabel="Extracted process actions" />
-        <MetricCard index={1} label="Actors" value={actorsCount} progress={actorsCount / maxEntityCount * 100} tone="aqua" sublabel="People and departments" />
-        <MetricCard index={2} label="Gateways" value={gatewaysCount} progress={gatewaysCount / maxEntityCount * 100} tone="yellow" sublabel="Decision points detected" />
-        <MetricCard index={3} label="Model Quality" value={`${report.qualityScore}%`} progress={report.qualityScore} tone={report.qualityScore >= 80 ? 'aqua' : report.qualityScore >= 50 ? 'yellow' : 'red'} sublabel={report.valid ? 'Structural checks passed' : 'Quality issues require attention'} />
-        <MetricCard index={4} label="High Severity" value={highIssues.length} progress={highIssues.length / totalIssues * 100} tone="red" visual="bar" sublabel="Broken paths and boundaries" />
-        <MetricCard index={5} label="Medium Severity" value={mediumIssues.length} progress={mediumIssues.length / totalIssues * 100} tone="yellow" visual="bar" sublabel="Ambiguous or incomplete logic" />
-        <MetricCard index={6} label="Recommendations" value={report.recommendations?.length || 0} progress={(report.recommendations?.length || 0) / Math.max(issues.length, 1) * 100} tone="aqua" visual="bar" sublabel="Actionable refinement ideas" />
+        <MetricCard index={0} label="Activities" value={activitiesCount} progress={activitiesCount / maxEntityCount * 100} tone="aqua" sublabel="Extracted process actions" info={METRIC_INFO.Activities} />
+        <MetricCard index={1} label="Actors" value={actorsCount} progress={actorsCount / maxEntityCount * 100} tone="aqua" sublabel="People and departments" info={METRIC_INFO.Actors} />
+        <MetricCard index={2} label="Gateways" value={gatewaysCount} progress={gatewaysCount / maxEntityCount * 100} tone="yellow" sublabel="Decision points detected" info={METRIC_INFO.Gateways} />
+        <MetricCard index={3} label="Model Quality" value={`${report.qualityScore}%`} progress={report.qualityScore} tone={report.qualityScore >= 80 ? 'aqua' : report.qualityScore >= 50 ? 'yellow' : 'red'} sublabel={report.valid ? 'Structural checks passed' : 'Quality issues require attention'} info={METRIC_INFO["Model Quality"]} />
+        <MetricCard index={4} label="High Severity" value={highIssues.length} progress={highIssues.length / totalIssues * 100} tone="red" visual="bar" sublabel="Broken paths and boundaries" info={METRIC_INFO["High Severity"]} />
+        <MetricCard index={5} label="Medium Severity" value={mediumIssues.length} progress={mediumIssues.length / totalIssues * 100} tone="yellow" visual="bar" sublabel="Ambiguous or incomplete logic" info={METRIC_INFO["Medium Severity"]} />
+        <MetricCard index={6} label="Recommendations" value={report.recommendations?.length || 0} progress={(report.recommendations?.length || 0) / Math.max(issues.length, 1) * 100} tone="aqua" visual="bar" sublabel="Actionable refinement ideas" info={METRIC_INFO.Recommendations} />
       </div>
 
       {/* Filter Tabs */}
@@ -248,7 +276,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
         <div className="pi-recommendations-card">
           <div className="pi-rec-header">
             <span>💡</span>
-            <h4>Agent 02 Recommended Fixes</h4>
+            <h4>Blueberry Pie Recommended Fixes</h4>
           </div>
           <ul className="pi-rec-list">
             {report.recommendations.map((rec, i) => (

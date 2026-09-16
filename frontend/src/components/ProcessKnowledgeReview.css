@@ -12,24 +12,24 @@
   flex-wrap: wrap;
   gap: 20px;
   padding: 24px 32px;
-  background: linear-gradient(145deg, #103263, #071a3d);
-  border: 1px solid rgba(88, 170, 205, 0.2);
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 18px;
-  box-shadow: 12px 14px 30px rgba(1, 10, 25, 0.55),
-              -8px -8px 20px rgba(31, 72, 117, 0.3),
-              inset 1px 1px rgba(255, 255, 255, 0.08);
+  box-shadow: 12px 14px 30px rgba(0, 0, 0, 0.15),
+              -8px -8px 20px var(--shadow),
+              inset 1px 1px var(--border);
 }
 
 .review-headline h3 {
   font-size: 26px;
   font-weight: 700;
-  color: var(--white);
+  color: var(--text);
   margin: 12px 0 4px;
   letter-spacing: -0.5px;
 }
 
 .review-headline p {
-  color: var(--muted);
+  color: var(--text-dimmer);
   font-size: 14px;
   margin: 0;
 }
@@ -42,10 +42,10 @@
 }
 
 .btn-ghost {
-  background: rgba(16, 50, 99, 0.5);
-  border: 1px solid rgba(116, 183, 220, 0.2);
+  background: var(--surface-weak);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  color: var(--soft-white);
+  color: var(--text-dim);
   padding: 10px 16px;
   font-family: var(--mono);
   font-size: 11px;
@@ -54,24 +54,24 @@
 }
 
 .btn-ghost:hover {
-  border-color: var(--aqua);
-  color: var(--aqua);
+  border-color: var(--accent-a);
+  color: var(--accent-a);
   background: rgba(57, 245, 208, 0.08);
 }
 
 /* Document Classification Table Styles */
 .classification-table-container {
-  background: linear-gradient(145deg, #0e2d5b, #061735);
-  border: 1px solid rgba(57, 245, 208, 0.2);
+  background: var(--surface-weak);
+  border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
   margin-bottom: 24px;
-  box-shadow: 0 8px 24px rgba(1, 10, 25, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .classification-header {
   padding: 16px 20px;
-  background: rgba(4, 18, 45, 0.6);
+  background: var(--bg-0);
   border-bottom: 1px solid rgba(57, 245, 208, 0.15);
   display: flex;
   align-items: center;
@@ -79,7 +79,7 @@
 }
 
 .classification-header h3 {
-  color: var(--white);
+  color: var(--text);
   font-size: 16px;
   margin: 0;
 }
@@ -93,17 +93,17 @@
 
 .class-table th {
   padding: 12px 20px;
-  color: var(--dim);
+  color: var(--text-dimmer);
   font-family: var(--mono);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 1px solid rgba(116, 183, 220, 0.1);
+  border-bottom: 1px solid var(--border);
 }
 
 .class-table td {
   padding: 16px 20px;
-  color: var(--soft-white);
+  color: var(--text-dim);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -113,12 +113,12 @@
 
 .doc-name {
   font-weight: 600;
-  color: var(--white);
+  color: var(--text);
 }
 
 .cat-badge {
   background: rgba(57, 245, 208, 0.15);
-  color: var(--aqua);
+  color: var(--accent-a);
   padding: 4px 10px;
   border-radius: 6px;
   font-family: var(--mono);
@@ -128,7 +128,7 @@
 .conf-bar-bg {
   width: 100px;
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-border);
   border-radius: 4px;
   overflow: hidden;
   display: inline-block;
@@ -171,7 +171,7 @@
 }
 
 .conflict-details span {
-  color: var(--soft-white);
+  color: var(--text-dim);
   font-size: 13px;
 }
 
@@ -204,7 +204,7 @@
 
 .chip-task {
   background: rgba(57, 245, 208, 0.12);
-  color: var(--aqua);
+  color: var(--accent-a);
   border: 1px solid rgba(57, 245, 208, 0.25);
 }
 
@@ -227,12 +227,12 @@
 }
 
 .review-card {
-  background: linear-gradient(145deg, #0e2d5b, #061735);
-  border: 1px solid rgba(102, 160, 194, 0.15);
+  background: var(--surface-weak);
+  border: 1px solid var(--border);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 8px 10px 20px rgba(1, 10, 25, 0.4),
-              -4px -4px 12px rgba(34, 79, 126, 0.18),
+  box-shadow: 8px 10px 20px rgba(0, 0, 0, 0.15),
+              -4px -4px 12px var(--border),
               inset 1px 1px rgba(255, 255, 255, 0.04);
   transition: border-color 0.2s, transform 0.2s ease;
 }
@@ -245,7 +245,7 @@
 .critical-card {
   grid-column: 1 / -1;
   border-color: rgba(255, 71, 87, 0.35);
-  background: linear-gradient(145deg, #2a1122, #0e122b);
+  background: var(--surface-weak);
 }
 
 .review-card-header {
@@ -253,8 +253,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 18px 22px;
-  background: rgba(4, 18, 45, 0.4);
-  border-bottom: 1px solid rgba(116, 183, 220, 0.08);
+  background: var(--bg-0);
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
   user-select: none;
 }
@@ -273,12 +273,12 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: var(--white);
+  color: var(--text);
 }
 
 .card-desc {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-dimmer);
 }
 
 .card-header-right {
@@ -289,8 +289,8 @@
 
 .badge {
   background: rgba(57, 245, 208, 0.15);
-  color: var(--aqua);
-  border: 1px solid rgba(57, 245, 208, 0.3);
+  color: var(--accent-a);
+  border: 1px solid var(--border);
   padding: 4px 10px;
   border-radius: 999px;
   font-family: var(--mono);
@@ -300,8 +300,8 @@
 
 .badge-zero {
   background: rgba(255, 255, 255, 0.05);
-  color: var(--dim);
-  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-dimmer);
+  border-color: var(--surface-border);
 }
 
 .critical-card .badge {
@@ -311,7 +311,7 @@
 }
 
 .collapse-arrow {
-  color: var(--dim);
+  color: var(--text-dimmer);
   font-family: var(--mono);
   font-size: 15px;
 }
@@ -329,7 +329,7 @@
 }
 
 .entity-list li {
-  color: var(--soft-white);
+  color: var(--text-dim);
   font-size: 13.5px;
   line-height: 1.5;
 }
@@ -340,7 +340,7 @@
 }
 
 .empty-state {
-  color: var(--dim);
+  color: var(--text-dimmer);
   font-size: 12px;
   font-style: italic;
   font-family: var(--mono);
