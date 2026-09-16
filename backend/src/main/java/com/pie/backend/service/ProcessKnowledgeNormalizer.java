@@ -165,8 +165,36 @@ public class ProcessKnowledgeNormalizer {
         List<String> businessRules = new ArrayList<>();
         List<String> risks = new ArrayList<>();
 
+        // 1. Try robust JSON array extraction first (handles malformed arrays better than Jackson)
+        if (rawText.contains("{") && rawText.contains("[")) {
+            activities.addAll(extractJsonArrayStringsRobust(rawText, "activities"));
+            actors.addAll(extractJsonArrayStringsRobust(rawText, "actors"));
+            systems.addAll(extractJsonArrayStringsRobust(rawText, "systems"));
+            gateways.addAll(extractJsonArrayStringsRobust(rawText, "gateways"));
+            events.addAll(extractJsonArrayStringsRobust(rawText, "events"));
+            businessRules.addAll(extractJsonArrayStringsRobust(rawText, "businessRules"));
+            risks.addAll(extractJsonArrayStringsRobust(rawText, "risks"));
+            
+            if (!activities.isEmpty() || !actors.isEmpty() || !systems.isEmpty()) {
+                return new ProcessKnowledgeDTO(
+                        cleanAndFilter(activities, true),
+                        cleanAndFilter(actors, true),
+                        List.of(),
+                        cleanAndFilter(systems, true),
+                        cleanAndFilter(events, false),
+                        cleanAndFilter(gateways, false),
+                        List.of(),
+                        List.of(),
+                        cleanAndFilter(businessRules, false),
+                        cleanAndFilter(risks, false),
+                        List.of(),
+                        List.of()
+                );
+            }
+        }
+
         Pattern numberedListPattern = Pattern.compile("^\\s*\\d+[.)]\\s*(?:\\*\\*(.*?)\\*\\*:?\\s*)?(.*)$");
-        Pattern bulletPattern = Pattern.compile("^\\s*[-*•]\\s*(?:\\*\\*(.*?)\\*\\*:?\\s*)?(.*)$");
+        Pattern bulletPattern = Pattern.compile("^\\s*[-*•?]\\s*(?:\\*\\*(.*?)\\*\\*:?\\s*)?(.*)$");
 
         String[] lines = rawText.split("\n");
         String currentSection = "activities";
@@ -178,39 +206,49 @@ public class ProcessKnowledgeNormalizer {
             String lower = trimmed.toLowerCase(Locale.ROOT);
             if (lower.contains("role") || lower.contains("actor") || lower.contains("team") || lower.contains("stakeholder")) {
                 currentSection = "actors";
-            } else if (lower.contains("system") || lower.contains("tool") || lower.contains("software") || lower.contains("platform")) {
+                continue;
+            } else if (lower.contains("system") || lower.contains("application") || lower.contains("tool") || lower.contains("software")) {
                 currentSection = "systems";
-            } else if (lower.contains("control") || lower.contains("rule") || lower.contains("policy") || lower.contains("factor")) {
-                currentSection = "rules";
-            } else if (lower.contains("risk") || lower.contains("defect") || lower.contains("hazard")) {
+                continue;
+            } else if (lower.contains("event") || lower.contains("trigger") || lower.contains("start") || lower.contains("end")) {
+                currentSection = "events";
+                continue;
+            } else if (lower.contains("gateway") || lower.contains("decision") || lower.contains("condition") || lower.contains("branch")) {
+                currentSection = "gateways";
+                continue;
+            } else if (lower.contains("rule") || lower.contains("policy") || lower.contains("logic")) {
+                currentSection = "businessRules";
+                continue;
+            } else if (lower.contains("risk") || lower.contains("issue") || lower.contains("conflict") || lower.contains("problem")) {
                 currentSection = "risks";
-            } else if (lower.contains("process") || lower.contains("step") || lower.contains("activit") || lower.contains("overview")) {
+                continue;
+            } else if (lower.contains("activity") || lower.contains("step") || lower.contains("task") || lower.contains("action") || lower.contains("process")) {
                 currentSection = "activities";
+                continue;
             }
 
-            Matcher numMatcher = numberedListPattern.matcher(trimmed);
-            Matcher bulletMatcher = bulletPattern.matcher(trimmed);
+            Matcher mNum = numberedListPattern.matcher(line);
+            Matcher mBul = bulletPattern.matcher(line);
 
             String item = null;
-            if (numMatcher.find()) {
-                String title = numMatcher.group(1);
-                String desc = numMatcher.group(2);
-                item = (title != null && !title.isBlank()) ? (title + (desc != null && !desc.isBlank() ? ": " + desc : "")) : desc;
-            } else if (bulletMatcher.find()) {
-                String title = bulletMatcher.group(1);
-                String desc = bulletMatcher.group(2);
-                item = (title != null && !title.isBlank()) ? (title + (desc != null && !desc.isBlank() ? ": " + desc : "")) : desc;
+            if (mNum.find()) {
+                item = (mNum.group(1) != null ? mNum.group(1) + ": " : "") + mNum.group(2);
+            } else if (mBul.find()) {
+                item = (mBul.group(1) != null ? mBul.group(1) + ": " : "") + mBul.group(2);
             }
 
             if (item != null && !item.isBlank()) {
-                item = item.replaceAll("[*#_]", "").trim();
-                if (item.endsWith("?")) {
-                    gateways.add(item);
-                } else if (currentSection.equals("actors")) {
+                item = item.replaceAll("[\\[\\]\"'{}]", "").trim();
+                
+                if (currentSection.equals("actors")) {
                     actors.add(item);
                 } else if (currentSection.equals("systems")) {
                     systems.add(item);
-                } else if (currentSection.equals("rules")) {
+                } else if (currentSection.equals("gateways")) {
+                    gateways.add(item);
+                } else if (currentSection.equals("events")) {
+                    events.add(item);
+                } else if (currentSection.equals("businessRules")) {
                     businessRules.add(item);
                 } else if (currentSection.equals("risks")) {
                     risks.add(item);
@@ -228,23 +266,40 @@ public class ProcessKnowledgeNormalizer {
         }
 
         if (events.isEmpty() && !cleanActivities.isEmpty()) {
-            events.add("Start Process");
-            events.add("Process Completed");
+            events.add("Start Event");
+            events.add("End Event");
         }
 
         return new ProcessKnowledgeDTO(
                 cleanActivities,
                 cleanActors,
-                cleanActors,
+                List.of(),
                 cleanAndFilter(systems, true),
-                events,
-                gateways,
+                cleanAndFilter(events, false),
+                cleanAndFilter(gateways, false),
                 List.of(),
                 List.of(),
-                businessRules,
-                risks,
+                cleanAndFilter(businessRules, false),
+                cleanAndFilter(risks, false),
+                List.of(),
                 List.of()
         );
+    }
+
+    private List<String> extractJsonArrayStringsRobust(String text, String key) {
+        List<String> results = new ArrayList<>();
+        java.util.regex.Matcher mArray = java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*\\[(.*?)\\]", java.util.regex.Pattern.DOTALL).matcher(text);
+        if (mArray.find()) {
+            String arrayContent = mArray.group(1);
+            java.util.regex.Matcher mStrings = java.util.regex.Pattern.compile("\"([^\"]+)\"").matcher(arrayContent);
+            while (mStrings.find()) {
+                String val = mStrings.group(1).trim();
+                if (!val.isBlank() && !val.equals(key)) {
+                    results.add(val);
+                }
+            }
+        }
+        return results;
     }
 
     private List<String> cleanAndFilter(List<String> items, boolean deduplicate) {

@@ -41,7 +41,14 @@ public class AiProcessQualityService {
                     .user(buildReviewInput(knowledge, graph))
                     .call()
                     .content();
-            SemanticReview review = objectMapper.readValue(extractJson(response), SemanticReview.class);
+            SemanticReview review = null;
+            try {
+                review = objectMapper.readValue(extractJson(response), SemanticReview.class);
+            } catch (Exception parseException) {
+                log.warn("Standard JSON parsing failed. Attempting robust Regex parser for LLM response...");
+                review = parseReviewRobustly(response);
+            }
+
             int semanticScore = Math.max(0, Math.min(100, review.semanticScore()));
             int blendedScore = Math.round(deterministicReport.qualityScore() * 0.70f + semanticScore * 0.30f);
 
@@ -61,6 +68,35 @@ public class AiProcessQualityService {
             log.warn("AI process quality review unavailable; using deterministic score: {}", exception.getMessage());
             return deterministicReport;
         }
+    }
+
+    private SemanticReview parseReviewRobustly(String text) {
+        int score = 80; // default safe score
+        List<String> findings = new ArrayList<>();
+        List<String> recommendations = new ArrayList<>();
+
+        java.util.regex.Matcher mScore = java.util.regex.Pattern.compile("\"semanticScore\"\\s*:\\s*(\\d+)").matcher(text);
+        if (mScore.find()) {
+            try { score = Integer.parseInt(mScore.group(1)); } catch (Exception ignored) {}
+        }
+
+        extractJsonArrayStrings(text, "findings").forEach(findings::add);
+        extractJsonArrayStrings(text, "recommendations").forEach(recommendations::add);
+
+        return new SemanticReview(score, findings, recommendations);
+    }
+
+    private List<String> extractJsonArrayStrings(String text, String key) {
+        List<String> results = new ArrayList<>();
+        java.util.regex.Matcher mArray = java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*\\[(.*?)\\]", java.util.regex.Pattern.DOTALL).matcher(text);
+        if (mArray.find()) {
+            String arrayContent = mArray.group(1);
+            java.util.regex.Matcher mStrings = java.util.regex.Pattern.compile("\"([^\"]+)\"").matcher(arrayContent);
+            while (mStrings.find()) {
+                results.add(mStrings.group(1));
+            }
+        }
+        return results;
     }
 
     private String buildReviewInput(ProcessKnowledgeDTO knowledge, ProcessGraphDTO graph) {
