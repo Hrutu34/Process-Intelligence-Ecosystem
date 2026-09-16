@@ -3,8 +3,8 @@
   width: 100%;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid var(--surface-border);
-  background: var(--bpmn-canvas-bg, #eef1f4);
+  border: 1px solid rgba(57, 245, 208, 0.25);
+  background: radial-gradient(circle at 50% 50%, var(--surface-weak), var(--bg-0));
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
 }
 
@@ -56,3 +56,38 @@
   width: auto; padding: 0 10px; font-size: 12px;
   font-family: var(--mono, monospace); letter-spacing: 1px;
 }
+
+/* Dark theme overrides for SVG */
+.bpmn-image-viewer-canvas .djs-container {
+  background: transparent !important;
+}
+
+.bpmn-image-viewer-canvas .djs-shape .djs-visual rect,
+.bpmn-image-viewer-canvas .djs-shape .djs-visual polygon {
+  stroke: var(--accent-a) !important;
+  stroke-width: 1.8px !important;
+  fill: var(--surface-weak) !important;
+}
+
+.bpmn-image-viewer-canvas .djs-shape .djs-visual circle {
+  stroke: var(--electric) !important;
+  stroke-width: 2px !important;
+  fill: var(--surface-weak) !important;
+}
+
+.bpmn-image-viewer-canvas .djs-shape .djs-visual polygon + path {
+  stroke: var(--electric) !important;
+  fill: var(--electric) !important;
+}
+
+.bpmn-image-viewer-canvas .djs-connection .djs-visual path {
+  stroke: var(--accent-a) !important;
+  stroke-width: 2px !important;
+}
+
+.bpmn-image-viewer-canvas text {
+  fill: var(--text) !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 12px !important;
+}
+

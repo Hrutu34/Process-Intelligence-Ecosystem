@@ -5,6 +5,7 @@ import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent"
 import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
 import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
+import { AgentExecutionTracker, type TrackerState } from "./components/AgentExecutionTracker";
 import { SplashScreen } from "./components/SplashScreen";
 import { ChatDock } from "./components/ChatDock";
 import BpmnImageViewer from "./components/BpmnImageViewer";
@@ -32,6 +33,39 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [entryMode, setEntryMode] = useState<EntryMode>("text-to-diagram");
   const [view, setView] = useState<"landing" | "ingest">("landing");
+  const [trackerState, setTrackerState] = useState<TrackerState | null>(null);
+  const [isTrackerHovered, setIsTrackerHovered] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isExtracting) {
+       setTrackerState(null);
+       return;
+    }
+    
+    setTrackerState({
+      currentStage: 'INPUT_RECEIVED',
+      completedStages: [],
+      failedStage: null,
+      statusMessage: 'Reading input and validating format...',
+      progressPercentage: 10
+    });
+    
+    const sequence = [
+      { delay: 1000, state: { currentStage: 'CLASSIFYING', completedStages: ['INPUT_RECEIVED'], statusMessage: 'Classifying document...', progressPercentage: 20 } },
+      { delay: 2500, state: { currentStage: 'KNOWLEDGE_EXTRACTION', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING'], statusMessage: 'Extracting process knowledge...', progressPercentage: 35 } },
+      { delay: 5000, state: { currentStage: 'BUILD_GRAPH', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION'], statusMessage: 'Building process graph...', progressPercentage: 50 } },
+      { delay: 8000, state: { currentStage: 'PROCESS_INTELLIGENCE', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION', 'BUILD_GRAPH'], statusMessage: 'Detecting missing events and ownership gaps...', progressPercentage: 65 } },
+      { delay: 11000, state: { currentStage: 'BPMN_MODELLING', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION', 'BUILD_GRAPH', 'PROCESS_INTELLIGENCE'], statusMessage: 'Generating BPMN...', progressPercentage: 80 } },
+      { delay: 14000, state: { currentStage: 'PROCESS_REVIEW', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION', 'BUILD_GRAPH', 'PROCESS_INTELLIGENCE', 'BPMN_MODELLING'], statusMessage: 'Reviewing BPMN...', progressPercentage: 90 } },
+      { delay: 17000, state: { currentStage: 'FINAL_OUTPUT', completedStages: ['INPUT_RECEIVED', 'CLASSIFYING', 'KNOWLEDGE_EXTRACTION', 'BUILD_GRAPH', 'PROCESS_INTELLIGENCE', 'BPMN_MODELLING', 'PROCESS_REVIEW'], statusMessage: 'Preparing final output...', progressPercentage: 98 } }
+    ];
+    
+    const timers = sequence.map(step => 
+       setTimeout(() => setTrackerState(prev => prev ? { ...prev, ...step.state } : null), step.delay)
+    );
+    
+    return () => timers.forEach(clearTimeout);
+  }, [isExtracting]);
 
   const openIngestPage = (mode: EntryMode) => {
     setEntryMode(mode);
@@ -140,27 +174,28 @@ function App() {
     }
   };
 
-  // F7 + F8: Apply — commit current BPMN as source of truth for downstream agents/chat.
-  const handleApply = () => {
+  // Auto-sync BPMN edits to downstream knowledge and graph representations.
+  useEffect(() => {
     if (!currentBpmnXml) return;
-    historyStore.add({
-      type: "diagram",
-      title: (extractedData as any)?.processName || "Applied BPMN",
-      preview: "Manual BPMN edits applied — downstream agents refreshed",
-      knowledge: extractedData,
-      bpmnXml: currentBpmnXml,
-      sourceText: currentSourceText,
-    });
-    refreshHistory();
-    // Force downstream re-fetch: nudge state so ProcessReviewAgent re-runs its effect.
-    setCurrentBpmnXml((xml) => (xml ? xml + "" : xml));
-    // Reset chat context so AI won't quote stale answers.
-    try {
-      localStorage.setItem("pie_chat_history", JSON.stringify([]));
-      window.dispatchEvent(new CustomEvent("pie:bpmn-applied", { detail: { bpmnXml: currentBpmnXml } }));
-    } catch {}
-    setActiveTab("04_REVIEW");
-  };
+    const timer = setTimeout(async () => {
+      try {
+        const bpmnForm = new FormData();
+        bpmnForm.append('file', new Blob([currentBpmnXml], { type: 'text/xml' }), 'auto-sync.bpmn');
+        const res = await fetch('http://localhost:8080/api/v1/process/import-bpmn-file', {
+          method: 'POST',
+          body: bpmnForm,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setExtractedData(data.knowledge);
+          window.dispatchEvent(new CustomEvent("pie:bpmn-applied", { detail: { bpmnXml: currentBpmnXml } }));
+        }
+      } catch (err) {
+        console.error("Failed to auto-sync BPMN edits to knowledge", err);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [currentBpmnXml]);
 
   // F6: reopen history entry
   const handleReopenEntry = (entry: HistoryEntry) => {
@@ -252,16 +287,6 @@ function App() {
                   </div>
 
                   <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                    {currentBpmnXml && (activeTab === "03_BPMN" || activeTab === "04_REVIEW") && (
-                      <button
-                        type="button"
-                        className="apply-btn"
-                        onClick={handleApply}
-                        title="Commit current BPMN — refresh chat AI + review agents with new diagram"
-                      >
-                        Apply ✓
-                      </button>
-                    )}
                     <button type="button" className="btn-outline" onClick={handleReset}>
                       ↺ New Document Ingestion
                     </button>
@@ -556,7 +581,33 @@ function App() {
 
         <footer className="footer">
           <div className="container footer-inner">
-            <span>Pie</span>
+            <div 
+              className="footer-status-container"
+              onMouseEnter={() => setIsTrackerHovered(true)}
+              onMouseLeave={() => setIsTrackerHovered(false)}
+            >
+              <button className="footer-status-btn" aria-label="Pipeline Status">
+                <span 
+                  className={`status-dot ${isExtracting ? 'pulsing' : ''}`} 
+                  style={!isExtracting ? { backgroundColor: 'var(--text-dimmer)' } : {}}
+                />
+                {isExtracting ? 'Pipeline Active' : 'System Idle'}
+              </button>
+
+              {isTrackerHovered && (
+                <div className="tracker-popup-container">
+                  <AgentExecutionTracker 
+                    state={trackerState || {
+                      currentStage: 'INPUT_RECEIVED',
+                      completedStages: [],
+                      failedStage: null,
+                      statusMessage: 'System idle. Waiting for input.',
+                      progressPercentage: 0
+                    }} 
+                  />
+                </div>
+              )}
+            </div>
             <span>PROCESS INTELLIGENCE ECOSYSTEM</span>
             <span>BUILT FOR THE I.MOBILOTHON © 2026</span>
           </div>

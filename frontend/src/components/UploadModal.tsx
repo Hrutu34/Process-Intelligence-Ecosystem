@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { processService } from '../services/processService';
 import type { ProcessEntity } from '../services/types';
+import { AgentExecutionTracker, type TrackerState } from './AgentExecutionTracker';
 import './UploadModal.css';
 
 interface Props {
@@ -12,23 +13,38 @@ export const UploadModal: React.FC<Props> = ({ onClose, onProcessCreated }) => {
   const [tab, setTab] = useState<'upload' | 'text'>('text');
   const [files, setFiles] = useState<File[]>([]);
   const [rawText, setRawText] = useState(
-    `Customer places an order.
-Sales reviews the order.
-If approved, Inventory checks stock.
-If in stock, Logistics ships the product.
-If rejected or out of stock, Customer is notified.`
+    `Customer places an order.\nSales reviews the order.\nIf approved, Inventory checks stock.\nIf in stock, Logistics ships the product.\nIf rejected or out of stock, Customer is notified.`
   );
   const [processTitle, setProcessTitle] = useState('Order Fulfillment Process');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [trackerState, setTrackerState] = useState<TrackerState>({
+    currentStage: 'INPUT_RECEIVED',
+    completedStages: [],
+    failedStage: null,
+    statusMessage: 'Ready to process',
+    progressPercentage: 0
+  });
+
+  const updateState = (updates: Partial<TrackerState>) => {
+    setTrackerState(prev => ({ ...prev, ...updates }));
+  };
 
   const handleStartIngestion = async () => {
     setIsProcessing(true);
-    setCurrentStep(1); // Document Ingestion
+    updateState({
+      currentStage: 'INPUT_RECEIVED',
+      statusMessage: 'Reading input and validating format...',
+      progressPercentage: 10
+    });
 
     try {
       await new Promise((r) => setTimeout(r, 600));
-      setCurrentStep(2); // Knowledge Extraction
+      updateState({
+        currentStage: 'KNOWLEDGE_EXTRACTION',
+        completedStages: ['INPUT_RECEIVED'],
+        statusMessage: 'Knowledge Extraction Agent is extracting activities, actors, decisions, and events.',
+        progressPercentage: 30
+      });
 
       let knowledge;
       let sourceName = 'Direct_Text_Input.txt';
@@ -46,8 +62,21 @@ If rejected or out of stock, Customer is notified.`
         knowledge = await processService.extractKnowledgeFromText(rawText);
       }
 
-      await new Promise((r) => setTimeout(r, 600));
-      setCurrentStep(3); // Canonical Process Graph Generation
+      await new Promise((r) => setTimeout(r, 800));
+      updateState({
+        currentStage: 'PROCESS_INTELLIGENCE',
+        completedStages: ['INPUT_RECEIVED', 'KNOWLEDGE_EXTRACTION'],
+        statusMessage: 'Process Intelligence Agent is checking for missing events, unclear gateways, and ownership gaps.',
+        progressPercentage: 50
+      });
+      
+      await new Promise((r) => setTimeout(r, 800));
+      updateState({
+        currentStage: 'BPMN_MODELLING',
+        completedStages: ['INPUT_RECEIVED', 'KNOWLEDGE_EXTRACTION', 'PROCESS_INTELLIGENCE'],
+        statusMessage: 'BPMN Modelling Agent is generating BPMN 2.0 XML.',
+        progressPercentage: 70
+      });
 
       const createdProcess = await processService.createProcessFromIngestion(
         processTitle || 'New Extracted Process',
@@ -57,91 +86,66 @@ If rejected or out of stock, Customer is notified.`
         rawText
       );
 
-      await new Promise((r) => setTimeout(r, 600));
-      setCurrentStep(4); // BPMN 2.0 & Validation
+      await new Promise((r) => setTimeout(r, 800));
+      updateState({
+        currentStage: 'PROCESS_REVIEW',
+        completedStages: ['INPUT_RECEIVED', 'KNOWLEDGE_EXTRACTION', 'PROCESS_INTELLIGENCE', 'BPMN_MODELLING'],
+        statusMessage: 'Process Review Agent is preparing business summary and improvement suggestions.',
+        progressPercentage: 90
+      });
 
-      await new Promise((r) => setTimeout(r, 400));
-      setCurrentStep(5); // Complete
+      await new Promise((r) => setTimeout(r, 600));
+      updateState({
+        currentStage: 'FINAL_OUTPUT',
+        completedStages: ['INPUT_RECEIVED', 'KNOWLEDGE_EXTRACTION', 'PROCESS_INTELLIGENCE', 'BPMN_MODELLING', 'PROCESS_REVIEW', 'FINAL_OUTPUT'],
+        statusMessage: 'Pipeline complete. Preparing UI.',
+        progressPercentage: 100
+      });
 
       setTimeout(() => {
         onProcessCreated(createdProcess);
         onClose();
-      }, 500);
-    } catch (err) {
+      }, 800);
+    } catch (err: any) {
       console.error('Ingestion failed', err);
-      alert('Ingestion error. Check backend connection.');
-      setIsProcessing(false);
+      updateState({
+        failedStage: trackerState.currentStage,
+        statusMessage: err.message || 'Execution failed due to an unexpected error.',
+        progressPercentage: 0
+      });
     }
   };
 
+  const handleRetry = () => {
+    setTrackerState({
+      currentStage: 'INPUT_RECEIVED',
+      completedStages: [],
+      failedStage: null,
+      statusMessage: 'Ready to process',
+      progressPercentage: 0
+    });
+    handleStartIngestion();
+  };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="upload-modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="history-modal-header">
-          <div>
-            <h3>Autonomous Process Ingestion</h3>
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-              Transform documents or text into a Canonical Process Graph & BPMN 2.0
-            </span>
-          </div>
-          {!isProcessing && (
+    <div className={isProcessing ? "tracker-footer-overlay" : "modal-overlay"} onClick={!isProcessing ? onClose : undefined}>
+      <div className={isProcessing ? "tracker-footer-card" : "upload-modal-card"} onClick={(e) => e.stopPropagation()}>
+        {!isProcessing && (
+          <div className="history-modal-header">
+            <div>
+              <h3>Autonomous Process Ingestion</h3>
+              <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                Transform documents or text into a Canonical Process Graph & BPMN 2.0
+              </span>
+            </div>
             <button type="button" className="btn-ghost" onClick={onClose}>
               ✕
             </button>
-          )}
-        </div>
-
-        {/* Stepper view while processing */}
-        {isProcessing ? (
-          <div className="stepper-container">
-            <div className={`stepper-item ${currentStep === 1 ? 'active' : currentStep > 1 ? 'done' : ''}`}>
-              <div className={`step-indicator ${currentStep === 1 ? 'active' : currentStep > 1 ? 'done' : 'waiting'}`}>
-                {currentStep > 1 ? '✓' : '1'}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--white)', fontSize: 14 }}>Document Classification & NLP</strong>
-                <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)' }}>
-                  Parsing text entities, clauses, and semantic boundaries...
-                </span>
-              </div>
-            </div>
-
-            <div className={`stepper-item ${currentStep === 2 ? 'active' : currentStep > 2 ? 'done' : ''}`}>
-              <div className={`step-indicator ${currentStep === 2 ? 'active' : currentStep > 2 ? 'done' : 'waiting'}`}>
-                {currentStep > 2 ? '✓' : '2'}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--white)', fontSize: 14 }}>AI Knowledge Extraction</strong>
-                <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)' }}>
-                  Extracting activities, actors, decision gates, and business rules...
-                </span>
-              </div>
-            </div>
-
-            <div className={`stepper-item ${currentStep === 3 ? 'active' : currentStep > 3 ? 'done' : ''}`}>
-              <div className={`step-indicator ${currentStep === 3 ? 'active' : currentStep > 3 ? 'done' : 'waiting'}`}>
-                {currentStep > 3 ? '✓' : '3'}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--white)', fontSize: 14 }}>Canonical Process Graph Construction</strong>
-                <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)' }}>
-                  Building deterministic sequence nodes, edge conditions, and role swimlanes...
-                </span>
-              </div>
-            </div>
-
-            <div className={`stepper-item ${currentStep === 4 ? 'active' : currentStep > 4 ? 'done' : ''}`}>
-              <div className={`step-indicator ${currentStep === 4 ? 'active' : currentStep > 4 ? 'done' : 'waiting'}`}>
-                {currentStep > 4 ? '✓' : '4'}
-              </div>
-              <div>
-                <strong style={{ color: 'var(--white)', fontSize: 14 }}>BPMN 2.0 & Quality Validation</strong>
-                <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)' }}>
-                  Synthesizing vector coordinates and quality score...
-                </span>
-              </div>
-            </div>
           </div>
+        )}
+
+        {isProcessing ? (
+          <AgentExecutionTracker state={trackerState} onRetry={handleRetry} />
         ) : (
           <>
             {/* Process Title Input */}

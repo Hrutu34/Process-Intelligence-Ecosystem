@@ -107,3 +107,25 @@
   background: var(--border);
   color: var(--text-dimmer);
 }
+
+.tracker-footer-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.tracker-footer-card {
+  width: 100%;
+  max-width: 800px;
+  background: transparent;
+  border: none;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  pointer-events: auto;
+  padding: 0;
+}
