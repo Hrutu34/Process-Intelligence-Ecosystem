@@ -35,12 +35,13 @@ public class ProcessController {
     private final com.pie.backend.service.AiProcessReviewService aiProcessReviewService;
     private final BpmnXmlParser bpmnParser;
     private final FallbackMockPipeline fallbackMockPipeline;
+    private final com.pie.backend.service.AgentLogger agentLogger;
 
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator) {
-        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null, null, null, null);
+        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null, null, null, null, null);
     }
 
     @Autowired
@@ -54,7 +55,8 @@ public class ProcessController {
             com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService,
             com.pie.backend.service.AiProcessReviewService aiProcessReviewService,
             BpmnXmlParser bpmnParser,
-            FallbackMockPipeline fallbackMockPipeline) {
+            FallbackMockPipeline fallbackMockPipeline,
+            com.pie.backend.service.AgentLogger agentLogger) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
         this.qualityValidator = qualityValidator;
@@ -65,28 +67,48 @@ public class ProcessController {
         this.aiProcessReviewService = aiProcessReviewService;
         this.bpmnParser = bpmnParser;
         this.fallbackMockPipeline = fallbackMockPipeline;
+        this.agentLogger = agentLogger;
     }
 
     @PostMapping("/extract-text")
-    public ResponseEntity<Object> extractFromText(@RequestBody TextPayload payload) {
-        if (fallbackMockPipeline != null) {
-            Object result = fallbackMockPipeline.executeWithFallback(
-                payload.content(), 
-                "knowledge", 
-                ProcessKnowledgeDTO.class, 
-                () -> ingestionService.ingestText(payload.content(), null, null)
-            );
-            return ResponseEntity.ok(result);
+    public ResponseEntity<Object> extractFromText(
+            @RequestHeader(value = "X-Session-ID", required = false) String sessionId,
+            @RequestBody TextPayload payload) {
+        agentLogger.setSessionId(sessionId);
+        agentLogger.logStart("INPUT_RECEIVED");
+        agentLogger.logSuccess("INPUT_RECEIVED", 0);
+        try {
+            if (fallbackMockPipeline != null) {
+                Object result = fallbackMockPipeline.executeWithFallback(
+                    payload.content(), 
+                    "knowledge", 
+                    ProcessKnowledgeDTO.class, 
+                    () -> ingestionService.ingestText(payload.content(), null, null)
+                );
+                return ResponseEntity.ok(result);
+            }
+            return ResponseEntity.ok(ingestionService.ingestText(payload.content(), null, null));
+        } finally {
+            agentLogger.clearSession();
         }
-        return ResponseEntity.ok(ingestionService.ingestText(payload.content(), null, null));
     }
 
     @PostMapping(value = "/extract-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ProcessKnowledgeDTO> extractFromFile(@RequestParam("files") List<MultipartFile> files) {
-        if (files == null || files.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<ProcessKnowledgeDTO> extractFromFile(
+            @RequestHeader(value = "X-Session-ID", required = false) String sessionId,
+            @RequestParam("files") List<MultipartFile> files) {
+        agentLogger.setSessionId(sessionId);
+        agentLogger.logStart("INPUT_RECEIVED");
+        agentLogger.logSuccess("INPUT_RECEIVED", 0);
+        try {
+            if (files == null || files.isEmpty()) {
+                agentLogger.logError("INPUT_RECEIVED", 0, "NO_FILES");
+                return ResponseEntity.badRequest().build();
+            }
+            return ResponseEntity.ok(ingestionService.ingestFilesCombined(files, null, null));
+        } finally {
+            agentLogger.clearSession();
         }
-        return ResponseEntity.ok(ingestionService.ingestFilesCombined(files, null, null));
     }
 
     @PostMapping("/graph")
@@ -96,41 +118,58 @@ public class ProcessController {
 
     // MATCHES FRONTEND FETCH CALL: /api/v1/process/bpmn/generate
     @PostMapping(value = "/bpmn/generate", produces = MediaType.APPLICATION_XML_VALUE)
-    public ResponseEntity<String> buildBpmn(@RequestBody com.pie.shared.dto.BpmnGenerateRequestPayload payload) {
-        if (bpmnMapper == null || bpmnXmlService == null) {
-            return ResponseEntity.internalServerError().build();
-        }
-
-        if (fallbackMockPipeline != null) {
-            String hint = "travel";
-            if (payload.knowledge() != null && payload.knowledge().activities() != null) {
-                hint = String.join(" ", payload.knowledge().activities());
+    public ResponseEntity<String> buildBpmn(
+            @RequestHeader(value = "X-Session-ID", required = false) String sessionId,
+            @RequestBody com.pie.shared.dto.BpmnGenerateRequestPayload payload) {
+        agentLogger.setSessionId(sessionId);
+        agentLogger.logStart("BPMN_MODELLING");
+        long start = System.currentTimeMillis();
+        try {
+            if (bpmnMapper == null || bpmnXmlService == null) {
+                agentLogger.logError("BPMN_MODELLING", System.currentTimeMillis() - start, "SERVICES_NULL");
+                return ResponseEntity.internalServerError().build();
             }
-            Object result = fallbackMockPipeline.executeWithFallback(
-                hint,
-                "bpmn",
-                String.class,
-                () -> {
-                    String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
-                    if (payload.knowledge() != null && aiBpmnRefinementService != null) {
-                        return aiBpmnRefinementService.refineBpmn(draftXml, payload.knowledge());
-                    }
-                    return draftXml;
-                }
-            );
-            return ResponseEntity.ok((String) result);
-        }
 
-        // Generate draft
-        String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
-        
-        // Refine with AI if knowledge is provided
-        if (payload.knowledge() != null && aiBpmnRefinementService != null) {
-            String refinedXml = aiBpmnRefinementService.refineBpmn(draftXml, payload.knowledge());
-            return ResponseEntity.ok(refinedXml);
+            if (fallbackMockPipeline != null) {
+                String hint = "travel";
+                if (payload.knowledge() != null && payload.knowledge().activities() != null) {
+                    hint = String.join(" ", payload.knowledge().activities());
+                }
+                Object result = fallbackMockPipeline.executeWithFallback(
+                    hint,
+                    "bpmn",
+                    String.class,
+                    () -> {
+                        String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
+                        if (payload.knowledge() != null && aiBpmnRefinementService != null) {
+                            return aiBpmnRefinementService.refineBpmn(draftXml, payload.knowledge());
+                        }
+                        return draftXml;
+                    }
+                );
+                // Note: FallbackMockPipeline logs success/error on fallback, but we should log success for the outer HTTP call if it didn't throw
+                agentLogger.logSuccess("BPMN_MODELLING", System.currentTimeMillis() - start);
+                return ResponseEntity.ok((String) result);
+            }
+
+            // Generate draft
+            String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
+            
+            // Refine with AI if knowledge is provided
+            if (payload.knowledge() != null && aiBpmnRefinementService != null) {
+                String refinedXml = aiBpmnRefinementService.refineBpmn(draftXml, payload.knowledge());
+                agentLogger.logSuccess("BPMN_MODELLING", System.currentTimeMillis() - start);
+                return ResponseEntity.ok(refinedXml);
+            }
+            
+            agentLogger.logSuccess("BPMN_MODELLING", System.currentTimeMillis() - start);
+            return ResponseEntity.ok(draftXml);
+        } catch (Exception e) {
+            agentLogger.logError("BPMN_MODELLING", System.currentTimeMillis() - start, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            agentLogger.clearSession();
         }
-        
-        return ResponseEntity.ok(draftXml);
     }
 
     @PostMapping("/validate")
@@ -139,60 +178,89 @@ public class ProcessController {
     }
 
     @PostMapping("/validate-knowledge")
-    public ResponseEntity<Object> validateKnowledge(@RequestBody ProcessKnowledgeDTO knowledge) {
-        if (fallbackMockPipeline != null) {
-            // Find a scenario hint from the knowledge (like process name or first activity)
-            String hint = "travel";
-            if (knowledge.activities() != null && !knowledge.activities().isEmpty()) {
-                hint = String.join(" ", knowledge.activities());
+    public ResponseEntity<Object> validateKnowledge(
+            @RequestHeader(value = "X-Session-ID", required = false) String sessionId,
+            @RequestBody ProcessKnowledgeDTO knowledge) {
+        agentLogger.setSessionId(sessionId);
+        agentLogger.logStart("PROCESS_INTELLIGENCE");
+        long start = System.currentTimeMillis();
+        try {
+            if (fallbackMockPipeline != null) {
+                // Find a scenario hint from the knowledge (like process name or first activity)
+                String hint = "travel";
+                if (knowledge.activities() != null && !knowledge.activities().isEmpty()) {
+                    hint = String.join(" ", knowledge.activities());
+                }
+
+                Object result = fallbackMockPipeline.executeWithFallback(
+                    hint,
+                    "review",
+                    ProcessQualityReportDTO.class,
+                    () -> {
+                        ProcessGraphDTO graph = graphBuilder.build(knowledge);
+                        ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
+                        if (aiQualityService != null) {
+                            report = aiQualityService.enhance(knowledge, graph, report);
+                        }
+                        return report;
+                    }
+                );
+                agentLogger.logSuccess("PROCESS_INTELLIGENCE", System.currentTimeMillis() - start);
+                return ResponseEntity.ok(result);
             }
 
-            Object result = fallbackMockPipeline.executeWithFallback(
-                hint,
-                "review",
-                ProcessQualityReportDTO.class,
-                () -> {
-                    ProcessGraphDTO graph = graphBuilder.build(knowledge);
-                    ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
-                    if (aiQualityService != null) {
-                        report = aiQualityService.enhance(knowledge, graph, report);
-                    }
-                    return report;
-                }
-            );
-            return ResponseEntity.ok(result);
+            ProcessGraphDTO graph = graphBuilder.build(knowledge);
+            ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
+            if (aiQualityService != null) {
+                report = aiQualityService.enhance(knowledge, graph, report);
+            }
+            agentLogger.logSuccess("PROCESS_INTELLIGENCE", System.currentTimeMillis() - start);
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            agentLogger.logError("PROCESS_INTELLIGENCE", System.currentTimeMillis() - start, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            agentLogger.clearSession();
         }
-
-        ProcessGraphDTO graph = graphBuilder.build(knowledge);
-        ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
-        if (aiQualityService != null) {
-            report = aiQualityService.enhance(knowledge, graph, report);
-        }
-        return ResponseEntity.ok(report);
     }
 
     @PostMapping("/review/summary")
-    public ResponseEntity<?> generateReviewSummary(@RequestBody TextPayload payload) {
-        if (aiProcessReviewService == null) {
-            return ResponseEntity.internalServerError().build();
-        }
-
-        if (fallbackMockPipeline != null) {
-            Object result = fallbackMockPipeline.executeWithFallback(
-                payload.content(),
-                "summary",
-                com.pie.shared.dto.ReviewReportDTO.class,
-                () -> aiProcessReviewService.generateSummary(payload.content())
-            );
-            return ResponseEntity.ok(result);
-        }
-
+    public ResponseEntity<?> generateReviewSummary(
+            @RequestHeader(value = "X-Session-ID", required = false) String sessionId,
+            @RequestBody TextPayload payload) {
+        agentLogger.setSessionId(sessionId);
+        agentLogger.logStart("PROCESS_REVIEW");
+        long start = System.currentTimeMillis();
         try {
-            return ResponseEntity.ok(aiProcessReviewService.generateSummary(payload.content()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error generating review summary.");
+            if (aiProcessReviewService == null) {
+                agentLogger.logError("PROCESS_REVIEW", System.currentTimeMillis() - start, "SERVICE_NULL");
+                return ResponseEntity.internalServerError().build();
+            }
+
+            if (fallbackMockPipeline != null) {
+                Object result = fallbackMockPipeline.executeWithFallback(
+                    payload.content(),
+                    "summary",
+                    com.pie.shared.dto.ReviewReportDTO.class,
+                    () -> aiProcessReviewService.generateSummary(payload.content())
+                );
+                agentLogger.logSuccess("PROCESS_REVIEW", System.currentTimeMillis() - start);
+                return ResponseEntity.ok(result);
+            }
+
+            try {
+                ResponseEntity<?> response = ResponseEntity.ok(aiProcessReviewService.generateSummary(payload.content()));
+                agentLogger.logSuccess("PROCESS_REVIEW", System.currentTimeMillis() - start);
+                return response;
+            } catch (IllegalArgumentException e) {
+                agentLogger.logError("PROCESS_REVIEW", System.currentTimeMillis() - start, "BAD_REQUEST");
+                return ResponseEntity.badRequest().body(e.getMessage());
+            } catch (Exception e) {
+                agentLogger.logError("PROCESS_REVIEW", System.currentTimeMillis() - start, "INTERNAL_ERROR");
+                return ResponseEntity.internalServerError().body("Error generating review summary.");
+            }
+        } finally {
+            agentLogger.clearSession();
         }
     }
 

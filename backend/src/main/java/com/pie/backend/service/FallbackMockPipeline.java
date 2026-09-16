@@ -33,7 +33,11 @@ public class FallbackMockPipeline {
     private long timeoutMs;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final AgentLogger agentLogger;
+
+    public FallbackMockPipeline(AgentLogger agentLogger) {
+        this.agentLogger = agentLogger;
+    }
 
     public <T> Object executeWithFallback(String scenarioHint, String outputType, Class<T> returnType, Callable<T> actualCall) {
         if (!demoModeEnabled && !fallbackEnabled) {
@@ -44,17 +48,31 @@ public class FallbackMockPipeline {
             }
         }
 
+        long start = System.currentTimeMillis();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<T> future = executor.submit(actualCall);
         try {
             return future.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             future.cancel(true);
             log.warn("LLM_TIMEOUT: Execution exceeded {} ms. Triggering fallback.", timeoutMs);
+            agentLogger.logFallbackTriggered(mapOutputTypeToStage(outputType), "LLM_TIMEOUT");
             return loadFallback(scenarioHint, outputType, returnType, "LLM_TIMEOUT");
         } catch (Exception e) {
             log.warn("EXECUTION_FAILED: Exception during pipeline step. Triggering fallback.", e);
+            agentLogger.logFallbackTriggered(mapOutputTypeToStage(outputType), "EXECUTION_FAILED");
             return loadFallback(scenarioHint, outputType, returnType, "EXECUTION_FAILED");
+        } finally {
+            executor.shutdownNow();
         }
+    }
+
+    private String mapOutputTypeToStage(String outputType) {
+        if ("knowledge".equals(outputType)) return "KNOWLEDGE_EXTRACTION";
+        if ("review".equals(outputType)) return "PROCESS_INTELLIGENCE";
+        if ("bpmn".equals(outputType)) return "BPMN_MODELLING";
+        if ("summary".equals(outputType)) return "PROCESS_REVIEW";
+        return outputType.toUpperCase();
     }
 
     private <T> Object loadFallback(String hint, String type, Class<T> returnType, String reason) {
