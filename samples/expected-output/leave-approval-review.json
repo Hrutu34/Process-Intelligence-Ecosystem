@@ -1,0 +1,17 @@
+{
+  "valid": false,
+  "qualityScore": 65,
+  "issues": [
+    {
+      "ruleId": "NO_REJECTION_PATH",
+      "severity": "HIGH",
+      "issue": "Manager review step has no defined path for rejection."
+    },
+    {
+      "ruleId": "MISSING_END_EVENT",
+      "severity": "MEDIUM",
+      "issue": "Process lacks a clear termination state after updating leave balance."
+    }
+  ]
+}
+

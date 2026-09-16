@@ -1,0 +1,2 @@
+The requester submits a purchase requisition. The department head reviews it. If the amount is under $5000, the department head approves it and it goes directly to purchasing. If the amount is $5000 or greater, it requires additional approval from the CFO. Once all required approvals are met, the purchasing team generates a purchase order. If any approver rejects the requisition, it is sent back to the requester for revision.
+

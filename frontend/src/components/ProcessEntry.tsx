@@ -297,17 +297,28 @@ export default function ProcessEntry({ onStart, onSuccess, onBpmnImported, onErr
               )}
             </div>
           </>
-        ) : (
-          <div className="text-input-container">
-            <textarea
-              className="process-textarea"
-              value={text}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
-              placeholder="Describe the process you want Pie to analyze..."
-              rows={12}
-            />
-          </div>
-        )}
+          ) : (
+            <div className="text-input-container">
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                <button type="button" className="btn-outline" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setText('The employee submits a travel request. The manager reviews the request. If the manager approves it, the request goes to finance for budget validation. If finance approves, the travel desk books the tickets. If the request is rejected at any step, the employee is notified.')}>
+                  Demo: Travel Request
+                </button>
+                <button type="button" className="btn-outline" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setText('An employee submits a leave application through the HR portal. The manager receives the application and reviews the requested dates. If the manager approves the leave, the system updates the employee\'s leave balance.')}>
+                  Demo: Leave (Incomplete)
+                </button>
+                <button type="button" className="btn-outline" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setText('The requester submits a purchase requisition. The department head reviews it. If the amount is under $5000, the department head approves it and it goes directly to purchasing. If the amount is $5000 or greater, it requires additional approval from the CFO. Once all required approvals are met, the purchasing team generates a purchase order. If any approver rejects the requisition, it is sent back to the requester for revision.')}>
+                  Demo: Purchase Request
+                </button>
+              </div>
+              <textarea
+                className="process-textarea"
+                value={text}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
+                placeholder="Describe the process you want Pie to analyze..."
+                rows={12}
+              />
+            </div>
+          )}
       </div>
 
       {error && <div className="error-message">{error}</div>}

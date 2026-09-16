@@ -1,0 +1,2 @@
+An employee submits a leave application through the HR portal. The manager receives the application and reviews the requested dates. If the manager approves the leave, the system updates the employee's leave balance.
+

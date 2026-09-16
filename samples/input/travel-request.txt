@@ -1,0 +1,2 @@
+The employee submits a travel request. The manager reviews the request. If the manager approves it, the request goes to finance for budget validation. If finance approves, the travel desk books the tickets. If the request is rejected at any step, the employee is notified.
+

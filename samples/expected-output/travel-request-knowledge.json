@@ -1,0 +1,23 @@
+{
+  "processName": "Employee Travel Request Process",
+  "summary": "Process for managing employee travel requests including manager and finance approvals.",
+  "actors": [
+    {"name": "Employee", "role": "Requester"},
+    {"name": "Manager", "role": "Approver"},
+    {"name": "Finance", "role": "Financial Reviewer"},
+    {"name": "Travel Desk", "role": "Booking Agent"}
+  ],
+  "steps": [
+    {"id": "S1", "name": "Submit Travel Request", "actor": "Employee", "description": "The employee submits a travel request"},
+    {"id": "S2", "name": "Review Travel Request", "actor": "Manager", "description": "The manager reviews the request"},
+    {"id": "S3", "name": "Validate Budget", "actor": "Finance", "description": "Finance validates the budget"},
+    {"id": "S4", "name": "Book Tickets", "actor": "Travel Desk", "description": "Travel desk books the tickets"},
+    {"id": "S5", "name": "Notify Employee", "actor": "Employee", "description": "Employee is notified of rejection"}
+  ],
+  "decisions": [
+    {"id": "D1", "name": "Manager Approval", "description": "Manager approves or rejects the request", "options": ["Approved", "Rejected"]},
+    {"id": "D2", "name": "Finance Approval", "description": "Finance approves or rejects the budget", "options": ["Approved", "Rejected"]}
+  ],
+  "dependencies": []
+}
+
