@@ -5,13 +5,17 @@
     {
       "ruleId": "NO_REJECTION_PATH",
       "severity": "HIGH",
-      "issue": "Manager review step has no defined path for rejection."
+      "elementId": "Manager Approval",
+      "issue": "Manager review step has no defined path for rejection.",
+      "suggestion": "Add a rejection path"
     },
     {
       "ruleId": "MISSING_END_EVENT",
       "severity": "MEDIUM",
-      "issue": "Process lacks a clear termination state after updating leave balance."
+      "elementId": "Update HR System",
+      "issue": "Process lacks a clear termination state after updating leave balance.",
+      "suggestion": "Add an End event"
     }
-  ]
+  ],
+  "recommendations": ["Ensure all gateways have default paths", "Always end processes with End Events"]
 }
-

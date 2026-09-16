@@ -1,0 +1,15 @@
+{
+  "processName": "Employee Travel Request",
+  "summary": "This process handles employee travel requests, managerial approval, budget validation, and ticket booking.",
+  "participants": ["Employee", "Manager", "Finance", "Travel Desk"],
+  "steps": [
+    {"sequence": 1, "name": "Submit Travel Request", "description": "Employee submits request"},
+    {"sequence": 2, "name": "Manager Approval", "description": "Manager reviews request"},
+    {"sequence": 3, "name": "Finance Approval", "description": "Finance checks budget"}
+  ],
+  "decisions": [
+    {"name": "Manager Approval", "description": "Approve or Reject"},
+    {"name": "Finance Approval", "description": "Approve or Reject based on budget"}
+  ]
+}
+

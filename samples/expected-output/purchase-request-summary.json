@@ -1,0 +1,13 @@
+{
+  "processName": "Purchase Request",
+  "summary": "Process for submitting and approving purchase requisitions.",
+  "participants": ["Employee", "Department Head", "Procurement"],
+  "steps": [
+    {"sequence": 1, "name": "Create PR", "description": "Employee creates a purchase requisition"},
+    {"sequence": 2, "name": "Approve PR", "description": "Department head approves"}
+  ],
+  "decisions": [
+    {"name": "Approve PR", "description": "Approve or Reject"}
+  ]
+}
+

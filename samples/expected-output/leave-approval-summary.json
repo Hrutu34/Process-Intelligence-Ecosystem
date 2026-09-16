@@ -1,0 +1,13 @@
+{
+  "processName": "Leave Approval",
+  "summary": "Handles employee leave requests and manager approvals.",
+  "participants": ["Employee", "Manager", "HR"],
+  "steps": [
+    {"sequence": 1, "name": "Submit Leave", "description": "Employee submits leave request"},
+    {"sequence": 2, "name": "Manager Review", "description": "Manager approves or rejects"}
+  ],
+  "decisions": [
+    {"name": "Manager Review", "description": "Approve or Reject"}
+  ]
+}
+

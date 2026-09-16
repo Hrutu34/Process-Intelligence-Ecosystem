@@ -5,6 +5,8 @@ import com.pie.backend.service.DocumentIngestionService;
 import com.pie.backend.service.AiProcessQualityService;
 import com.pie.backend.service.BpmnDomainModelMapper;
 import com.pie.backend.service.BpmnXmlGenerationService;
+import java.util.Map;
+import com.pie.backend.service.FallbackMockPipeline;
 import com.pie.backend.service.ProcessGraphBuilder;
 import com.pie.backend.service.ProcessQualityValidator;
 import com.pie.shared.dto.ProcessGraphDTO;
@@ -32,12 +34,13 @@ public class ProcessController {
     private final com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService;
     private final com.pie.backend.service.AiProcessReviewService aiProcessReviewService;
     private final BpmnXmlParser bpmnParser;
+    private final FallbackMockPipeline fallbackMockPipeline;
 
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator) {
-        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null, null, null);
+        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null, null, null, null);
     }
 
     @Autowired
@@ -50,7 +53,8 @@ public class ProcessController {
             BpmnXmlGenerationService bpmnXmlService,
             com.pie.backend.service.AiBpmnRefinementService aiBpmnRefinementService,
             com.pie.backend.service.AiProcessReviewService aiProcessReviewService,
-            BpmnXmlParser bpmnParser) {
+            BpmnXmlParser bpmnParser,
+            FallbackMockPipeline fallbackMockPipeline) {
         this.ingestionService = ingestionService;
         this.graphBuilder = graphBuilder;
         this.qualityValidator = qualityValidator;
@@ -60,10 +64,20 @@ public class ProcessController {
         this.aiBpmnRefinementService = aiBpmnRefinementService;
         this.aiProcessReviewService = aiProcessReviewService;
         this.bpmnParser = bpmnParser;
+        this.fallbackMockPipeline = fallbackMockPipeline;
     }
 
     @PostMapping("/extract-text")
-    public ResponseEntity<ProcessKnowledgeDTO> extractFromText(@RequestBody TextPayload payload) {
+    public ResponseEntity<Object> extractFromText(@RequestBody TextPayload payload) {
+        if (fallbackMockPipeline != null) {
+            Object result = fallbackMockPipeline.executeWithFallback(
+                payload.content(), 
+                "knowledge", 
+                ProcessKnowledgeDTO.class, 
+                () -> ingestionService.ingestText(payload.content(), null, null)
+            );
+            return ResponseEntity.ok(result);
+        }
         return ResponseEntity.ok(ingestionService.ingestText(payload.content(), null, null));
     }
 
@@ -86,6 +100,27 @@ public class ProcessController {
         if (bpmnMapper == null || bpmnXmlService == null) {
             return ResponseEntity.internalServerError().build();
         }
+
+        if (fallbackMockPipeline != null) {
+            String hint = "travel";
+            if (payload.knowledge() != null && payload.knowledge().activities() != null) {
+                hint = String.join(" ", payload.knowledge().activities());
+            }
+            Object result = fallbackMockPipeline.executeWithFallback(
+                hint,
+                "bpmn",
+                String.class,
+                () -> {
+                    String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
+                    if (payload.knowledge() != null && aiBpmnRefinementService != null) {
+                        return aiBpmnRefinementService.refineBpmn(draftXml, payload.knowledge());
+                    }
+                    return draftXml;
+                }
+            );
+            return ResponseEntity.ok((String) result);
+        }
+
         // Generate draft
         String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
         
@@ -104,7 +139,30 @@ public class ProcessController {
     }
 
     @PostMapping("/validate-knowledge")
-    public ResponseEntity<ProcessQualityReportDTO> validateKnowledge(@RequestBody ProcessKnowledgeDTO knowledge) {
+    public ResponseEntity<Object> validateKnowledge(@RequestBody ProcessKnowledgeDTO knowledge) {
+        if (fallbackMockPipeline != null) {
+            // Find a scenario hint from the knowledge (like process name or first activity)
+            String hint = "travel";
+            if (knowledge.activities() != null && !knowledge.activities().isEmpty()) {
+                hint = String.join(" ", knowledge.activities());
+            }
+
+            Object result = fallbackMockPipeline.executeWithFallback(
+                hint,
+                "review",
+                ProcessQualityReportDTO.class,
+                () -> {
+                    ProcessGraphDTO graph = graphBuilder.build(knowledge);
+                    ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
+                    if (aiQualityService != null) {
+                        report = aiQualityService.enhance(knowledge, graph, report);
+                    }
+                    return report;
+                }
+            );
+            return ResponseEntity.ok(result);
+        }
+
         ProcessGraphDTO graph = graphBuilder.build(knowledge);
         ProcessQualityReportDTO report = qualityValidator.validateQuality(graph);
         if (aiQualityService != null) {
@@ -118,6 +176,17 @@ public class ProcessController {
         if (aiProcessReviewService == null) {
             return ResponseEntity.internalServerError().build();
         }
+
+        if (fallbackMockPipeline != null) {
+            Object result = fallbackMockPipeline.executeWithFallback(
+                payload.content(),
+                "summary",
+                com.pie.shared.dto.ReviewReportDTO.class,
+                () -> aiProcessReviewService.generateSummary(payload.content())
+            );
+            return ResponseEntity.ok(result);
+        }
+
         try {
             return ResponseEntity.ok(aiProcessReviewService.generateSummary(payload.content()));
         } catch (IllegalArgumentException e) {
