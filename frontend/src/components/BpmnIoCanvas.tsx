@@ -112,7 +112,7 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, o
       modeler.destroy();
       viewerRef.current = null;
     };
-  }, [graph]);
+  }, [graph, knowledge]);
 
   // Re-import when parent pushes a new externalXml that we did NOT emit ourselves
   // (e.g. chat applied an edit while the canvas is already mounted).

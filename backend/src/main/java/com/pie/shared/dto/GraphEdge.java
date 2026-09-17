@@ -1,13 +1,21 @@
 package com.pie.shared.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GraphEdge {
     private String id;
+
+    @JsonProperty("from")
+    @JsonAlias({"source", "sourceId", "fromId"})
     private String from;
+
+    @JsonProperty("to")
+    @JsonAlias({"target", "targetId", "toId"})
     private String to;
     private EdgeType edgeType;
     private String label;

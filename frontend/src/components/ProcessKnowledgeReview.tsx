@@ -56,16 +56,98 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
     onKnowledgeChange({ ...data, [key]: nextList } as ProcessKnowledgeDTO);
   };
 
+  const parseActivityItem = (text: string) => {
+    let raw = text || '';
+    let actor: string | null = null;
+    let tag: string | null = null;
+
+    // Check (Actor) at the end
+    const parenMatch = raw.match(/\s*\(([^)]+)\)\s*$/);
+    if (parenMatch) {
+      actor = parenMatch[1].trim();
+      raw = raw.slice(0, parenMatch.index).trim();
+    }
+
+    // Check [TASK_TYPE] at the end
+    const tagMatch = raw.match(/\s*\[([a-zA-Z_]+)\]\s*$/);
+    if (tagMatch) {
+      tag = tagMatch[1].toUpperCase();
+      raw = raw.slice(0, tagMatch.index).trim();
+    }
+
+    // Check (Actor) before [TASK_TYPE] if not found yet
+    if (!actor) {
+      const parenMatch2 = raw.match(/\s*\(([^)]+)\)\s*$/);
+      if (parenMatch2) {
+        actor = parenMatch2[1].trim();
+        raw = raw.slice(0, parenMatch2.index).trim();
+      }
+    }
+
+    return { label: raw, tag, actor };
+  };
+
   const updateItem = (key: KnowledgeKey, idx: number, value: string) => {
     const list = ((data[key] as string[]) || []).slice();
+    const oldValue = list[idx];
     list[idx] = value;
-    emit(key, list);
+
+    if (!onKnowledgeChange) return;
+    const nextDTO: ProcessKnowledgeDTO = { ...data, [key]: list } as ProcessKnowledgeDTO;
+
+    // If an actor is renamed, automatically sync with roles and update any activities tagged with the old actor
+    if (key === 'actors' && oldValue && oldValue.trim() !== value.trim()) {
+      const oldTrimmed = oldValue.trim().toLowerCase();
+      if (nextDTO.roles) {
+        nextDTO.roles = nextDTO.roles.map((r) =>
+          r.trim().toLowerCase() === oldTrimmed ? value.trim() : r
+        );
+      }
+      if (nextDTO.activities) {
+        nextDTO.activities = nextDTO.activities.map((act) => {
+          const parsed = parseActivityItem(act);
+          if (parsed.actor && parsed.actor.toLowerCase() === oldTrimmed) {
+            const base = parsed.label + (parsed.tag ? ` [${parsed.tag}]` : '');
+            return `${base} (${value.trim()})`;
+          }
+          return act;
+        });
+      }
+    } else if (key === 'roles' && oldValue && oldValue.trim() !== value.trim()) {
+      const oldTrimmed = oldValue.trim().toLowerCase();
+      if (nextDTO.actors) {
+        nextDTO.actors = nextDTO.actors.map((a) =>
+          a.trim().toLowerCase() === oldTrimmed ? value.trim() : a
+        );
+      }
+    }
+
+    onKnowledgeChange(nextDTO);
   };
 
   const removeItem = (key: KnowledgeKey, idx: number) => {
     const list = ((data[key] as string[]) || []).slice();
+    const removedValue = list[idx];
     list.splice(idx, 1);
-    emit(key, list);
+
+    if (!onKnowledgeChange) return;
+    const nextDTO: ProcessKnowledgeDTO = { ...data, [key]: list } as ProcessKnowledgeDTO;
+
+    // If an actor is removed, untag it from activities that referenced it
+    if (key === 'actors' && removedValue) {
+      const removedTrimmed = removedValue.trim().toLowerCase();
+      if (nextDTO.activities) {
+        nextDTO.activities = nextDTO.activities.map((act) => {
+          const parsed = parseActivityItem(act);
+          if (parsed.actor && parsed.actor.toLowerCase() === removedTrimmed) {
+            return parsed.label + (parsed.tag ? ` [${parsed.tag}]` : '');
+          }
+          return act;
+        });
+      }
+    }
+
+    onKnowledgeChange(nextDTO);
   };
 
   const addItem = (key: KnowledgeKey) => {
@@ -115,21 +197,35 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
   const isConflictsCollapsed = Boolean(collapsedSections['conflicts']);
 
   const renderItemWithChip = (text: string) => {
-    const match = text.match(/^(.*?)\s*\[([a-zA-Z_]+)\]$/);
-    if (match) {
-      const label = match[1];
-      const tag = match[2].toUpperCase();
-      const isGateway = ['EXCLUSIVE', 'PARALLEL', 'INCLUSIVE'].includes(tag);
-      return (
-        <li className="entity-li-flex">
-          <span>{label}</span>
+    const parsed = parseActivityItem(text);
+    const isGateway = parsed.tag && ['EXCLUSIVE', 'PARALLEL', 'INCLUSIVE'].includes(parsed.tag);
+
+    return (
+      <li className="entity-li-flex" style={{ gap: 8, alignItems: 'center' }}>
+        <span style={{ flex: 1 }}>{parsed.label}</span>
+        {parsed.tag && (
           <span className={`ai-chip ${isGateway ? 'chip-gateway' : 'chip-task'}`}>
-            {tag.replace('_', ' ')}
+            {parsed.tag.replace('_', ' ')}
           </span>
-        </li>
-      );
-    }
-    return <li className="entity-li-flex"><span>{text}</span></li>;
+        )}
+        {parsed.actor && (
+          <span
+            className="ai-chip"
+            style={{
+              background: 'rgba(100, 255, 218, 0.12)',
+              color: 'var(--aqua)',
+              border: '1px solid rgba(100, 255, 218, 0.3)',
+              fontSize: '11px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            👤 {parsed.actor}
+          </span>
+        )}
+      </li>
+    );
   };
 
   return (
@@ -313,6 +409,36 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
                                   fontFamily: 'inherit',
                                 }}
                               />
+                              {section.key === 'activities' && (data.actors || []).length > 0 && (() => {
+                                const parsed = parseActivityItem(item);
+                                return (
+                                  <select
+                                    value={parsed.actor || ''}
+                                    onChange={(e) => {
+                                      const newActor = e.target.value;
+                                      const baseText = parsed.label + (parsed.tag ? ` [${parsed.tag}]` : '');
+                                      const updated = newActor ? `${baseText} (${newActor})` : baseText;
+                                      updateItem('activities', idx, updated);
+                                    }}
+                                    title="Assign actor to this activity"
+                                    style={{
+                                      background: 'rgba(4, 18, 45, 0.85)',
+                                      border: '1px solid rgba(100, 255, 218, 0.35)',
+                                      color: 'var(--aqua)',
+                                      borderRadius: 6,
+                                      padding: '6px 8px',
+                                      fontSize: 12,
+                                      fontFamily: 'inherit',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    <option value="">👤 Unassigned Role</option>
+                                    {(data.actors || []).map((act) => (
+                                      <option key={act} value={act}>👤 {act}</option>
+                                    ))}
+                                  </select>
+                                );
+                              })()}
                               <button
                                 type="button"
                                 onClick={() => removeItem(section.key, idx)}

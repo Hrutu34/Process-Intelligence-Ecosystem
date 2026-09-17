@@ -1,6 +1,8 @@
 package com.pie.shared.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +12,8 @@ import java.util.Objects;
 /** The single graph contract shared by graph generation, validation, and API clients. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProcessGraphDTO {
+    @JsonProperty("graphId")
+    @JsonAlias({"id", "graph_id"})
     private String graphId;
     private List<GraphNode> nodes = new ArrayList<>();
     private List<GraphEdge> edges = new ArrayList<>();

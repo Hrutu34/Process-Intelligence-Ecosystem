@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class ProcessGraphBuilder {
@@ -92,6 +93,21 @@ public class ProcessGraphBuilder {
             if (raw == null || raw.isBlank()) continue;
             String label = raw.trim();
             String taskType = "USER_TASK"; // Default fallback
+            String explicitRole = null;
+
+            // Check if label ends with (RoleName), e.g. "Review Request (Manager)" or "Review Request [USER_TASK] (Manager)"
+            Matcher mParen = Pattern.compile("\\s*\\(([a-zA-Z0-9_\\s-]+)\\)\\s*$").matcher(label);
+            if (mParen.find()) {
+                explicitRole = mParen.group(1).trim();
+                label = label.substring(0, mParen.start()).trim();
+            }
+
+            // Check if label ends with @RoleName, e.g. "Review Request @Manager"
+            Matcher mAt = Pattern.compile("\\s*@([a-zA-Z0-9_\\s-]+)\\s*$").matcher(label);
+            if (mAt.find() && explicitRole == null) {
+                explicitRole = mAt.group(1).trim();
+                label = label.substring(0, mAt.start()).trim();
+            }
 
             // EXTRACT AI SEMANTIC TAG (e.g., "Review Request [SERVICE_TASK]")
             if (label.matches(".*\\[[A-Z_]+\\]$")) {
@@ -100,21 +116,59 @@ public class ProcessGraphBuilder {
                 label = label.substring(0, bracketIdx).trim();
             }
 
+            // Check again in case (RoleName) was before [TASK_TYPE], e.g. "Review Request (Manager) [USER_TASK]"
+            if (explicitRole == null) {
+                Matcher m2 = Pattern.compile("\\s*\\(([a-zA-Z0-9_\\s-]+)\\)\\s*$").matcher(label);
+                if (m2.find()) {
+                    explicitRole = m2.group(1).trim();
+                    label = label.substring(0, m2.start()).trim();
+                }
+            }
+
+            // Check for prefix "Actor: Task", e.g. "Manager: Review Request"
+            int colonIdx = label.indexOf(':');
+            if (colonIdx > 0 && colonIdx < 30 && explicitRole == null) {
+                String candidateRole = label.substring(0, colonIdx).trim();
+                if (containsAnyIgnoreCase(candidateRole, knowledge.actors(), knowledge.roles())) {
+                    explicitRole = candidateRole;
+                    label = label.substring(colonIdx + 1).trim();
+                }
+            }
+
             String id = "activity-" + slugify(label);
 
             if (!nodeRegistry.containsKey(id)) {
+                NodeMetadata.Builder metaBuilder = NodeMetadata.builder().taskType(taskType);
+                if (explicitRole != null && !explicitRole.isBlank()) {
+                    metaBuilder.roleRef("role-" + slugify(explicitRole));
+                }
+
                 GraphNode node = GraphNode.builder()
                         .id(id)
                         .type(NodeType.Activity)
                         .label(label)
-                        // Inject the AI-detected taskType into metadata
-                        .metadata(NodeMetadata.builder().taskType(taskType).build()) 
+                        .metadata(metaBuilder.build())
                         .build();
                 nodeRegistry.put(id, node);
                 list.add(node);
             }
         }
         return list;
+    }
+
+    private boolean containsAnyIgnoreCase(String value, List<String> list1, List<String> list2) {
+        String val = value.trim().toLowerCase(Locale.ROOT);
+        if (list1 != null) {
+            for (String s : list1) {
+                if (s != null && s.trim().equalsIgnoreCase(val)) return true;
+            }
+        }
+        if (list2 != null) {
+            for (String s : list2) {
+                if (s != null && s.trim().equalsIgnoreCase(val)) return true;
+            }
+        }
+        return false;
     }
 
     private int activityOrderScore(String label) {
@@ -143,6 +197,17 @@ public class ProcessGraphBuilder {
                 continue;
             }
 
+            // Filter out placeholder roles like "unassigned" if other valid roles exist
+            if (label.equalsIgnoreCase("unassigned") || label.equalsIgnoreCase("unknown") ||
+                label.equalsIgnoreCase("none") || label.equalsIgnoreCase("n/a")) {
+                boolean hasOtherRoles = combinedRoles.stream().anyMatch(r -> r != null && !r.isBlank() &&
+                        !r.equalsIgnoreCase("unassigned") && !r.equalsIgnoreCase("unknown") &&
+                        !r.equalsIgnoreCase("none") && !r.equalsIgnoreCase("n/a"));
+                if (hasOtherRoles) {
+                    continue;
+                }
+            }
+
             String id = "role-" + slugify(label);
             if (!nodeRegistry.containsKey(id)) {
                 GraphNode node = GraphNode.builder()
@@ -155,6 +220,26 @@ public class ProcessGraphBuilder {
                 list.add(node);
             }
         }
+
+        // Also ensure any explicit roles tagged on activities are registered as Role nodes
+        for (GraphNode act : nodeRegistry.values()) {
+            if (act.getType() == NodeType.Activity && act.getMetadata() != null && act.getMetadata().getRoleRef() != null) {
+                String roleId = act.getMetadata().getRoleRef();
+                if (!nodeRegistry.containsKey(roleId)) {
+                    String roleLabel = roleId.replaceFirst("^role-", "").replace('-', ' ');
+                    roleLabel = Character.toUpperCase(roleLabel.charAt(0)) + roleLabel.substring(1);
+                    GraphNode roleNode = GraphNode.builder()
+                            .id(roleId)
+                            .type(NodeType.Role)
+                            .label(roleLabel)
+                            .metadata(NodeMetadata.builder().build())
+                            .build();
+                    nodeRegistry.put(roleId, roleNode);
+                    list.add(roleNode);
+                }
+            }
+        }
+
         return list;
     }
 
@@ -306,7 +391,26 @@ public class ProcessGraphBuilder {
 
         Set<Integer> matchedActivityIndices = new HashSet<>();
 
+        // Pass 1: Explicit roleRef already parsed from activity label or set in metadata
         for (int i = 0; i < activityNodes.size(); i++) {
+            GraphNode actNode = activityNodes.get(i);
+            if (actNode.getMetadata() != null && actNode.getMetadata().getRoleRef() != null) {
+                String targetRef = actNode.getMetadata().getRoleRef();
+                GraphNode roleNode = roleNodes.stream()
+                        .filter(r -> r.getId().equalsIgnoreCase(targetRef) ||
+                                     slugify(r.getLabel()).equalsIgnoreCase(targetRef.replaceFirst("^role-", "")))
+                        .findFirst()
+                        .orElse(null);
+                if (roleNode != null) {
+                    addAssociation(roleNode, actNode, edgeRegistry);
+                    matchedActivityIndices.add(i);
+                }
+            }
+        }
+
+        // Pass 2: Direct string match (activity label contains role label)
+        for (int i = 0; i < activityNodes.size(); i++) {
+            if (matchedActivityIndices.contains(i)) continue;
             GraphNode actNode = activityNodes.get(i);
             String actLabel = actNode.getLabel().toLowerCase(Locale.ROOT);
 
@@ -330,11 +434,123 @@ public class ProcessGraphBuilder {
             }
         }
 
-        if (matchedActivityIndices.isEmpty() && roleNodes.size() == activityNodes.size()) {
-            for (int i = 0; i < activityNodes.size(); i++) {
-                addAssociation(roleNodes.get(i), activityNodes.get(i), edgeRegistry);
+        // Pass 3: Semantic role heuristics
+        for (int i = 0; i < activityNodes.size(); i++) {
+            if (matchedActivityIndices.contains(i)) continue;
+            GraphNode actNode = activityNodes.get(i);
+            String actLabel = actNode.getLabel().toLowerCase(Locale.ROOT);
+
+            GraphNode bestRole = findSemanticRoleMatch(actLabel, roleNodes);
+            if (bestRole != null) {
+                addAssociation(bestRole, actNode, edgeRegistry);
+                matchedActivityIndices.add(i);
             }
         }
+
+        // Pass 4: Fallback distribution for remaining unassigned activities
+        // Ensure no activity is left orphan and every participant has assigned tasks
+        if (matchedActivityIndices.size() < activityNodes.size()) {
+            if (roleNodes.size() == 1) {
+                // If only 1 role exists, assign all unassigned to that role
+                GraphNode singleRole = roleNodes.get(0);
+                for (int i = 0; i < activityNodes.size(); i++) {
+                    if (!matchedActivityIndices.contains(i)) {
+                        addAssociation(singleRole, activityNodes.get(i), edgeRegistry);
+                        matchedActivityIndices.add(i);
+                    }
+                }
+            } else if (matchedActivityIndices.isEmpty() && roleNodes.size() == activityNodes.size()) {
+                // Exact 1-to-1 match fallback
+                for (int i = 0; i < activityNodes.size(); i++) {
+                    addAssociation(roleNodes.get(i), activityNodes.get(i), edgeRegistry);
+                }
+            } else {
+                // Prioritize giving tasks to roles that currently have 0 assigned activities
+                Set<String> assignedRoleIds = edgeRegistry.values().stream()
+                        .filter(e -> e.getEdgeType() == EdgeType.association)
+                        .map(GraphEdge::getFrom)
+                        .collect(Collectors.toSet());
+
+                List<GraphNode> hungryRoles = roleNodes.stream()
+                        .filter(r -> !assignedRoleIds.contains(r.getId()))
+                        .toList();
+
+                int hungryIdx = 0;
+                for (int i = 0; i < activityNodes.size(); i++) {
+                    if (!matchedActivityIndices.contains(i)) {
+                        GraphNode assignedRole;
+                        if (hungryIdx < hungryRoles.size()) {
+                            assignedRole = hungryRoles.get(hungryIdx++);
+                        } else {
+                            // Assign to first role or previous activity's role
+                            assignedRole = roleNodes.get(0);
+                        }
+                        addAssociation(assignedRole, activityNodes.get(i), edgeRegistry);
+                        matchedActivityIndices.add(i);
+                    }
+                }
+            }
+        }
+    }
+
+    private GraphNode findSemanticRoleMatch(String actLabel, List<GraphNode> roleNodes) {
+        // Priority 0: Explicit requester initiation action (Submit, Apply, Initiate, Draft) -> Employee / Requester
+        if (containsAny(actLabel, "submit", "apply", "initiat", "draft", "fill out", "enter")) {
+            for (GraphNode r : roleNodes) {
+                String rl = r.getLabel().toLowerCase(Locale.ROOT);
+                if (containsAny(rl, "employee", "applicant", "initiat", "staff", "user", "customer", "operator", "requester")) {
+                    return r;
+                }
+            }
+        }
+        // Priority 1: Manager / Reviewer / Approver
+        for (GraphNode r : roleNodes) {
+            String rl = r.getLabel().toLowerCase(Locale.ROOT);
+            if (containsAny(rl, "manager", "approv", "lead", "supervisor", "head", "director", "reviewer")) {
+                if (containsAny(actLabel, "approv", "review", "authoriz", "reject", "sign off", "evaluat", "assess", "escalat", "exception")) {
+                    return r;
+                }
+            }
+        }
+        // Priority 2: Finance / Accounts
+        for (GraphNode r : roleNodes) {
+            String rl = r.getLabel().toLowerCase(Locale.ROOT);
+            if (containsAny(rl, "finance", "account", "billing", "treasury", "payroll")) {
+                if (containsAny(actLabel, "pay", "invoice", "reimburse", "budget", "billing", "disburse", "disbursement", "ledger", "fund", "financial")) {
+                    return r;
+                }
+            }
+        }
+        // Priority 3: Travel
+        for (GraphNode r : roleNodes) {
+            String rl = r.getLabel().toLowerCase(Locale.ROOT);
+            if (containsAny(rl, "travel", "desk", "flight", "hotel", "logistics")) {
+                if (containsAny(actLabel, "book", "flight", "hotel", "ticket", "travel", "reservation")) {
+                    return r;
+                }
+            }
+        }
+        // Priority 4: HR
+        for (GraphNode r : roleNodes) {
+            String rl = r.getLabel().toLowerCase(Locale.ROOT);
+            if (containsAny(rl, "hr", "human", "recruit", "talent")) {
+                if (containsAny(actLabel, "onboard", "hire", "interview", "candidate", "training", "orient")) {
+                    return r;
+                }
+            }
+        }
+        // Priority 5: Employee / Requester (only if not an approval or review task)
+        if (!containsAny(actLabel, "review", "approv", "authoriz", "evaluat", "assess", "sign off")) {
+            for (GraphNode r : roleNodes) {
+                String rl = r.getLabel().toLowerCase(Locale.ROOT);
+                if (containsAny(rl, "employee", "applicant", "initiat", "staff", "user", "customer", "operator", "requester")) {
+                    if (containsAny(actLabel, "submit", "request", "create", "draft", "fill", "apply", "enter", "initiat", "upload", "attach", "provide")) {
+                        return r;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private void buildSystemAssociations(List<GraphNode> activityNodes, List<GraphNode> systemNodes,
@@ -532,6 +748,7 @@ public class ProcessGraphBuilder {
         
         if (ifIdx >= 0 && endIdx > ifIdx + 3) {
             String cond = rule.substring(ifIdx + 3, endIdx).trim();
+            if (cond.equalsIgnoreCase("within policy")) return "yes";
             if (cond.length() <= 30) return cond; // Ensure labels don't get too long
         }
         
@@ -560,8 +777,16 @@ public class ProcessGraphBuilder {
             
             // 1. Identify which activity precedes this gateway (Evaluating Activity)
             GraphNode evalAct = null;
-            if (!activityNodes.isEmpty()) {
-                // If it's the first gateway, attach it to the first or second activity
+            for (GraphNode act : activityNodes) {
+                String actLower = act.getLabel().toLowerCase(Locale.ROOT);
+                if (hasHighTokenOverlap(actLower, gwLabel) ||
+                    (containsAny(gwLabel, "approv", "review", "check", "evaluat", "validat", "policy") &&
+                     containsAny(actLower, "review", "evaluat", "check", "assess", "approv", "inspect", "audit", "policy"))) {
+                    evalAct = act;
+                    break;
+                }
+            }
+            if (evalAct == null && !activityNodes.isEmpty()) {
                 evalAct = activityNodes.get(Math.min(i, activityNodes.size() - 1)); 
             }
             String evalActId = evalAct != null ? evalAct.getId() : null;
@@ -620,15 +845,24 @@ public class ProcessGraphBuilder {
 
     // Helper: Find common tokens to match gateways to rules
     private boolean hasHighTokenOverlap(String text1, String text2) {
-        Set<String> tokens1 = new HashSet<>(Arrays.asList(text1.split("\\W+")));
-        Set<String> tokens2 = new HashSet<>(Arrays.asList(text2.split("\\W+")));
-        tokens1.removeIf(t -> t.length() < 4); // ignore short words
-        tokens2.removeIf(t -> t.length() < 4);
-        
-        Set<String> intersection = new HashSet<>(tokens1);
-        intersection.retainAll(tokens2);
-        
-        return !intersection.isEmpty();
+        if (text1 == null || text2 == null) return false;
+        List<String> tokens1 = Arrays.stream(text1.toLowerCase(Locale.ROOT).split("\\W+"))
+                .filter(t -> t.length() >= 4)
+                .toList();
+        List<String> tokens2 = Arrays.stream(text2.toLowerCase(Locale.ROOT).split("\\W+"))
+                .filter(t -> t.length() >= 4)
+                .toList();
+
+        for (String t1 : tokens1) {
+            for (String t2 : tokens2) {
+                if (t1.equals(t2)) return true;
+                int prefixLen = Math.min(Math.min(t1.length(), t2.length()), 6);
+                if (prefixLen >= 5 && t1.substring(0, prefixLen).equals(t2.substring(0, prefixLen))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private GraphNode findBestMatchingActivity(List<GraphNode> activityNodes, String... searchPhrases) {

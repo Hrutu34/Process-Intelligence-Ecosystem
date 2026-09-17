@@ -247,10 +247,19 @@ public class BpmnXmlParser {
                 .map(GraphNode::getLabel)
                 .toList();
 
+        List<String> validRoles = roleNames.stream()
+                .filter(r -> {
+                    if (r == null) return false;
+                    String lower = r.trim().toLowerCase();
+                    return !("unassigned".equals(lower) || "others".equals(lower) || "unknown".equals(lower) || "placeholder".equals(lower) || "none".equals(lower) || "null".equals(lower));
+                })
+                .toList();
+        List<String> finalRoles = validRoles.isEmpty() ? roleNames : validRoles;
+
         ProcessKnowledgeDTO knowledge = new ProcessKnowledgeDTO(
                 activities,
-                roleNames,
-                roleNames,
+                finalRoles,
+                finalRoles,
                 List.of(),
                 events,
                 gateways,

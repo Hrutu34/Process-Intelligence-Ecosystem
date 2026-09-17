@@ -453,7 +453,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proc
 
       {/* VIEW: BPMN.IO CANVAS */}
       {viewMode === 'bpmn' && (
-        <BpmnIoCanvas graph={graph} externalXml={externalXml} highlightedNodeId={highlightedElementId} highlightColor={highlightColor} onXmlChange={onXmlChange} onReviewClick={onProceed} />
+        <BpmnIoCanvas graph={graph} knowledge={knowledge} externalXml={externalXml} highlightedNodeId={highlightedElementId} highlightColor={highlightColor} onXmlChange={onXmlChange} onReviewClick={onProceed} />
       )}
 
       {/* VIEW 2: TOPOLOGY TABLE VIEW */}

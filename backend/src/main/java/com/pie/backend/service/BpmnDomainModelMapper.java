@@ -9,6 +9,7 @@ import com.pie.shared.dto.ProcessGraphDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -101,14 +102,34 @@ public class BpmnDomainModelMapper {
                     .filter(id -> !assigned.contains(id))
                     .toList();
             if (!orphans.isEmpty()) {
-                laneList.add(new BpmnProcessModel.Lane("unassigned", "Unassigned", orphans));
+                // If participants exist, do NOT dump tasks into a synthetic "Unassigned" lane.
+                // Distribute orphans to the participant with the fewest tasks (or first participant)
+                // so the user-configured roles/actors remain active and visible.
+                BpmnProcessModel.Lane targetLane = laneList.stream()
+                        .min(Comparator.comparingInt(l -> l.flowNodeIds().size()))
+                        .orElse(null);
+                if (targetLane != null) {
+                    List<String> combined = new ArrayList<>(targetLane.flowNodeIds());
+                    combined.addAll(orphans);
+                    int idx = laneList.indexOf(targetLane);
+                    laneList.set(idx, new BpmnProcessModel.Lane(targetLane.id(), targetLane.name(), combined));
+                } else {
+                    laneList.add(new BpmnProcessModel.Lane("unassigned", "Unassigned", orphans));
+                }
             }
             lanes = List.copyOf(laneList);
         }
 
+        String rawGraphId = graph.getGraphId();
+        String safeId = (rawGraphId != null && !rawGraphId.isBlank()) ? rawGraphId : "process_workflow";
+        String processName = safeId.replaceFirst("^graph-", "").replace('-', ' ').trim();
+        if (processName.isBlank()) {
+            processName = "Process Workflow";
+        }
+
         return new BpmnProcessModel(
-                "Process_" + sanitize(graph.getGraphId()),
-                graph.getGraphId().replaceFirst("^graph-", "").replace('-', ' '),
+                "Process_" + sanitize(safeId),
+                processName,
                 lanes,
                 participants,
                 tasks,

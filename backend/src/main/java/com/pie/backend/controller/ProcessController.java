@@ -38,11 +38,14 @@ public class ProcessController {
     private final FallbackMockPipeline fallbackMockPipeline;
     private final com.pie.backend.service.AgentLogger agentLogger;
 
+    @org.springframework.beans.factory.annotation.Value("${pie.bpmn.ai-refinement.enabled:false}")
+    private boolean aiBpmnRefinementEnabled = false;
+
     public ProcessController(
             DocumentIngestionService ingestionService,
             ProcessGraphBuilder graphBuilder,
             ProcessQualityValidator qualityValidator) {
-        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null, null, null, null, null);
+        this(ingestionService, graphBuilder, qualityValidator, null, null, null, null, null, null, null, new com.pie.backend.service.AgentLogger());
     }
 
     @Autowired
@@ -142,7 +145,7 @@ public class ProcessController {
                     String.class,
                     () -> {
                         String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
-                        if (payload.knowledge() != null && aiBpmnRefinementService != null) {
+                        if (aiBpmnRefinementEnabled && payload.knowledge() != null && aiBpmnRefinementService != null) {
                             return aiBpmnRefinementService.refineBpmn(draftXml, payload.knowledge());
                         }
                         return draftXml;
@@ -159,8 +162,8 @@ public class ProcessController {
             // Generate draft
             String draftXml = bpmnXmlService.generate(bpmnMapper.map(payload.graph()));
             
-            // Refine with AI if knowledge is provided
-            if (payload.knowledge() != null && aiBpmnRefinementService != null) {
+            // Refine with AI if enabled and knowledge is provided
+            if (aiBpmnRefinementEnabled && payload.knowledge() != null && aiBpmnRefinementService != null) {
                 String refinedXml = aiBpmnRefinementService.refineBpmn(draftXml, payload.knowledge());
                 agentLogger.logSuccess("BPMN_MODELLING", System.currentTimeMillis() - start);
                 return ResponseEntity.ok(refinedXml);

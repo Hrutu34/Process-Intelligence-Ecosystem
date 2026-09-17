@@ -327,7 +327,7 @@ export const ProcessWorkspace: React.FC<Props> = ({
               // Invalidate any cached graph derived from the previous knowledge
               // so downstream views regenerate from the corrected DTO.
               clearProcessGraphCache();
-              onUpdateProcess({ ...process, knowledge: next, lastUpdated: 'Just now' });
+              onUpdateProcess({ ...process, knowledge: next, graph: undefined, lastUpdated: 'Just now' });
             }}
           />
 

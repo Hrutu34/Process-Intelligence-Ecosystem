@@ -33,8 +33,8 @@ public class ProcessKnowledgeNormalizer {
 
             return new ProcessKnowledgeDTO(
                     normalizeList(root, "activities", true),    // Deduplicate
-                    normalizeList(root, "actors", true),        // Deduplicate
-                    normalizeList(root, "roles", true),
+                    normalizeList(root, "actors", true, true),        // Deduplicate and filter placeholders
+                    normalizeList(root, "roles", true, true),
                     normalizeList(root, "systems", true),
                     normalizeList(root, "events", false),
                     normalizeList(root, "gateways", false),
@@ -42,7 +42,7 @@ public class ProcessKnowledgeNormalizer {
                     normalizeList(root, "outputs", false),
                     normalizeList(root, "businessRules", false),
                     normalizeList(root, "risks", false),
-                        allowCrossDocumentConflicts ? normalizeList(root, "conflicts", false) : List.of()
+                    allowCrossDocumentConflicts ? normalizeList(root, "conflicts", false) : List.of()
             );
         } catch (IllegalArgumentException e) {
             // Re-throw argument exceptions from repairJson if no JSON found
@@ -172,6 +172,10 @@ public class ProcessKnowledgeNormalizer {
     }
 
     private List<String> normalizeList(JsonNode rootNode, String fieldName, boolean deduplicate) {
+        return normalizeList(rootNode, fieldName, deduplicate, false);
+    }
+
+    private List<String> normalizeList(JsonNode rootNode, String fieldName, boolean deduplicate, boolean filterPlaceholders) {
         JsonNode fieldNode = rootNode.get(fieldName);
         if (fieldNode == null || !fieldNode.isArray()) {
             return List.of();
@@ -201,7 +205,7 @@ public class ProcessKnowledgeNormalizer {
             }
         }
 
-        return cleanAndFilter(rawItems, deduplicate);
+        return cleanAndFilter(rawItems, deduplicate, filterPlaceholders);
     }
 
     private ProcessKnowledgeDTO parseFallbackMarkdownText(String rawText) {
@@ -239,7 +243,7 @@ public class ProcessKnowledgeNormalizer {
                 if (!earlyActivities.isEmpty() || !earlyEvents.isEmpty()) {
                     return new ProcessKnowledgeDTO(
                             earlyActivities,
-                            cleanAndFilter(actors, true),
+                            cleanAndFilter(actors, true, true),
                             List.of(),
                             cleanAndFilter(systems, true),
                             earlyEvents,
@@ -321,7 +325,7 @@ public class ProcessKnowledgeNormalizer {
         }
 
         List<String> cleanActivities = cleanAndFilter(activities, true);
-        List<String> cleanActors = cleanAndFilter(actors, true);
+        List<String> cleanActors = cleanAndFilter(actors, true, true);
 
         if (events.isEmpty() && !cleanActivities.isEmpty()) {
             events.add("Start Event");
@@ -494,7 +498,15 @@ public class ProcessKnowledgeNormalizer {
         }
     }
 
+    private static final Set<String> GENERIC_ACTOR_PLACEHOLDERS = Set.of(
+            "unassigned", "others", "unknown", "someone", "n/a", "none", "null", "placeholder", "tbd"
+    );
+
     private List<String> cleanAndFilter(List<String> items, boolean deduplicate) {
+        return cleanAndFilter(items, deduplicate, false);
+    }
+
+    private List<String> cleanAndFilter(List<String> items, boolean deduplicate, boolean filterPlaceholders) {
         if (items == null) return List.of();
 
         Collection<String> resultCollection = deduplicate ? new LinkedHashSet<>() : new ArrayList<>();
@@ -503,6 +515,9 @@ public class ProcessKnowledgeNormalizer {
             if (raw == null) continue;
             String cleaned = raw.trim();
             if (cleaned.isBlank() || cleaned.equalsIgnoreCase("none") || cleaned.equalsIgnoreCase("n/a") || cleaned.equalsIgnoreCase("null")) {
+                continue;
+            }
+            if (filterPlaceholders && GENERIC_ACTOR_PLACEHOLDERS.contains(cleaned.toLowerCase(Locale.ROOT))) {
                 continue;
             }
             resultCollection.add(cleaned);

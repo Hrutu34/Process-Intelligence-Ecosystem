@@ -173,7 +173,29 @@ function App() {
         });
         if (res.ok) {
           const data = await res.json();
-          setExtractedData(data.knowledge);
+          setExtractedData((prev) => {
+            if (!prev) return data.knowledge;
+            const isPlaceholder = (s: string) => {
+              const lower = (s || '').trim().toLowerCase();
+              return ['unassigned', 'others', 'unknown', 'someone', 'n/a', 'none', 'null', 'placeholder', 'tbd'].includes(lower);
+            };
+            const incomingActors = (data.knowledge?.actors || []).filter((a: string) => !isPlaceholder(a));
+            const incomingRoles = (data.knowledge?.roles || []).filter((r: string) => !isPlaceholder(r));
+
+            return {
+              ...prev,
+              activities: data.knowledge?.activities && data.knowledge.activities.length > 0 ? data.knowledge.activities : prev.activities,
+              actors: incomingActors.length > 0 ? incomingActors : prev.actors,
+              roles: incomingRoles.length > 0 ? incomingRoles : prev.roles,
+              gateways: data.knowledge?.gateways && data.knowledge.gateways.length > 0 ? data.knowledge.gateways : prev.gateways,
+              events: data.knowledge?.events && data.knowledge.events.length > 0 ? data.knowledge.events : prev.events,
+              // Preserve rich textual items that BPMN XML cannot represent
+              inputs: prev.inputs && prev.inputs.length > 0 ? prev.inputs : (data.knowledge?.inputs || []),
+              outputs: prev.outputs && prev.outputs.length > 0 ? prev.outputs : (data.knowledge?.outputs || []),
+              businessRules: prev.businessRules && prev.businessRules.length > 0 ? prev.businessRules : (data.knowledge?.businessRules || []),
+              processName: prev.processName || data.processName || (data.knowledge as any)?.processName,
+            };
+          });
           window.dispatchEvent(new CustomEvent("pie:bpmn-applied", { detail: { bpmnXml: currentBpmnXml } }));
         }
       } catch (err) {
