@@ -122,8 +122,8 @@ public class BpmnXmlParser {
         parseIntermediateEvents(doc, "intermediateCatchEvent", nodeMap);
         parseIntermediateEvents(doc, "intermediateThrowEvent", nodeMap);
 
-        // 6. Parse Tasks (task, userTask, serviceTask, manualTask, scriptTask, sendTask, receiveTask)
-        String[] taskTags = {"task", "userTask", "serviceTask", "manualTask", "scriptTask", "sendTask", "receiveTask"};
+        // 6. Parse Tasks (task, userTask, serviceTask, manualTask, scriptTask, sendTask, receiveTask, businessRuleTask)
+        String[] taskTags = {"task", "userTask", "serviceTask", "manualTask", "scriptTask", "sendTask", "receiveTask", "businessRuleTask"};
         for (String tag : taskTags) {
             NodeList tasks = doc.getElementsByTagNameNS("*", tag);
             for (int i = 0; i < tasks.getLength(); i++) {
@@ -133,8 +133,19 @@ public class BpmnXmlParser {
                 if (name == null || name.isBlank()) name = "Unnamed Activity";
 
                 String roleRef = nodeToLaneMap.get(id);
+                String taskTypeStr = switch (tag) {
+                    case "serviceTask" -> "SERVICE_TASK";
+                    case "manualTask" -> "MANUAL_TASK";
+                    case "scriptTask" -> "SCRIPT_TASK";
+                    case "sendTask" -> "SEND_TASK";
+                    case "receiveTask" -> "RECEIVE_TASK";
+                    case "businessRuleTask" -> "BUSINESS_RULE_TASK";
+                    default -> "USER_TASK";
+                };
+
                 NodeMetadata meta = NodeMetadata.builder()
                         .roleRef(roleRef)
+                        .taskType(taskTypeStr)
                         .build();
 
                 nodeMap.put(id, GraphNode.builder()

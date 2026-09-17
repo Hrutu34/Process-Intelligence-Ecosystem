@@ -19,6 +19,7 @@ import { trackerStore, useTrackerStore } from "./services/trackerStore";
 import { SunIcon, MoonIcon, StarIcon } from "./services/icons";
 import vwgdsLogo from "./assets/vwgds-logo.png";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
+import type { SelectedElementInfo } from "./services/chatService";
 import { useCallback, useEffect, useState } from "react";
 
 type AgentTab = "01_KNOWLEDGE" | "02_INTELLIGENCE" | "03_BPMN" | "04_REVIEW";
@@ -32,6 +33,7 @@ function App() {
   const [currentBpmnXml, setCurrentBpmnXml] = useState<string | null>(null);
   const [currentSourceText, setCurrentSourceText] = useState<string>("");
   const [, setHighlightedElement] = useState<{ id: string; color: string } | null>(null);
+  const [selectedBpmnElement, setSelectedBpmnElement] = useState<SelectedElementInfo | null>(null);
   const [showSplash, setShowSplash] = useState(true);
   const [entryMode, setEntryMode] = useState<EntryMode>("text-to-diagram");
   const [view, setView] = useState<"landing" | "ingest">("landing");
@@ -349,6 +351,7 @@ function App() {
                     proceedLabel="PROCEED TO PROCESS REVIEW <span>↗</span>"
                     onXmlChange={setCurrentBpmnXml}
                     externalXml={currentBpmnXml}
+                    onElementSelected={setSelectedBpmnElement}
                   />
                 )}
 
@@ -647,8 +650,12 @@ function App() {
 
         {currentBpmnXml && (
           <ChatDock
+            processName={(extractedData as any)?.processName || "Process Model"}
             bpmnXml={currentBpmnXml}
             knowledge={extractedData}
+            selectedElement={selectedBpmnElement}
+            onClearSelectedElement={() => setSelectedBpmnElement(null)}
+            sourceText={currentSourceText}
             onBpmnUpdated={setCurrentBpmnXml}
           />
         )}

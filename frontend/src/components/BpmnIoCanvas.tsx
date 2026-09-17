@@ -5,6 +5,7 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import type { ProcessGraphDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import type { ProcessKnowledgeDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import type { SelectedElementInfo } from '../services/chatService';
 import { trackerStore } from '../services/trackerStore';
 import { autoLayoutBpmn } from '../services/bpmnLayout';
 import './BpmnIoCanvas.css';
@@ -17,9 +18,10 @@ interface Props {
   onReviewClick?: () => void;
   highlightedNodeId?: string | null;
   highlightColor?: string;
+  onElementSelected?: (element: SelectedElementInfo | null) => void;
 }
 
-export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, onXmlChange, onReviewClick, highlightedNodeId, highlightColor = '#ff6b6b' }) => {
+export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, onXmlChange, onReviewClick, highlightedNodeId, highlightColor = '#ff6b6b', onElementSelected }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -53,6 +55,28 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, o
         if (isMounted && saved.xml) {
           lastEmittedRef.current = saved.xml;
           setXmlString(saved.xml);
+        }
+      });
+
+      eventBus?.on('selection.changed', (e: any) => {
+        if (!isMounted) return;
+        const selection = e?.newSelection;
+        if (selection && selection.length > 0) {
+          const el = selection[0];
+          const incoming = (el.incoming || []).map((f: any) => f.source?.businessObject?.name || f.source?.id || f.id);
+          const outgoing = (el.outgoing || []).map((f: any) => f.target?.businessObject?.name || f.target?.id || f.id);
+          const info: SelectedElementInfo = {
+            id: el.id,
+            name: el.businessObject?.name || el.id,
+            type: (el.type || 'task').replace(/^bpmn:/, ''),
+            incoming,
+            outgoing,
+            x: Math.round(el.x || 0),
+            y: Math.round(el.y || 0)
+          };
+          onElementSelected?.(info);
+        } else {
+          onElementSelected?.(null);
         }
       });
     };
