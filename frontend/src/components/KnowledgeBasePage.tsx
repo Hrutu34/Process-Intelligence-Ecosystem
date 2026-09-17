@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { knowledgeService } from '../services/knowledgeService';
+import { ClockIcon } from '../services/icons';
 import './KnowledgeBasePage.css';
 
 type KbTab = 'actors' | 'activities' | 'decisions';
@@ -52,7 +53,7 @@ export const KnowledgeBasePage: React.FC<Props> = () => {
         </div>
 
         <div className="kb-stat-item">
-          <span className="kb-stat-icon">⏱️</span>
+          <div className="kb-stat-icon"><ClockIcon /></div>
           <div>
             <div className="kb-stat-number">{stats.eventsCount}</div>
             <div className="kb-stat-label">Events & Triggers</div>

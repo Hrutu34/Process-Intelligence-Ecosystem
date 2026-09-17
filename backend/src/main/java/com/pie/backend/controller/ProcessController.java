@@ -2,6 +2,7 @@ package com.pie.backend.controller;
 
 import com.pie.backend.service.BpmnXmlParser;
 import com.pie.backend.service.DocumentIngestionService;
+import com.pie.backend.service.AgentLogger;
 import com.pie.backend.service.AiProcessQualityService;
 import com.pie.backend.service.BpmnDomainModelMapper;
 import com.pie.backend.service.BpmnXmlGenerationService;
@@ -147,9 +148,12 @@ public class ProcessController {
                         return draftXml;
                     }
                 );
-                // Note: FallbackMockPipeline logs success/error on fallback, but we should log success for the outer HTTP call if it didn't throw
-                agentLogger.logSuccess("BPMN_MODELLING", System.currentTimeMillis() - start);
-                return ResponseEntity.ok((String) result);
+                // Note: FallbackMockPipeline logs the fallback trigger; report the outer
+                // HTTP call honestly so canned BPMN is never recorded as SUCCESS.
+                String bpmnXml = (String) result;
+                boolean usedFallback = bpmnXml != null && bpmnXml.contains("FALLBACK_USED:");
+                agentLogger.logCompletion("BPMN_MODELLING", System.currentTimeMillis() - start, usedFallback);
+                return ResponseEntity.ok(bpmnXml);
             }
 
             // Generate draft
@@ -205,7 +209,8 @@ public class ProcessController {
                         return report;
                     }
                 );
-                agentLogger.logSuccess("PROCESS_INTELLIGENCE", System.currentTimeMillis() - start);
+                agentLogger.logCompletion("PROCESS_INTELLIGENCE", System.currentTimeMillis() - start,
+                        AgentLogger.isFallbackResult(result));
                 return ResponseEntity.ok(result);
             }
 
@@ -244,7 +249,8 @@ public class ProcessController {
                     com.pie.shared.dto.ReviewReportDTO.class,
                     () -> aiProcessReviewService.generateSummary(payload.content())
                 );
-                agentLogger.logSuccess("PROCESS_REVIEW", System.currentTimeMillis() - start);
+                agentLogger.logCompletion("PROCESS_REVIEW", System.currentTimeMillis() - start,
+                        AgentLogger.isFallbackResult(result));
                 return ResponseEntity.ok(result);
             }
 

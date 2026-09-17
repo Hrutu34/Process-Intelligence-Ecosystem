@@ -39,3 +39,10 @@ Output your response as a JSON object with the following structure:
   ]
 }
 
+Output rules (strict):
+- Respond with the raw JSON object ONLY. No markdown code fences, no commentary before or after.
+- Every property name and every string value must be wrapped in double quotes.
+- "sequence" must be a plain integer with no quotes.
+- Do not add trailing commas.
+- Escape any double quote appearing inside a string value as \".
+

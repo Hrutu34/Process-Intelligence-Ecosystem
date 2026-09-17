@@ -16,6 +16,7 @@ import TextToDiagramGenAnim from "./components/TextToDiagramGenAnim";
 import DiagramToSummaryGenAnim from "./components/DiagramToSummaryGenAnim";
 import { historyStore, type HistoryEntry } from "./services/historyStore";
 import { trackerStore, useTrackerStore } from "./services/trackerStore";
+import { SunIcon, MoonIcon, StarIcon } from "./services/icons";
 import vwgdsLogo from "./assets/vwgds-logo.png";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import { useCallback, useEffect, useState } from "react";
@@ -243,9 +244,9 @@ function App() {
                 History
                 {historyEntries.length > 0 && <span className="history-badge">{historyEntries.length}</span>}
               </button>
-              <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle Theme">
-                {theme === "dark" ? "☀️" : "🌙"}
-              </button>
+               <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle Theme">
+                 {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+               </button>
               <span className="vwgds-logo-frame" aria-label="Volkswagen Group Digital Solutions">
                 <img src={vwgdsLogo} alt="VWGDS" className="vwgds-logo-img" />
               </span>
@@ -528,7 +529,7 @@ function App() {
                     <div className="statement-top">
                       <span>03</span>
                       <span>WHY PIE?</span>
-                      <span>✦</span>
+                      <span className="statement-star"><StarIcon /></span>
                     </div>
                     <h2>Your business already has the knowledge.<span> It's just trapped in documents.</span></h2>
                     <div className="statement-bottom">

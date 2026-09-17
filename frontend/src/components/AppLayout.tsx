@@ -1,5 +1,6 @@
 import React from 'react';
 import type { UserSession } from '../services/types';
+import { SettingsIcon, PieChartIcon, ZapIcon, DocumentIcon, BrainIcon, SearchIcon, UserIcon } from '../services/icons';
 import './AppLayout.css';
 
 export type AppPage = 'dashboard' | 'processes' | 'documents' | 'knowledge' | 'settings';
@@ -25,13 +26,18 @@ export const AppLayout: React.FC<Props> = ({
     <div className="layout-shell">
       {/* Left Navigation Sidebar */}
       <aside className="layout-sidebar">
-        <div className="sidebar-brand" onClick={() => onNavigate('dashboard')}>
+        <button
+          type="button"
+          className="sidebar-brand"
+          onClick={() => onNavigate('dashboard')}
+          aria-label="Go to dashboard"
+        >
           <div className="sidebar-logo-mark">π</div>
           <div>
             <div className="sidebar-brand-title">P.I.E. Workspace</div>
             <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>v0.2 HACKATHON</span>
           </div>
-        </div>
+        </button>
 
         <nav className="sidebar-nav">
           <button
@@ -39,7 +45,7 @@ export const AppLayout: React.FC<Props> = ({
             className={`nav-item ${currentPage === 'dashboard' ? 'active' : ''}`}
             onClick={() => onNavigate('dashboard')}
           >
-            <span className="nav-icon">📊</span>
+            <div className="nav-icon"><PieChartIcon /></div>
             <span>Dashboard</span>
           </button>
 
@@ -48,7 +54,7 @@ export const AppLayout: React.FC<Props> = ({
             className={`nav-item ${currentPage === 'processes' ? 'active' : ''}`}
             onClick={() => onNavigate('processes')}
           >
-            <span className="nav-icon">⚡</span>
+            <div className="nav-icon"><ZapIcon /></div>
             <span>Processes</span>
           </button>
 
@@ -57,7 +63,7 @@ export const AppLayout: React.FC<Props> = ({
             className={`nav-item ${currentPage === 'documents' ? 'active' : ''}`}
             onClick={() => onNavigate('documents')}
           >
-            <span className="nav-icon">📄</span>
+            <div className="nav-icon"><DocumentIcon /></div>
             <span>Documents</span>
           </button>
 
@@ -66,7 +72,7 @@ export const AppLayout: React.FC<Props> = ({
             className={`nav-item ${currentPage === 'knowledge' ? 'active' : ''}`}
             onClick={() => onNavigate('knowledge')}
           >
-            <span className="nav-icon">🧠</span>
+            <div className="nav-icon"><BrainIcon /></div>
             <span>Knowledge Base</span>
           </button>
 
@@ -84,14 +90,14 @@ export const AppLayout: React.FC<Props> = ({
 
           <div className="sidebar-divider" />
 
-          <button
-            type="button"
-            className={`nav-item ${currentPage === 'settings' ? 'active' : ''}`}
-            onClick={() => onNavigate('settings')}
-          >
-            <span className="nav-icon">⚙️</span>
-            <span>Settings</span>
-          </button>
+           <button
+             type="button"
+             className={`nav-item ${currentPage === 'settings' ? 'active' : ''}`}
+             onClick={() => onNavigate('settings')}
+           >
+             <div className="nav-icon"><SettingsIcon /></div>
+             <span>Settings</span>
+           </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -109,34 +115,34 @@ export const AppLayout: React.FC<Props> = ({
       {/* Main Content Area */}
       <div className="layout-main-content">
         {/* Top Header */}
-        <header className="layout-top-bar">
-          <div className="top-bar-search">
-            <span>🔍</span>
-            <input type="text" placeholder="Search processes, documents, actors..." />
-          </div>
+         <header className="layout-top-bar">
+           <div className="top-bar-search">
+             <div className="search-icon"><SearchIcon /></div>
+             <input type="text" placeholder="Search processes, documents, actors..." />
+           </div>
 
-          <div className="top-bar-actions">
-            <div className="status-pill">
-              <span className="status-dot" />
-              BACKEND CONNECTED
-            </div>
+           <div className="top-bar-actions">
+             <div className="status-pill">
+               <span className="status-dot" />
+               BACKEND CONNECTED
+             </div>
 
-            {user && (
-              <div className="user-profile-badge">
-                <span className="user-avatar">{user.avatarUrl || '👤'}</span>
-                <span className="user-name">{user.name}</span>
-                <button
-                  type="button"
-                  style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 11, cursor: 'pointer', marginLeft: 6 }}
-                  onClick={onLogout}
-                  title="Sign out"
-                >
-                  (Sign Out)
-                </button>
-              </div>
-            )}
-          </div>
-        </header>
+             {user && (
+               <div className="user-profile-badge">
+                 <div className="user-avatar"><UserIcon /></div>
+                 <span className="user-name">{user.name}</span>
+                 <button
+                   type="button"
+                   style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 11, cursor: 'pointer', marginLeft: 6 }}
+                   onClick={onLogout}
+                   title="Sign out"
+                 >
+                   (Sign Out)
+                 </button>
+               </div>
+             )}
+           </div>
+         </header>
 
         {/* Dynamic Page Content */}
         <main className="page-body-container">{children}</main>

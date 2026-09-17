@@ -28,6 +28,18 @@
 
 .kb-stat-icon {
   font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--accent-a);
+}
+
+.kb-stat-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
 }
 
 .kb-stat-number {

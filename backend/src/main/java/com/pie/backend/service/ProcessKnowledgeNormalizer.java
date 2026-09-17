@@ -116,7 +116,55 @@ public class ProcessKnowledgeNormalizer {
         while (!openDelimiters.isEmpty()) {
             json += openDelimiters.pop() == '[' ? "]" : "}";
         }
-        return json;
+        return stripTrailingCommas(json);
+    }
+
+    /**
+     * Removes trailing commas before '}' or ']' (e.g. {"a":[1,2,],}) which LLMs emit
+     * frequently and Jackson rejects. String-aware so commas inside values are preserved.
+     */
+    private String stripTrailingCommas(String json) {
+        StringBuilder out = new StringBuilder(json.length());
+        boolean inString = false;
+        boolean escaped = false;
+
+        for (int i = 0; i < json.length(); i++) {
+            char current = json.charAt(i);
+
+            if (inString) {
+                out.append(current);
+                if (escaped) {
+                    escaped = false;
+                } else if (current == '\\') {
+                    escaped = true;
+                } else if (current == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (current == '"') {
+                inString = true;
+                out.append(current);
+                continue;
+            }
+
+            if (current == ',') {
+                // Look ahead past whitespace: if the next structural char closes a
+                // container, this comma is trailing and must be dropped.
+                int j = i + 1;
+                while (j < json.length() && Character.isWhitespace(json.charAt(j))) {
+                    j++;
+                }
+                if (j < json.length() && (json.charAt(j) == '}' || json.charAt(j) == ']')) {
+                    continue;
+                }
+            }
+
+            out.append(current);
+        }
+
+        return out.toString();
     }
 
     private boolean matches(char opening, char closing) {
@@ -176,20 +224,34 @@ public class ProcessKnowledgeNormalizer {
             risks.addAll(extractJsonArrayStringsRobust(rawText, "risks"));
             
             if (!activities.isEmpty() || !actors.isEmpty() || !systems.isEmpty()) {
-                return new ProcessKnowledgeDTO(
-                        cleanAndFilter(activities, true),
-                        cleanAndFilter(actors, true),
-                        List.of(),
-                        cleanAndFilter(systems, true),
-                        cleanAndFilter(events, false),
-                        cleanAndFilter(gateways, false),
-                        List.of(),
-                        List.of(),
-                        cleanAndFilter(businessRules, false),
-                        cleanAndFilter(risks, false),
-                        List.of(),
-                        List.of()
-                );
+                List<String> earlyActivities = cleanAndFilter(activities, true);
+                List<String> earlyEvents = cleanAndFilter(events, false);
+
+                // A graph needs at least one activity or event. Mirror the default-event
+                // behaviour of the line-based parser below.
+                if (!earlyActivities.isEmpty() && earlyEvents.isEmpty()) {
+                    earlyEvents = List.of("Start Event", "End Event");
+                }
+
+                // If regex extraction only found actors/systems, the result is not a usable
+                // process graph. Fall through to the line-based parser instead of returning
+                // knowledge that is guaranteed to fail downstream validation.
+                if (!earlyActivities.isEmpty() || !earlyEvents.isEmpty()) {
+                    return new ProcessKnowledgeDTO(
+                            earlyActivities,
+                            cleanAndFilter(actors, true),
+                            List.of(),
+                            cleanAndFilter(systems, true),
+                            earlyEvents,
+                            cleanAndFilter(gateways, false),
+                            List.of(),
+                            List.of(),
+                            cleanAndFilter(businessRules, false),
+                            cleanAndFilter(risks, false),
+                            List.of(),
+                            List.of()
+                    );
+                }
             }
         }
 
@@ -261,13 +323,17 @@ public class ProcessKnowledgeNormalizer {
         List<String> cleanActivities = cleanAndFilter(activities, true);
         List<String> cleanActors = cleanAndFilter(actors, true);
 
-        if (cleanActivities.isEmpty() && cleanActors.isEmpty() && cleanAndFilter(systems, true).isEmpty()) {
-            throw new IllegalArgumentException("No valid process knowledge could be extracted from input: " + rawText);
-        }
-
         if (events.isEmpty() && !cleanActivities.isEmpty()) {
             events.add("Start Event");
             events.add("End Event");
+        }
+
+        List<String> cleanEvents = cleanAndFilter(events, false);
+
+        // Fail loudly here rather than returning knowledge that cannot form a graph.
+        // Downstream ProcessGraphValidator requires at least one activity or event.
+        if (cleanActivities.isEmpty() && cleanEvents.isEmpty()) {
+            throw new IllegalArgumentException("No valid process knowledge could be extracted from input: " + rawText);
         }
 
         return new ProcessKnowledgeDTO(
@@ -275,7 +341,7 @@ public class ProcessKnowledgeNormalizer {
                 cleanActors,
                 List.of(),
                 cleanAndFilter(systems, true),
-                cleanAndFilter(events, false),
+                cleanEvents,
                 cleanAndFilter(gateways, false),
                 List.of(),
                 List.of(),
@@ -286,20 +352,146 @@ public class ProcessKnowledgeNormalizer {
         );
     }
 
+    /**
+     * Locates the array literal following {@code "key":} in the raw text and returns
+     * every top-level string value inside it.
+     *
+     * <p>Both operations are performed with a string- and bracket-aware scanner rather
+     * than a regex, so values containing embedded brackets (e.g. {@code "Submit request
+     * [USER_TASK]"}) or nested arrays no longer truncate the match.
+     */
     private List<String> extractJsonArrayStringsRobust(String text, String key) {
         List<String> results = new ArrayList<>();
-        java.util.regex.Matcher mArray = java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*\\[(.*?)\\]", java.util.regex.Pattern.DOTALL).matcher(text);
-        if (mArray.find()) {
-            String arrayContent = mArray.group(1);
-            java.util.regex.Matcher mStrings = java.util.regex.Pattern.compile("\"([^\"]+)\"").matcher(arrayContent);
-            while (mStrings.find()) {
-                String val = mStrings.group(1).trim();
-                if (!val.isBlank() && !val.equals(key)) {
-                    results.add(val);
+
+        int keyStart = findKeyOccurrence(text, key);
+        if (keyStart < 0) {
+            return results;
+        }
+
+        int arrayStart = text.indexOf('[', keyStart);
+        if (arrayStart < 0) {
+            return results;
+        }
+
+        int arrayEnd = findMatchingBracket(text, arrayStart);
+        if (arrayEnd < 0) {
+            return results;
+        }
+
+        String arrayContent = text.substring(arrayStart + 1, arrayEnd);
+        collectTopLevelStrings(arrayContent, key, results);
+        return results;
+    }
+
+    /**
+     * Finds {@code "key"} in the text but only when it is used as a property name,
+     * i.e. immediately followed by a colon (with optional whitespace).
+     */
+    private int findKeyOccurrence(String text, String key) {
+        String quoted = "\"" + key + "\"";
+        int from = 0;
+        while (true) {
+            int idx = text.indexOf(quoted, from);
+            if (idx < 0) {
+                return -1;
+            }
+            int after = idx + quoted.length();
+            while (after < text.length() && Character.isWhitespace(text.charAt(after))) {
+                after++;
+            }
+            if (after < text.length() && text.charAt(after) == ':') {
+                return idx;
+            }
+            from = idx + 1;
+        }
+    }
+
+    /**
+     * Given the index of an opening bracket, returns the index of its matching closer
+     * while respecting string literals and nested brackets/braces, or -1 if unbalanced.
+     */
+    private int findMatchingBracket(String text, int openIdx) {
+        char open = text.charAt(openIdx);
+        char close = open == '[' ? ']' : '}';
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+
+        for (int i = openIdx; i < text.length(); i++) {
+            char c = text.charAt(i);
+
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (c == '\\') {
+                    escaped = true;
+                } else if (c == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (c == '"') {
+                inString = true;
+            } else if (c == open) {
+                depth++;
+            } else if (c == close) {
+                depth--;
+                if (depth == 0) {
+                    return i;
                 }
             }
         }
-        return results;
+        return -1;
+    }
+
+    /**
+     * Walks the array body and collects each top-level double-quoted string. Values
+     * inside nested objects/arrays are ignored so we do not accidentally slurp keys
+     * or fragments out of malformed sub-structures.
+     */
+    private void collectTopLevelStrings(String arrayContent, String key, List<String> out) {
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+        StringBuilder current = null;
+
+        for (int i = 0; i < arrayContent.length(); i++) {
+            char c = arrayContent.charAt(i);
+
+            if (inString) {
+                if (escaped) {
+                    current.append(c);
+                    escaped = false;
+                } else if (c == '\\') {
+                    escaped = true;
+                    current.append(c);
+                } else if (c == '"') {
+                    inString = false;
+                    if (depth == 0) {
+                        String val = current.toString().trim();
+                        if (!val.isBlank() && !val.equals(key)) {
+                            out.add(val);
+                        }
+                    }
+                    current = null;
+                } else {
+                    current.append(c);
+                }
+                continue;
+            }
+
+            if (c == '"') {
+                inString = true;
+                current = new StringBuilder();
+            } else if (c == '{' || c == '[') {
+                depth++;
+            } else if (c == '}' || c == ']') {
+                if (depth > 0) {
+                    depth--;
+                }
+            }
+        }
     }
 
     private List<String> cleanAndFilter(List<String> items, boolean deduplicate) {

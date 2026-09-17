@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ProcessEntity, UserSession } from '../services/types';
+import { DocumentIcon, PenIcon, BrainIcon, CommandIcon } from '../services/icons';
 import './DashboardPage.css';
 
 interface Props {
@@ -151,13 +152,13 @@ export const DashboardPage: React.FC<Props> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div className="panel-card">
             <div className="panel-card-header">
-              <h3>⚡ Quick Actions</h3>
+              <h3>Quick Actions</h3>
             </div>
 
             <div className="quick-actions-grid">
               <div className="quick-action-item" onClick={onOpenUploadModal}>
                 <div className="quick-action-left">
-                  <span className="quick-action-icon">📄</span>
+                  <div className="quick-action-icon"><DocumentIcon /></div>
                   <div>
                     <div className="quick-action-title">Upload SOP Document</div>
                     <div className="quick-action-desc">Ingest PDF, Word, or TXT</div>
@@ -168,7 +169,7 @@ export const DashboardPage: React.FC<Props> = ({
 
               <div className="quick-action-item" onClick={onOpenUploadModal}>
                 <div className="quick-action-left">
-                  <span className="quick-action-icon">✍️</span>
+                  <div className="quick-action-icon"><PenIcon /></div>
                   <div>
                     <div className="quick-action-title">Create Process from Free Text</div>
                     <div className="quick-action-desc">Instant natural language input</div>
@@ -179,7 +180,7 @@ export const DashboardPage: React.FC<Props> = ({
 
               <div className="quick-action-item" onClick={onNavigateToKnowledge}>
                 <div className="quick-action-left">
-                  <span className="quick-action-icon">🧠</span>
+                  <div className="quick-action-icon"><BrainIcon /></div>
                   <div>
                     <div className="quick-action-title">Explore Knowledge Base</div>
                     <div className="quick-action-desc">Cross-process entity matrix</div>
@@ -190,7 +191,7 @@ export const DashboardPage: React.FC<Props> = ({
 
               <div className="quick-action-item" onClick={() => onOpenProcess('proc_travel_request')}>
                 <div className="quick-action-left">
-                  <span className="quick-action-icon">⌘</span>
+                  <div className="quick-action-icon"><CommandIcon /></div>
                   <div>
                     <div className="quick-action-title">Open Travel Request Demo</div>
                     <div className="quick-action-desc">Primary hackathon demo process</div>

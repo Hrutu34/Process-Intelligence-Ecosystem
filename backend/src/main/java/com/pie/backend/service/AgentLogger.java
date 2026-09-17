@@ -41,6 +41,25 @@ public class AgentLogger {
     public void logSuccess(String stage, long durationMs) {
         logTelemetry(stage, "SUCCESS", durationMs, false, null);
     }
+
+    /**
+     * Records completion of a stage that was served by mock/fallback data rather than
+     * a real agent result, so SUCCESS is never reported for canned output.
+     */
+    public void logCompletion(String stage, long durationMs, boolean fallbackUsed) {
+        if (fallbackUsed) {
+            logTelemetry(stage, "COMPLETED_WITH_FALLBACK", durationMs, true, "FALLBACK_DATA");
+        } else {
+            logTelemetry(stage, "SUCCESS", durationMs, false, null);
+        }
+    }
+
+    /**
+     * True when a FallbackMockPipeline result carries the fallback marker.
+     */
+    public static boolean isFallbackResult(Object result) {
+        return result instanceof Map<?, ?> map && Boolean.TRUE.equals(map.get("fallbackUsed"));
+    }
     
     public void logFallbackTriggered(String stage, String reason) {
         logTelemetry(stage, "FALLBACK_TRIGGERED", 0, true, reason);

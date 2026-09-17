@@ -154,6 +154,12 @@ a {
 }
 .theme-toggle:hover{ border-color:var(--accent-a); box-shadow:0 0 12px rgba(34,197,94,0.3); }
 
+.theme-toggle svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+}
+
 /* =====================================================
    GLOBAL P.I.E. ELECTRIC BUTTONS
    ===================================================== */
@@ -763,6 +769,19 @@ a {
   color: #081300;
   font-weight: bold;
   box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.statement-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-a);
+}
+
+.statement-star svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
 }
 
 /* =====================================================

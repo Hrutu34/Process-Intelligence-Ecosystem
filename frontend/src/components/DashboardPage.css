@@ -220,6 +220,21 @@
 
 .quick-action-icon {
   font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--accent-a);
+  flex-shrink: 0;
+}
+
+.quick-action-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
 }
 
 .quick-action-title {
