@@ -6,6 +6,7 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import type { ProcessGraphDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import type { ProcessKnowledgeDTO } from '../../../backend/src/main/java/com/pie/shared/types/dto';
 import { trackerStore } from '../services/trackerStore';
+import { autoLayoutBpmn } from '../services/bpmnLayout';
 import './BpmnIoCanvas.css';
 
 interface Props {
@@ -57,9 +58,12 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, o
     };
 
     const importReadyXml = async (xml: string) => {
-      lastEmittedRef.current = xml;
-      setXmlString(xml);
-      await modeler.importXML(xml);
+      // Normalize DI via bpmn-auto-layout (falls back to original on failure /
+      // for collaboration diagrams / when disabled via VITE_BPMN_AUTOLAYOUT).
+      const laidOut = await autoLayoutBpmn(xml);
+      lastEmittedRef.current = laidOut;
+      setXmlString(laidOut);
+      await modeler.importXML(laidOut);
       wireChangeListener();
       modeler.get('canvas').zoom('fit-viewport', 'auto');
     };
@@ -116,16 +120,19 @@ export const BpmnIoCanvas: React.FC<Props> = ({ graph, knowledge, externalXml, o
     if (!externalXml || !viewerRef.current) return;
     if (externalXml === lastEmittedRef.current) return;
     if (externalXml === xmlString) return;
-    viewerRef.current
-      .importXML(externalXml)
-      .then(() => {
-        lastEmittedRef.current = externalXml;
-        setXmlString(externalXml);
-        try {
-          viewerRef.current.get('canvas').zoom('fit-viewport', 'auto');
-        } catch { /* ignore */ }
-      })
-      .catch((e: any) => setRenderError(e.message || 'External BPMN import failed'));
+    (async () => {
+      const laidOut = await autoLayoutBpmn(externalXml);
+      viewerRef.current
+        .importXML(laidOut)
+        .then(() => {
+          lastEmittedRef.current = laidOut;
+          setXmlString(laidOut);
+          try {
+            viewerRef.current.get('canvas').zoom('fit-viewport', 'auto');
+          } catch { /* ignore */ }
+        })
+        .catch((e: any) => setRenderError(e.message || 'External BPMN import failed'));
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalXml]);
 

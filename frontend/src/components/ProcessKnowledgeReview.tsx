@@ -7,6 +7,12 @@ interface Props {
   documents?: ProcessDocumentDTO[];
   onProceedToIntelligence?: () => void;
   onReset: () => void;
+  /**
+   * When provided, an "Edit" toggle is shown and users can add / rename / remove
+   * items in each entity card. Emitted whenever the user commits a change so the
+   * parent can persist the corrected DTO before downstream generation runs.
+   */
+  onKnowledgeChange?: (next: ProcessKnowledgeDTO) => void;
 }
 
 type KnowledgeKey = keyof ProcessKnowledgeDTO & string;
@@ -37,8 +43,44 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
   documents = [],
   onProceedToIntelligence,
   onReset,
+  onKnowledgeChange,
 }) => {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [editMode, setEditMode] = useState(false);
+  const [newItemDrafts, setNewItemDrafts] = useState<Record<string, string>>({});
+
+  const canEdit = typeof onKnowledgeChange === 'function';
+
+  const emit = (key: KnowledgeKey, nextList: string[]) => {
+    if (!onKnowledgeChange) return;
+    onKnowledgeChange({ ...data, [key]: nextList } as ProcessKnowledgeDTO);
+  };
+
+  const updateItem = (key: KnowledgeKey, idx: number, value: string) => {
+    const list = ((data[key] as string[]) || []).slice();
+    list[idx] = value;
+    emit(key, list);
+  };
+
+  const removeItem = (key: KnowledgeKey, idx: number) => {
+    const list = ((data[key] as string[]) || []).slice();
+    list.splice(idx, 1);
+    emit(key, list);
+  };
+
+  const addItem = (key: KnowledgeKey) => {
+    const draft = (newItemDrafts[key] || '').trim();
+    if (!draft) return;
+    const list = ((data[key] as string[]) || []).slice();
+    // Case-insensitive dedupe.
+    if (list.some((existing) => existing.trim().toLowerCase() === draft.toLowerCase())) {
+      setNewItemDrafts((prev) => ({ ...prev, [key]: '' }));
+      return;
+    }
+    list.push(draft);
+    emit(key, list);
+    setNewItemDrafts((prev) => ({ ...prev, [key]: '' }));
+  };
 
   const toggleSection = (key: string) => {
     setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -108,6 +150,16 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
         <div className="review-controls">
           <button type="button" className="btn-ghost" onClick={() => toggleAll(false)}>Expand All</button>
           <button type="button" className="btn-ghost" onClick={() => toggleAll(true)}>Collapse All</button>
+          {canEdit && (
+            <button
+              type="button"
+              className={editMode ? 'yellow-button' : 'btn-ghost'}
+              onClick={() => setEditMode((v) => !v)}
+              title="Fix AI hallucinations before the diagram is generated"
+            >
+              {editMode ? '✓ Done Editing' : '✎ Edit Entities'}
+            </button>
+          )}
           <button type="button" className="btn-ghost" onClick={onReset}>↺ New Upload</button>
           {onProceedToIntelligence && (
             <button type="button" className="yellow-button" onClick={onProceedToIntelligence}>
@@ -237,15 +289,90 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
 
               {!isCollapsed && (
                 <div className="review-card-body">
-                  {items.length === 0 ? (
+                  {items.length === 0 && !editMode ? (
                     <span className="empty-state">None detected in source material</span>
                   ) : (
                     <ul className="entity-list">
                       {items.map((item: string, idx: number) => (
                         <React.Fragment key={idx}>
-                          {renderItemWithChip(item)}
+                          {editMode && canEdit ? (
+                            <li className="entity-li-flex" style={{ gap: 8, alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                value={item}
+                                onChange={(e) => updateItem(section.key, idx, e.target.value)}
+                                className="entity-edit-input"
+                                style={{
+                                  flex: 1,
+                                  background: 'rgba(4, 18, 45, 0.6)',
+                                  border: '1px solid var(--border)',
+                                  color: 'var(--white)',
+                                  borderRadius: 6,
+                                  padding: '6px 10px',
+                                  fontSize: 13,
+                                  fontFamily: 'inherit',
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeItem(section.key, idx)}
+                                title="Remove"
+                                aria-label={`Remove ${item}`}
+                                style={{
+                                  background: 'transparent',
+                                  border: '1px solid rgba(255,107,129,0.4)',
+                                  color: '#ff6b81',
+                                  borderRadius: 6,
+                                  padding: '4px 10px',
+                                  cursor: 'pointer',
+                                  fontSize: 13,
+                                  lineHeight: 1,
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </li>
+                          ) : (
+                            renderItemWithChip(item)
+                          )}
                         </React.Fragment>
                       ))}
+                      {editMode && canEdit && (
+                        <li className="entity-li-flex" style={{ gap: 8, alignItems: 'center', marginTop: 6 }}>
+                          <input
+                            type="text"
+                            placeholder={`Add to ${section.title.toLowerCase()}...`}
+                            value={newItemDrafts[section.key] || ''}
+                            onChange={(e) =>
+                              setNewItemDrafts((prev) => ({ ...prev, [section.key]: e.target.value }))
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                addItem(section.key);
+                              }
+                            }}
+                            style={{
+                              flex: 1,
+                              background: 'rgba(4, 18, 45, 0.4)',
+                              border: '1px dashed var(--border)',
+                              color: 'var(--white)',
+                              borderRadius: 6,
+                              padding: '6px 10px',
+                              fontSize: 13,
+                              fontFamily: 'inherit',
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => addItem(section.key)}
+                            className="btn-ghost"
+                            style={{ padding: '4px 12px', fontSize: 13 }}
+                          >
+                            + Add
+                          </button>
+                        </li>
+                      )}
                     </ul>
                   )}
                 </div>

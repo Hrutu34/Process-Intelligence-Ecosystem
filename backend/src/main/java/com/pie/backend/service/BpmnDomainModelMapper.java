@@ -9,8 +9,12 @@ import com.pie.shared.dto.ProcessGraphDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class BpmnDomainModelMapper {
@@ -28,10 +32,36 @@ public class BpmnDomainModelMapper {
         List<BpmnProcessModel.Participant> participants = new ArrayList<>();
         List<BpmnProcessModel.SequenceFlow> flows = new ArrayList<>();
 
+        // Pre-index participant (Role/System) node IDs so we can resolve ownership
+        // from association edges when the AI omits metadata.roleRef / systemRef.
+        Set<String> participantIds = new HashSet<>();
+        for (GraphNode node : graph.getNodes()) {
+            if (node.getType() == NodeType.Role || node.getType() == NodeType.System) {
+                participantIds.add(node.getId());
+            }
+        }
+
+        // Fallback ownership derived from association edges: activityId -> participantId
+        Map<String, String> ownershipFromEdges = new HashMap<>();
+        for (GraphEdge edge : graph.getEdges()) {
+            if (edge.getEdgeType() == EdgeType.association) {
+                // Support either direction: participant -> activity  OR  activity -> participant.
+                if (participantIds.contains(edge.getFrom()) && !participantIds.contains(edge.getTo())) {
+                    ownershipFromEdges.putIfAbsent(edge.getTo(), edge.getFrom());
+                } else if (participantIds.contains(edge.getTo()) && !participantIds.contains(edge.getFrom())) {
+                    ownershipFromEdges.putIfAbsent(edge.getFrom(), edge.getTo());
+                }
+            }
+        }
+
         for (GraphNode node : graph.getNodes()) {
             if (node.getType() == NodeType.Activity) {
+                String owner = ownerId(node);
+                if (owner == null) {
+                    owner = ownershipFromEdges.get(node.getId());
+                }
                 tasks.add(new BpmnProcessModel.Task(
-                        node.getId(), node.getLabel(), mapTaskType(node), ownerId(node)));
+                        node.getId(), node.getLabel(), mapTaskType(node), owner));
             } else if (node.getType() == NodeType.Gateway) {
                 gateways.add(new BpmnProcessModel.Gateway(
                         node.getId(), node.getLabel(), mapGatewayType(node)));
@@ -49,10 +79,32 @@ public class BpmnDomainModelMapper {
             }
         }
 
-        List<BpmnProcessModel.Lane> lanes = participants.stream()
-                .map(participant -> new BpmnProcessModel.Lane(participant.id(), participant.name(),
-                        tasks.stream().filter(task -> participant.id().equals(task.ownerId())).map(BpmnProcessModel.Task::id).toList()))
-                .toList();
+        // Build lanes. If any activities remain unassigned but participants exist,
+        // route them into a synthetic "Unassigned" lane so the swimlane pool still
+        // renders every task (avoids silently dropping nodes out of the DI plane).
+        List<BpmnProcessModel.Lane> lanes;
+        if (participants.isEmpty()) {
+            lanes = List.of();
+        } else {
+            List<BpmnProcessModel.Lane> laneList = new ArrayList<>();
+            Set<String> assigned = new HashSet<>();
+            for (BpmnProcessModel.Participant participant : participants) {
+                List<String> ids = tasks.stream()
+                        .filter(task -> participant.id().equals(task.ownerId()))
+                        .map(BpmnProcessModel.Task::id)
+                        .toList();
+                assigned.addAll(ids);
+                laneList.add(new BpmnProcessModel.Lane(participant.id(), participant.name(), ids));
+            }
+            List<String> orphans = tasks.stream()
+                    .map(BpmnProcessModel.Task::id)
+                    .filter(id -> !assigned.contains(id))
+                    .toList();
+            if (!orphans.isEmpty()) {
+                laneList.add(new BpmnProcessModel.Lane("unassigned", "Unassigned", orphans));
+            }
+            lanes = List.copyOf(laneList);
+        }
 
         return new BpmnProcessModel(
                 "Process_" + sanitize(graph.getGraphId()),

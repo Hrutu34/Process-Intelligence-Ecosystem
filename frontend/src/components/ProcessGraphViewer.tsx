@@ -26,6 +26,17 @@ type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
 const processGraphCache = new Map<string, ProcessGraphDTO>();
 const processGraphRequestCache = new Map<string, Promise<ProcessGraphDTO>>();
 
+/**
+ * Invalidate all cached graphs. Call this whenever the upstream
+ * ProcessKnowledgeDTO is edited by the user so the next render of
+ * ProcessGraphViewer re-fetches from the backend instead of showing a
+ * stale graph derived from pre-edit knowledge.
+ */
+export function clearProcessGraphCache(): void {
+  processGraphCache.clear();
+  processGraphRequestCache.clear();
+}
+
 export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proceedLabel = 'PROCEED <span>↗</span>', defaultView = 'visual', onXmlChange, externalXml, highlightedElementId, highlightColor, minimalLayout }) => {
   const knowledgeKey = JSON.stringify(knowledge);
   const [graph, setGraph] = useState<ProcessGraphDTO | null>(

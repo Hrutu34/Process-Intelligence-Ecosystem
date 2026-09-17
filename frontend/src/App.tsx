@@ -2,7 +2,7 @@ import "./App.css";
 import ProcessEntry from "./components/ProcessEntry";
 import { ProcessKnowledgeReview } from "./components/ProcessKnowledgeReview";
 import { ProcessIntelligenceAgent } from "./components/ProcessIntelligenceAgent";
-import { ProcessGraphViewer } from "./components/ProcessGraphViewer";
+import { ProcessGraphViewer, clearProcessGraphCache } from "./components/ProcessGraphViewer";
 import { ProcessReviewAgent } from "./components/ProcessReviewAgent";
 import { AgentLoadingScreen } from "./components/AgentLoadingScreen";
 import { AgentExecutionTracker } from "./components/AgentExecutionTracker";
@@ -299,6 +299,16 @@ function App() {
                     data={extractedData}
                     onProceedToIntelligence={() => setActiveTab("02_INTELLIGENCE")}
                     onReset={handleReset}
+                    onKnowledgeChange={(next) => {
+                      // User edited the extracted entities. Invalidate every
+                      // downstream artifact derived from the previous knowledge
+                      // so the graph and BPMN diagram are regenerated fresh
+                      // from the corrected DTO — no stale cached output leaks
+                      // into Blueberry Pie or Cherry Pie.
+                      clearProcessGraphCache();
+                      setCurrentBpmnXml(null);
+                      setExtractedData(next);
+                    }}
                   />
                 )}
 

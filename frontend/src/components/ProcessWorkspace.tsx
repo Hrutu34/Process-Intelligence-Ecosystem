@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { ProcessEntity, ChatMessage } from '../services/types';
 import { aiReviewService } from '../services/aiReviewService';
-import { ProcessGraphViewer } from './ProcessGraphViewer';
+import { ProcessGraphViewer, clearProcessGraphCache } from './ProcessGraphViewer';
 import { BpmnIoCanvas } from './BpmnIoCanvas';
 import { ProcessKnowledgeReview } from './ProcessKnowledgeReview';
 import { ProcessHistoryModal } from './ProcessHistoryModal';
@@ -323,6 +323,12 @@ export const ProcessWorkspace: React.FC<Props> = ({
             documents={process.knowledge.documents || []} 
             onProceedToIntelligence={() => setActiveTab('validation')}
             onReset={() => {}}
+            onKnowledgeChange={(next) => {
+              // Invalidate any cached graph derived from the previous knowledge
+              // so downstream views regenerate from the corrected DTO.
+              clearProcessGraphCache();
+              onUpdateProcess({ ...process, knowledge: next, lastUpdated: 'Just now' });
+            }}
           />
 
           {/* Detailed Source Traceability Table */}
