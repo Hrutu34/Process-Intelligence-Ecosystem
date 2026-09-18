@@ -3,25 +3,25 @@
    ========================================================================== */
 
 :root {
-  --bg-primary: #090d16;
-  --bg-secondary: #0f172a;
-  --bg-surface: rgba(17, 24, 39, 0.82);
-  --bg-surface-elevated: rgba(30, 41, 59, 0.75);
-  --bg-card: rgba(15, 23, 42, 0.75);
-  --bg-card-hover: rgba(30, 41, 59, 0.9);
+  --bg-primary: #0a120e;
+  --bg-secondary: #0f1a14;
+  --bg-surface: rgba(15, 26, 20, 0.82);
+  --bg-surface-elevated: rgba(26, 51, 38, 0.75);
+  --bg-card: rgba(15, 26, 20, 0.75);
+  --bg-card-hover: rgba(26, 51, 38, 0.9);
   
   --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-focus: rgba(99, 102, 241, 0.6);
-  --border-glow: rgba(99, 102, 241, 0.25);
+  --border-focus: rgba(34, 197, 94, 0.6);
+  --border-glow: rgba(34, 197, 94, 0.25);
   
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-highlight: #e0e7ff;
+  --text-primary: #eafff0;
+  --text-secondary: #9fc2ac;
+  --text-muted: #6f9481;
+  --text-highlight: #d9ffe6;
 
-  --accent-primary: #6366f1;
-  --accent-primary-hover: #4f46e5;
-  --accent-cyan: #06b6d4;
+  --accent-primary: #22c55e;
+  --accent-primary-hover: #15803d;
+  --accent-cyan: #84cc16;
   --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
@@ -30,7 +30,7 @@
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.25);
+  --shadow-glow: 0 0 25px rgba(34, 197, 94, 0.25);
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -47,8 +47,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  background-color: var(--bg-primary, #090d16);
-  color: var(--text-primary, #f8fafc);
+  background-color: var(--bg-primary, #0a120e);
+  color: var(--text-primary, #eafff0);
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
@@ -71,7 +71,7 @@ code, pre, .mono-font {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 26, 20, 0.5);
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(100, 116, 139, 0.4);
@@ -87,15 +87,15 @@ code, pre, .mono-font {
   flex-direction: column;
   height: 100vh;
   width: 100vw;
-  background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-              radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 40%),
+  background: radial-gradient(circle at 10% 20%, rgba(34, 197, 94, 0.08) 0%, transparent 40%),
+              radial-gradient(circle at 90% 80%, rgba(132, 204, 22, 0.06) 0%, transparent 40%),
               var(--bg-primary);
 }
 
 /* Navbar */
 .navbar {
   height: 64px;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 26, 20, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
@@ -120,13 +120,13 @@ code, pre, .mono-font {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
 }
 
 .brand-title {
   font-size: 1.15rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);
+  background: linear-gradient(135deg, #ffffff 30%, #bbf7d0 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: flex;
@@ -138,9 +138,9 @@ code, pre, .mono-font {
   font-size: 0.68rem;
   padding: 2px 7px;
   border-radius: 20px;
-  background: rgba(99, 102, 241, 0.15);
-  color: #c7d2fe;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(34, 197, 94, 0.15);
+  color: #bbf7d0;
+  border: 1px solid rgba(34, 197, 94, 0.3);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -159,7 +159,7 @@ code, pre, .mono-font {
 }
 
 .corpus-select {
-  background: rgba(30, 41, 59, 0.8);
+  background: rgba(26, 51, 38, 0.8);
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -173,8 +173,8 @@ code, pre, .mono-font {
 }
 .corpus-select:hover, .corpus-select:focus {
   border-color: var(--border-focus);
-  background: rgba(30, 41, 59, 1);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+  background: rgba(26, 51, 38, 1);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
 }
 
 .select-caret {
@@ -201,13 +201,13 @@ code, pre, .mono-font {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
   transform: translateY(-1px);
 }
 .btn-primary:active {
@@ -215,7 +215,7 @@ code, pre, .mono-font {
 }
 
 .btn-secondary {
-  background: rgba(30, 41, 59, 0.7);
+  background: rgba(26, 51, 38, 0.7);
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
 }
@@ -225,7 +225,7 @@ code, pre, .mono-font {
 }
 
 .btn-scenario-toggle {
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(26, 51, 38, 0.6);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   display: flex;
@@ -241,9 +241,9 @@ code, pre, .mono-font {
   transition: var(--transition-fast);
 }
 .btn-scenario-option.active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(6, 182, 212, 0.25) 100%);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(132, 204, 22, 0.25) 100%);
   color: #ffffff;
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  border: 1px solid rgba(34, 197, 94, 0.4);
 }
 
 /* Main Workspace */
@@ -254,7 +254,7 @@ code, pre, .mono-font {
   width: 100%;
   position: relative;
   overflow: hidden;
-  background: #090d16;
+  background: #0a120e;
   border-radius: 0 0 14px 14px;
 }
 
@@ -265,13 +265,13 @@ code, pre, .mono-font {
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  background: #090d16;
+  background: #0a120e;
   height: 100%;
 }
 
 .bpmn-header-bar {
   height: 46px;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 26, 20, 0.75);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -295,9 +295,9 @@ code, pre, .mono-font {
   font-size: 0.72rem;
   padding: 2px 8px;
   border-radius: 12px;
-  background: rgba(6, 182, 212, 0.12);
-  color: #67e8f9;
-  border: 1px solid rgba(6, 182, 212, 0.25);
+  background: rgba(132, 204, 22, 0.12);
+  color: #d9f99d;
+  border: 1px solid rgba(132, 204, 22, 0.25);
   font-weight: 600;
 }
 
@@ -307,9 +307,9 @@ code, pre, .mono-font {
   min-height: 530px;
   position: relative;
   overflow: hidden;
-  background: radial-gradient(#1e293b 1.2px, transparent 1.2px);
+  background: radial-gradient(#16301f 1.2px, transparent 1.2px);
   background-size: 24px 24px;
-  background-color: #0b0f19;
+  background-color: #0a120e;
 }
 
 /* BPMN-JS Diagram Overrides for Dark Luxury Theme */
@@ -321,8 +321,8 @@ code, pre, .mono-font {
 .djs-element[data-element-id*="Task"] .djs-visual rect,
 .djs-element[data-element-id*="Activity"] .djs-visual rect,
 .djs-shape.djs-element .djs-visual rect {
-  fill: #162032 !important;
-  stroke: #4f46e5 !important;
+  fill: #12241a !important;
+  stroke: #15803d !important;
   stroke-width: 2px !important;
   rx: 8px !important;
   ry: 8px !important;
@@ -331,7 +331,7 @@ code, pre, .mono-font {
 }
 
 .djs-shape.djs-element:hover .djs-visual rect {
-  stroke: #38bdf8 !important;
+  stroke: #a3e635 !important;
   stroke-width: 2.5px !important;
   cursor: pointer;
 }
@@ -375,7 +375,7 @@ code, pre, .mono-font {
 .djs-element .djs-visual text tspan,
 .djs-label text,
 .djs-label tspan {
-  fill: #f8fafc !important;
+  fill: #eafff0 !important;
   font-family: 'Outfit', 'Inter', -apple-system, sans-serif !important;
   font-weight: 600 !important;
   font-size: 13px !important;
@@ -384,13 +384,13 @@ code, pre, .mono-font {
 /* Sequence Flows & Connectors */
 .djs-element .djs-visual path,
 .djs-connection .djs-visual path {
-  stroke: #94a3b8 !important;
+  stroke: #9fc2ac !important;
   stroke-width: 2px !important;
 }
 
 .djs-connection marker path {
-  fill: #94a3b8 !important;
-  stroke: #94a3b8 !important;
+  fill: #9fc2ac !important;
+  stroke: #9fc2ac !important;
 }
 
 .djs-element.highlight-bottleneck .djs-visual rect {
@@ -402,7 +402,7 @@ code, pre, .mono-font {
 /* Active Node Pulsing in Live Token Simulation */
 .djs-element.node-active-simulating .djs-visual rect,
 .djs-element.node-active-simulating .djs-visual circle {
-  stroke: #38bdf8 !important;
+  stroke: #a3e635 !important;
   stroke-width: 4px !important;
   fill: rgba(56, 189, 248, 0.25) !important;
   filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.9)) !important;
@@ -430,11 +430,11 @@ code, pre, .mono-font {
   stroke-width: 2.5px !important;
   stroke-dasharray: 8 6 !important;
   animation: flowDashForward 0.75s linear infinite !important;
-  filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.5)) !important;
+  filter: drop-shadow(0 0 4px rgba(132, 204, 22, 0.5)) !important;
 }
 
 .djs-connection.flow-speed-medium .djs-visual path {
-  stroke: #818cf8 !important;
+  stroke: #4ade80 !important;
   stroke-width: 2.5px !important;
   stroke-dasharray: 8 6 !important;
   animation: flowDashForward 1.8s linear infinite !important;
@@ -457,7 +457,7 @@ code, pre, .mono-font {
 }
 
 .djs-connection.flow-active-highlight .djs-visual path {
-  stroke: #38bdf8 !important;
+  stroke: #a3e635 !important;
   stroke-width: 4px !important;
   filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.9)) !important;
 }
@@ -506,7 +506,7 @@ code, pre, .mono-font {
   position: absolute;
   bottom: 20px;
   left: 20px;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 26, 20, 0.85);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -535,9 +535,9 @@ code, pre, .mono-font {
   color: var(--text-primary);
 }
 .toolbar-btn.active {
-  background: rgba(99, 102, 241, 0.25);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
 }
 
 .toolbar-divider {
@@ -602,7 +602,7 @@ code, pre, .mono-font {
   align-items: center;
 }
 .form-input, .form-select {
-  background: rgba(30, 41, 59, 0.7);
+  background: rgba(26, 51, 38, 0.7);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 8px 12px;
@@ -613,8 +613,8 @@ code, pre, .mono-font {
 }
 .form-input:focus, .form-select:focus {
   border-color: var(--border-focus);
-  background: rgba(30, 41, 59, 0.95);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: rgba(26, 51, 38, 0.95);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
 }
 
 .slider-container {
@@ -662,7 +662,7 @@ code, pre, .mono-font {
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 26, 20, 0.8);
 }
 
 .analytics-tabs {
@@ -689,8 +689,8 @@ code, pre, .mono-font {
 }
 .analytics-tab-btn.active {
   color: #ffffff;
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px solid rgba(99, 102, 241, 0.35);
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.35);
 }
 
 .analytics-content {
@@ -705,7 +705,7 @@ code, pre, .mono-font {
   width: 100%;
   min-width: 0;
   height: 330px;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 26, 20, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
   padding: 16px 18px 12px 14px;
@@ -735,7 +735,7 @@ code, pre, .mono-font {
   transition: var(--transition-fast);
 }
 .kpi-card:hover {
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(34, 197, 94, 0.3);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -823,7 +823,7 @@ code, pre, .mono-font {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 26, 20, 0.5);
 }
 
 @keyframes fadeIn {
@@ -837,7 +837,7 @@ code, pre, .mono-font {
 
 /* Recharts Custom Tooltip */
 .custom-recharts-tooltip {
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(15, 26, 20, 0.95);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 10px 14px;

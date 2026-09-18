@@ -101,7 +101,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
       {/* Header */}
       <div className="drawer-header">
         <div className="drawer-title">
-          <Sliders size={18} color="#818cf8" />
+          <Sliders size={18} color="#4ade80" />
           <span>{selectedNode ? 'Entity Parameter Inspector' : 'Global Process Settings'}</span>
         </div>
         <div>
@@ -122,17 +122,17 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
               <div
                 style={{
                   fontSize: '0.7rem',
-                  color: '#94a3b8',
+                  color: '#9fc2ac',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
                 }}
               >
                 Activity Node
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#eafff0', marginTop: '2px' }}>
                 {taskParam.name || selectedNode.id}
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#64748b', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '0.72rem', color: '#6f9481', fontFamily: 'monospace' }}>
                 ID: {selectedNode.id}
               </div>
             </div>
@@ -141,7 +141,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
             <div className="form-group">
               <label className="form-label">
                 <span>Duration Model</span>
-                <Clock size={14} color="#a5b4fc" />
+                <Clock size={14} color="#bbf7d0" />
               </label>
               <select
                 className="form-select"
@@ -229,7 +229,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
                     onChange={(e) => handleTaskChange('stdDev', Number(e.target.value))}
                   />
                 </div>
-                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                <span style={{ fontSize: '0.7rem', color: '#6f9481' }}>
                   💡 ~68% of transactions will finish between{' '}
                   {Math.max(1, taskParam.meanDuration - (taskParam.stdDev || 0))} and{' '}
                   {taskParam.meanDuration + (taskParam.stdDev || 0)} min.
@@ -239,11 +239,11 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
               <div
                 style={{
                   padding: '8px 12px',
-                  background: 'rgba(6, 182, 212, 0.08)',
-                  border: '1px solid rgba(6, 182, 212, 0.22)',
+                  background: 'rgba(132, 204, 22, 0.08)',
+                  border: '1px solid rgba(132, 204, 22, 0.22)',
                   borderRadius: '8px',
                   fontSize: '0.74rem',
-                  color: '#67e8f9',
+                  color: '#d9f99d',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
@@ -282,7 +282,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
                   onChange={(e) => handleTaskChange('resourceCapacity', Number(e.target.value))}
                 />
               </div>
-              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.7rem', color: '#6f9481' }}>
                 💡 When demand exceeds capacity, tokens wait in queue causing a bottleneck.
               </span>
             </div>
@@ -371,17 +371,17 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
               <div
                 style={{
                   fontSize: '0.7rem',
-                  color: '#94a3b8',
+                  color: '#9fc2ac',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
                 }}
               >
                 XOR Decision Gateway
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#eafff0', marginTop: '2px' }}>
                 {gwParam.name || selectedNode.id}
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+              <div style={{ fontSize: '0.72rem', color: '#6f9481' }}>
                 Configure branch routing probabilities (must total 100%)
               </div>
             </div>
@@ -432,7 +432,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
                 <div
                   style={{
                     fontSize: '0.7rem',
-                    color: '#94a3b8',
+                    color: '#9fc2ac',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em'
                   }}
@@ -445,9 +445,9 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
                       fontSize: '0.68rem',
                       padding: '2px 8px',
                       borderRadius: '10px',
-                      background: 'rgba(99, 102, 241, 0.18)',
-                      color: '#c7d2fe',
-                      border: '1px solid rgba(99, 102, 241, 0.3)',
+                      background: 'rgba(34, 197, 94, 0.18)',
+                      color: '#bbf7d0',
+                      border: '1px solid rgba(34, 197, 94, 0.3)',
                       fontWeight: 600,
                       maxWidth: '180px',
                       overflow: 'hidden',
@@ -460,10 +460,10 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#eafff0' }}>
                 Global Process Settings
               </div>
-              <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.74rem', color: '#9fc2ac', marginTop: '2px' }}>
                 Simulate demand volume and arrival rates for{' '}
                 <strong>{globalParam.entityName || 'cases'}</strong>
               </div>
@@ -525,7 +525,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
                   onChange={(e) => handleGlobalChange('arrivalMeanMinutes', Number(e.target.value))}
                 />
               </div>
-              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.7rem', color: '#6f9481' }}>
                 {globalParam.arrivalHelpText ||
                   '💡 Shorter interval means higher arrival volume and increased stress on task resources.'}
               </span>
@@ -558,7 +558,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
                   onChange={(e) => handleGlobalChange('slaThresholdHours', Number(e.target.value))}
                 />
               </div>
-              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.7rem', color: '#6f9481' }}>
                 {globalParam.slaHelpText ||
                   '💡 Cases taking longer than this limit are flagged as SLA breaches.'}
               </span>

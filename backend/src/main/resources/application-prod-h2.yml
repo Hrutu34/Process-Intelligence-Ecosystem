@@ -1,0 +1,41 @@
+# Production-like profile that swaps PostgreSQL for a file-based H2 database
+# and uses VW Group LLMaaS (OpenAI-compatible gpt-4o via Cloud IDP OAuth2) as
+# the chat backend instead of Gemini or a local Ollama model.
+# See AiRoutingConfig -> VwLlmaasChatModel is @Primary for this profile.
+# Requires VW_LLM_CLIENT_ID / VW_LLM_CLIENT_SECRET / VW_LLM_API_KEY (see
+# application.yml's vw.llm.* block and .env).
+spring:
+  datasource:
+    # Deliberately NOT using ${DB_URL}/${DB_USER}/${DB_PASS}: those env vars
+    # are reserved for the Postgres-backed staging/prod profiles and are
+    # unconditionally set in .env for local Postgres use. Reusing them here
+    # would feed a Postgres URL to the H2 driver and crash on startup.
+    url: ${PROD_H2_DB_URL:jdbc:h2:file:./storage/pie_db;AUTO_SERVER=TRUE}
+    username: ${PROD_H2_DB_USER:sa}
+    password: ${PROD_H2_DB_PASS:}
+    driverClassName: org.h2.Driver
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.H2Dialect
+  ai:
+    ollama:
+      chat:
+        enabled: false
+    openai:
+      # Not used for chat: VW LLMaaS is called directly via VwLlmaasService/WebClient
+      # (custom OAuth2 + X-LLM-API-CLIENT-ID header), not via Spring AI's OpenAI client.
+      # Dummy value only satisfies Spring AI's client bean construction at startup.
+      api-key: dummy_key_to_satisfy_client_init
+      chat:
+        enabled: false
+    google:
+      genai:
+        # Not the active model in this profile; dummy value only satisfies
+        # Spring AI's client bean construction at startup.
+        api-key: dummy_key_to_satisfy_client_init
+        chat:
+          enabled: false

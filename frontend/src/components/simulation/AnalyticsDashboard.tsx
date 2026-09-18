@@ -55,10 +55,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       <div className={`analytics-panel ${isMinimized ? 'minimized' : ''}`}>
         <div className="analytics-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem', fontWeight: 600 }}>
-            <Clock size={16} color="#818cf8" />
+            <Clock size={16} color="#4ade80" />
             <span>Process Simulation &amp; Performance Analytics</span>
           </div>
-          <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+          <span style={{ fontSize: '0.76rem', color: '#6f9481' }}>
             Click &quot;Run Simulation&quot; in the action toolbar to compute performance metrics
           </span>
         </div>
@@ -84,7 +84,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             style={{
               fontWeight: 700,
               marginBottom: '6px',
-              color: '#f8fafc',
+              color: '#eafff0',
               borderBottom: '1px solid rgba(255,255,255,0.1)',
               paddingBottom: '4px'
             }}
@@ -95,7 +95,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <span>🔴 Wasted Queue Wait (Delay):</span>
             <strong>{waitTime} min</strong>
           </div>
-          <div style={{ color: '#818cf8', display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ color: '#4ade80', display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
             <span>🟣 Active Working Time:</span>
             <strong>{serviceTime} min</strong>
           </div>
@@ -113,9 +113,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <strong>{totalTime} min</strong>
           </div>
           {activityData && (
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '4px' }}>
+            <div style={{ fontSize: '0.72rem', color: '#9fc2ac', marginTop: '4px' }}>
               Resource Utilization:{' '}
-              <strong style={{ color: activityData.utilizationPercent >= 80 ? '#fb7185' : '#38bdf8' }}>
+              <strong style={{ color: activityData.utilizationPercent >= 80 ? '#fb7185' : '#a3e635' }}>
                 {activityData.utilizationPercent}%
               </strong>{' '}
               ({activityData.capacity} workers)
@@ -240,7 +240,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   ) : (
                     <CheckCircle2 size={17} color="#10b981" />
                   )}
-                  <strong style={{ fontSize: '0.9rem', color: '#f8fafc' }}>{diag.headline}</strong>
+                  <strong style={{ fontSize: '0.9rem', color: '#eafff0' }}>{diag.headline}</strong>
                 </div>
                 <span
                   style={{
@@ -274,8 +274,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 <div
                   style={{
                     fontSize: '0.76rem',
-                    color: '#a5b4fc',
-                    background: 'rgba(99, 102, 241, 0.1)',
+                    color: '#bbf7d0',
+                    background: 'rgba(34, 197, 94, 0.1)',
                     padding: '6px 10px',
                     borderRadius: '6px',
                     marginTop: '2px'
@@ -294,7 +294,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <div className="kpi-title">Average End-to-End Time</div>
               <div className="kpi-value">{summary.avgCycleTimeHours} hrs</div>
               <div className="kpi-sub">
-                <span style={{ color: '#818cf8' }}>Active: {summary.avgServiceTimeHours || 0}h</span>
+                <span style={{ color: '#4ade80' }}>Active: {summary.avgServiceTimeHours || 0}h</span>
                 <span>•</span>
                 <span style={{ color: '#fb7185' }}>Wait: {summary.avgWaitTimeHours || 0}h</span>
               </div>
@@ -357,10 +357,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           {activeTab === 'bottlenecks' && (
             <div className="chart-container-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={{ fontSize: '0.82rem', color: '#f8fafc', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.82rem', color: '#eafff0', fontWeight: 600 }}>
                   Where are {entityName} Waiting in Line? (Queue Delay vs. Active Service Time)
                 </span>
-                <span style={{ fontSize: '0.72rem', color: '#38bdf8' }}>
+                <span style={{ fontSize: '0.72rem', color: '#a3e635' }}>
                   💡 Tallest coral red bar is your #1 delay driver. Increase capacity to unclog the workflow.
                 </span>
               </div>
@@ -370,14 +370,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                     <XAxis
                       dataKey="name"
-                      stroke="#94a3b8"
+                      stroke="#9fc2ac"
                       fontSize={11}
                       angle={-18}
                       textAnchor="end"
                       interval={0}
                       height={50}
                     />
-                    <YAxis stroke="#94a3b8" fontSize={11} />
+                    <YAxis stroke="#9fc2ac" fontSize={11} />
                     <Tooltip content={<CustomBottleneckTooltip />} />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
                     <Bar
@@ -391,7 +391,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       dataKey="avgServiceMinutes"
                       name="Active Working Time"
                       stackId="a"
-                      fill="#6366f1"
+                      fill="#22c55e"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
@@ -404,10 +404,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           {activeTab === 'leadtime' && (
             <div className="chart-container-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={{ fontSize: '0.82rem', color: '#f8fafc', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.82rem', color: '#eafff0', fontWeight: 600 }}>
                   Completion Time Spread for {entityName}
                 </span>
-                <span style={{ fontSize: '0.72rem', color: '#38bdf8' }}>
+                <span style={{ fontSize: '0.72rem', color: '#a3e635' }}>
                   💡 Cyan bars beat the deadline ({summary.slaThresholdHours}h). Red bars were late.
                 </span>
               </div>
@@ -415,11 +415,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={histogram} margin={{ top: 10, right: 25, left: 0, bottom: 25 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="range" stroke="#94a3b8" fontSize={11} height={30} />
-                    <YAxis stroke="#94a3b8" fontSize={11} />
+                    <XAxis dataKey="range" stroke="#9fc2ac" fontSize={11} height={30} />
+                    <YAxis stroke="#9fc2ac" fontSize={11} />
                     <Tooltip
                       formatter={(value: any) => [`${value} ${entityName}`, 'Volume']}
-                      contentStyle={{ background: '#0f172a', borderColor: '#334155', borderRadius: '8px' }}
+                      contentStyle={{ background: '#0f1a14', borderColor: '#234433', borderRadius: '8px' }}
                     />
                     <ReferenceLine
                       x={summary.slaBinRange || histogram[Math.min(histogram.length - 1, 4)]?.range}
@@ -447,10 +447,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           {activeTab === 'resources' && (
             <div className="chart-container-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                <span style={{ fontSize: '0.82rem', color: '#f8fafc', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.82rem', color: '#eafff0', fontWeight: 600 }}>
                   Worker Stress &amp; Capacity Meter (% of Time Busy per Activity)
                 </span>
-                <span style={{ fontSize: '0.72rem', color: '#38bdf8' }}>
+                <span style={{ fontSize: '0.72rem', color: '#a3e635' }}>
                   💡 Green (&lt;60%) is relaxed. Orange (60-85%) is balanced. Red (&gt;85%) is overloaded.
                 </span>
               </div>
@@ -460,20 +460,20 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                     <XAxis
                       dataKey="name"
-                      stroke="#94a3b8"
+                      stroke="#9fc2ac"
                       fontSize={11}
                       angle={-18}
                       textAnchor="end"
                       interval={0}
                       height={50}
                     />
-                    <YAxis stroke="#94a3b8" fontSize={11} domain={[0, 100]} />
+                    <YAxis stroke="#9fc2ac" fontSize={11} domain={[0, 100]} />
                     <Tooltip
                       formatter={(val: any, _name: any, item: any) => [
                         `${val}% (${item.payload.capacity} workers)`,
                         'Utilization'
                       ]}
-                      contentStyle={{ background: '#0f172a', borderColor: '#334155', borderRadius: '8px' }}
+                      contentStyle={{ background: '#0f1a14', borderColor: '#234433', borderRadius: '8px' }}
                     />
                     <ReferenceLine
                       y={85}
@@ -515,7 +515,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '320px', maxWidth: '100%' }}>
-                  <Search size={15} color="#64748b" />
+                  <Search size={15} color="#6f9481" />
                   <input
                     type="text"
                     className="form-input"
@@ -551,7 +551,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                         background: 'rgba(30, 41, 59, 0.8)',
                         borderBottom: '1px solid rgba(255,255,255,0.1)',
                         textAlign: 'left',
-                        color: '#94a3b8',
+                        color: '#9fc2ac',
                         position: 'sticky',
                         top: 0,
                         zIndex: 2
@@ -570,10 +570,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   <tbody>
                     {filteredEventLogs.slice(0, 100).map((log, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td style={{ padding: '6px 10px', color: '#a5b4fc' }}>{log.caseId}</td>
-                        <td style={{ padding: '6px 10px', color: '#f8fafc' }}>{log.activityName}</td>
-                        <td style={{ padding: '6px 10px', color: '#94a3b8' }}>{log.queueEntryTime}m</td>
-                        <td style={{ padding: '6px 10px', color: '#94a3b8' }}>{log.startTime}m</td>
+                        <td style={{ padding: '6px 10px', color: '#bbf7d0' }}>{log.caseId}</td>
+                        <td style={{ padding: '6px 10px', color: '#eafff0' }}>{log.activityName}</td>
+                        <td style={{ padding: '6px 10px', color: '#9fc2ac' }}>{log.queueEntryTime}m</td>
+                        <td style={{ padding: '6px 10px', color: '#9fc2ac' }}>{log.startTime}m</td>
                         <td
                           style={{
                             padding: '6px 10px',
@@ -583,7 +583,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                         >
                           {log.waitTimeMinutes}m
                         </td>
-                        <td style={{ padding: '6px 10px', color: '#38bdf8' }}>{log.durationMinutes}m</td>
+                        <td style={{ padding: '6px 10px', color: '#a3e635' }}>{log.durationMinutes}m</td>
                         <td style={{ padding: '6px 10px', color: '#34d399' }}>${log.cost}</td>
                         <td style={{ padding: '6px 10px', color: '#c084fc' }}>{log.resource}</td>
                       </tr>

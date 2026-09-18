@@ -201,8 +201,8 @@ export const ProcessMiningTab: React.FC<ProcessMiningTabProps> = ({
         {/* Left: Model Selector & Ingestion */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Layers size={16} color="#818cf8" />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f8fafc' }}>Model:</span>
+            <Layers size={16} color="#4ade80" />
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#eafff0' }}>Model:</span>
           </div>
 
           <div style={{ position: 'relative' }}>
@@ -212,7 +212,7 @@ export const ProcessMiningTab: React.FC<ProcessMiningTabProps> = ({
               onChange={(e) => handleSelectModel(e.target.value)}
               style={{
                 background: 'rgba(30, 41, 59, 0.8)',
-                color: '#f8fafc',
+                color: '#eafff0',
                 border: '1px solid rgba(255, 255, 255, 0.12)',
                 borderRadius: '8px',
                 padding: '6px 28px 6px 12px',
@@ -234,7 +234,7 @@ export const ProcessMiningTab: React.FC<ProcessMiningTabProps> = ({
             </select>
             <ChevronDown
               size={14}
-              color="#94a3b8"
+              color="#9fc2ac"
               style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
             />
           </div>
@@ -278,12 +278,12 @@ export const ProcessMiningTab: React.FC<ProcessMiningTabProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '7px',
-              background: showGraphs ? 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)' : undefined,
-              borderColor: showGraphs ? 'rgba(99, 102, 241, 0.6)' : undefined
+              background: showGraphs ? 'linear-gradient(135deg, #15803d 0%, #166534 100%)' : undefined,
+              borderColor: showGraphs ? 'rgba(34, 197, 94, 0.6)' : undefined
             }}
             title="Toggle bottleneck distribution, queue metrics, and event log below"
           >
-            <BarChart3 size={15} color={showGraphs ? '#ffffff' : '#818cf8'} />
+            <BarChart3 size={15} color={showGraphs ? '#ffffff' : '#4ade80'} />
             <span>{showGraphs ? 'Hide Graphs & Analytics' : 'Show Graphs & Analytics'}</span>
             {simulationResult && (
               <span
@@ -291,8 +291,8 @@ export const ProcessMiningTab: React.FC<ProcessMiningTabProps> = ({
                   fontSize: '0.7rem',
                   padding: '2px 7px',
                   borderRadius: '10px',
-                  background: showGraphs ? 'rgba(255, 255, 255, 0.22)' : 'rgba(99, 102, 241, 0.25)',
-                  color: showGraphs ? '#ffffff' : '#c7d2fe',
+                  background: showGraphs ? 'rgba(255, 255, 255, 0.22)' : 'rgba(34, 197, 94, 0.25)',
+                  color: showGraphs ? '#ffffff' : '#bbf7d0',
                   fontWeight: 700
                 }}
               >
@@ -322,8 +322,8 @@ export const ProcessMiningTab: React.FC<ProcessMiningTabProps> = ({
               padding: '7px 18px',
               fontSize: '0.85rem',
               fontWeight: 700,
-              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-              boxShadow: '0 0 15px rgba(99, 102, 241, 0.35)',
+              background: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
+              boxShadow: '0 0 15px rgba(34, 197, 94, 0.35)',
               display: 'flex',
               alignItems: 'center',
               gap: '8px'

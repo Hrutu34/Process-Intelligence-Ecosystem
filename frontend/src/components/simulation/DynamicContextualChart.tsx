@@ -40,11 +40,11 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
         return (
           <AreaChart data={chartSpec.data}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-            <XAxis dataKey={chartSpec.xAxisKey} stroke="#94a3b8" tick={{ fontSize: 11 }} />
-            <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} />
+            <XAxis dataKey={chartSpec.xAxisKey} stroke="#9fc2ac" tick={{ fontSize: 11 }} />
+            <YAxis stroke="#9fc2ac" tick={{ fontSize: 11 }} />
             <Tooltip
               contentStyle={{
-                background: '#0f172a',
+                background: '#0f1a14',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '8px',
                 fontSize: '12px'
@@ -57,8 +57,8 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
                 type="monotone"
                 dataKey={y.key}
                 name={y.name}
-                stroke={y.color || '#818cf8'}
-                fill={y.color || '#818cf8'}
+                stroke={y.color || '#4ade80'}
+                fill={y.color || '#4ade80'}
                 fillOpacity={0.35}
               />
             ))}
@@ -69,11 +69,11 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
         return (
           <LineChart data={chartSpec.data}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-            <XAxis dataKey={chartSpec.xAxisKey} stroke="#94a3b8" tick={{ fontSize: 11 }} />
-            <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} />
+            <XAxis dataKey={chartSpec.xAxisKey} stroke="#9fc2ac" tick={{ fontSize: 11 }} />
+            <YAxis stroke="#9fc2ac" tick={{ fontSize: 11 }} />
             <Tooltip
               contentStyle={{
-                background: '#0f172a',
+                background: '#0f1a14',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '8px',
                 fontSize: '12px'
@@ -86,7 +86,7 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
                 type="monotone"
                 dataKey={y.key}
                 name={y.name}
-                stroke={y.color || '#38bdf8'}
+                stroke={y.color || '#a3e635'}
                 strokeWidth={2}
                 dot={{ r: 3 }}
               />
@@ -98,11 +98,11 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
         return (
           <RadarChart data={chartSpec.data}>
             <PolarGrid stroke="rgba(255,255,255,0.1)" />
-            <PolarAngleAxis dataKey={chartSpec.xAxisKey} stroke="#94a3b8" tick={{ fontSize: 11 }} />
-            <PolarRadiusAxis stroke="#64748b" tick={{ fontSize: 10 }} />
+            <PolarAngleAxis dataKey={chartSpec.xAxisKey} stroke="#9fc2ac" tick={{ fontSize: 11 }} />
+            <PolarRadiusAxis stroke="#6f9481" tick={{ fontSize: 10 }} />
             <Tooltip
               contentStyle={{
-                background: '#0f172a',
+                background: '#0f1a14',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '8px',
                 fontSize: '12px'
@@ -127,11 +127,11 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
         return (
           <BarChart data={chartSpec.data}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-            <XAxis dataKey={chartSpec.xAxisKey} stroke="#94a3b8" tick={{ fontSize: 11 }} />
-            <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} />
+            <XAxis dataKey={chartSpec.xAxisKey} stroke="#9fc2ac" tick={{ fontSize: 11 }} />
+            <YAxis stroke="#9fc2ac" tick={{ fontSize: 11 }} />
             <Tooltip
               contentStyle={{
-                background: '#0f172a',
+                background: '#0f1a14',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '8px',
                 fontSize: '12px'
@@ -143,7 +143,7 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
                 key={y.key}
                 dataKey={y.key}
                 name={y.name}
-                fill={y.color || '#818cf8'}
+                fill={y.color || '#4ade80'}
                 stackId={y.stackId}
                 radius={[4, 4, 0, 0]}
               />
@@ -169,8 +169,8 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={16} color="#818cf8" />
-          <h4 style={{ margin: 0, color: '#f8fafc', fontSize: '0.92rem', fontWeight: 600 }}>
+          <Sparkles size={16} color="#4ade80" />
+          <h4 style={{ margin: 0, color: '#eafff0', fontSize: '0.92rem', fontWeight: 600 }}>
             {chartSpec.chartTitle || 'Context-Driven Process Analytics'}
           </h4>
         </div>
@@ -178,7 +178,7 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
           style={{
             fontSize: '0.68rem',
             background: 'rgba(129,140,248,0.15)',
-            color: '#818cf8',
+            color: '#4ade80',
             padding: '2px 8px',
             borderRadius: '12px',
             textTransform: 'uppercase',
@@ -190,7 +190,7 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
       </div>
 
       {chartSpec.chartSubtitle && (
-        <p style={{ margin: '0 0 14px 0', color: '#94a3b8', fontSize: '0.76rem', lineHeight: '1.4' }}>
+        <p style={{ margin: '0 0 14px 0', color: '#9fc2ac', fontSize: '0.76rem', lineHeight: '1.4' }}>
           {chartSpec.chartSubtitle}
         </p>
       )}
@@ -208,13 +208,13 @@ export const DynamicContextualChart: React.FC<DynamicContextualChartProps> = ({ 
             padding: '10px 12px',
             background: 'rgba(99,102,241,0.08)',
             borderRadius: '8px',
-            borderLeft: '3px solid #818cf8',
+            borderLeft: '3px solid #4ade80',
             fontSize: '0.78rem',
             color: '#e0e7ff',
             lineHeight: '1.5'
           }}
         >
-          <strong style={{ color: '#a5b4fc' }}>💡 Managerial Takeaway:</strong> {chartSpec.managerialInsight}
+          <strong style={{ color: '#bbf7d0' }}>💡 Managerial Takeaway:</strong> {chartSpec.managerialInsight}
         </div>
       )}
     </div>

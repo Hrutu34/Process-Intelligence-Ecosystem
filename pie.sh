@@ -59,6 +59,9 @@ verify_env() {
   if [ "$PROFILE" = "prod" ] && [ -z "$GEMINI_API_KEY" ]; then
     echo -e "${RED}[X] GEMINI_API_KEY is missing from environment / .env file${NC}"
     errors=$((errors+1))
+  elif [ "$PROFILE" = "prod-h2" ] && { [ -z "$VW_LLM_CLIENT_ID" ] || [ -z "$VW_LLM_CLIENT_SECRET" ] || [ -z "$VW_LLM_API_KEY" ]; }; then
+    echo -e "${RED}[X] VW_LLM_CLIENT_ID / VW_LLM_CLIENT_SECRET / VW_LLM_API_KEY must all be set in environment / .env file for prod-h2${NC}"
+    errors=$((errors+1))
   else
     echo -e "${GREEN}[✓] API Key check passed${NC}"
   fi
@@ -123,15 +126,17 @@ run_tests() {
 
 choose_profile() {
   echo -e "${YELLOW}Select the environment profile to run:${NC}"
-  echo "1) Local   (H2 DB + Ollama - Instant start)"
-  echo "2) Staging (PostgreSQL + LLMaaS API Key)"
-  echo "3) Prod    (Cloud DB + Gemini API Key)"
+  echo "1) Local    (H2 DB + Ollama - Instant start)"
+  echo "2) Staging  (PostgreSQL + LLMaaS API Key)"
+  echo "3) Prod     (Cloud DB + Gemini API Key)"
+  echo "4) Prod-H2  (H2 file DB + VW LLMaaS / OpenAI gpt-4o - no Ollama, no Gemini)"
   
-  read -p "Enter choice [1-3] (Default: 1): " choice
+  read -p "Enter choice [1-4] (Default: 1): " choice
 
   case $choice in
     2) PROFILE="staging" ;;
     3) PROFILE="prod" ;;
+    4) PROFILE="prod-h2" ;;
     *) PROFILE="local" ;;
   esac
   

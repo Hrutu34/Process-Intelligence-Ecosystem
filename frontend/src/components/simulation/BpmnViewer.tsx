@@ -353,11 +353,11 @@ export const BpmnViewer: React.FC<BpmnViewerProps> = ({
       {/* Top Diagram Bar */}
       <div className="bpmn-header-bar">
         <div className="process-meta-info">
-          <Layers size={16} color="#818cf8" />
+          <Layers size={16} color="#4ade80" />
           <span className="process-meta-title">{processName || 'Process Flow'}</span>
           {processCategory && <span className="process-meta-category">{processCategory}</span>}
           {simulationResult && (
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: '8px' }}>
+            <span style={{ fontSize: '0.75rem', color: '#9fc2ac', marginLeft: '8px' }}>
               • Top Bottleneck:{' '}
               <strong style={{ color: '#f43f5e' }}>{simulationResult.summary.primaryBottleneck}</strong>
             </span>
@@ -376,7 +376,7 @@ export const BpmnViewer: React.FC<BpmnViewerProps> = ({
               borderRadius: '12px',
               background: 'rgba(56, 189, 248, 0.15)',
               border: '1px solid rgba(56, 189, 248, 0.35)',
-              color: '#38bdf8'
+              color: '#a3e635'
             }}
           >
             <span
@@ -384,7 +384,7 @@ export const BpmnViewer: React.FC<BpmnViewerProps> = ({
                 width: '6px',
                 height: '6px',
                 borderRadius: '50%',
-                background: '#38bdf8',
+                background: '#a3e635',
                 display: 'inline-block'
               }}
             />
@@ -392,12 +392,12 @@ export const BpmnViewer: React.FC<BpmnViewerProps> = ({
               Active: <strong>{activeStepInfo.name}</strong>
             </span>
             {(activeStepInfo.durationMin ?? 0) > 0 && (
-              <span style={{ color: '#94a3b8' }}>({activeStepInfo.durationMin} min duration)</span>
+              <span style={{ color: '#9fc2ac' }}>({activeStepInfo.durationMin} min duration)</span>
             )}
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: '#64748b' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: '#6f9481' }}>
           <span>💡 Click any task to edit • Arrows flow by task time</span>
         </div>
       </div>
@@ -419,7 +419,7 @@ export const BpmnViewer: React.FC<BpmnViewerProps> = ({
           >
             <AlertTriangle size={36} />
             <div style={{ fontWeight: 600 }}>Diagram Rendering Issue</div>
-            <div style={{ fontSize: '0.85rem', color: '#94a3b8', maxWidth: '400px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.85rem', color: '#9fc2ac', maxWidth: '400px', textAlign: 'center' }}>
               {renderError}
             </div>
           </div>
@@ -432,7 +432,7 @@ export const BpmnViewer: React.FC<BpmnViewerProps> = ({
             onClick={handleToggleFlow}
             title={isPlayingFlow ? 'Pause Token Flow Animation' : 'Start Animated Flow Along Diagram'}
           >
-            {isPlayingFlow ? <Pause size={16} color="#38bdf8" /> : <Play size={16} fill="currentColor" />}
+            {isPlayingFlow ? <Pause size={16} color="#a3e635" /> : <Play size={16} fill="currentColor" />}
           </button>
 
           {isPlayingFlow && (
@@ -451,8 +451,8 @@ export const BpmnViewer: React.FC<BpmnViewerProps> = ({
                   key={s}
                   style={{
                     border: 'none',
-                    background: playbackSpeed === s ? 'rgba(99, 102, 241, 0.4)' : 'transparent',
-                    color: playbackSpeed === s ? '#ffffff' : '#94a3b8',
+                    background: playbackSpeed === s ? 'rgba(34, 197, 94, 0.4)' : 'transparent',
+                    color: playbackSpeed === s ? '#ffffff' : '#9fc2ac',
                     fontSize: '0.68rem',
                     fontWeight: 700,
                     borderRadius: '4px',
