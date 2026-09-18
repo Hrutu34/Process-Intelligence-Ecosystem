@@ -5,6 +5,7 @@ import type {
   GraphNode,
   GraphEdge
 } from '../../../backend/src/main/java/com/pie/shared/types/dto';
+import type { SelectedElementInfo } from '../services/chatService';
 import { BpmnIoCanvas } from './BpmnIoCanvas';
 import { AgentLoadingScreen } from './AgentLoadingScreen';
 import './ProcessGraphViewer.css';
@@ -19,6 +20,7 @@ interface Props {
   highlightedElementId?: string | null;
   highlightColor?: string;
   minimalLayout?: boolean;
+  onElementSelected?: (element: SelectedElementInfo | null) => void;
 }
 
 type ViewMode = 'visual' | 'bpmn' | 'topology' | 'json';
@@ -37,7 +39,7 @@ export function clearProcessGraphCache(): void {
   processGraphRequestCache.clear();
 }
 
-export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proceedLabel = 'PROCEED <span>↗</span>', defaultView = 'visual', onXmlChange, externalXml, highlightedElementId, highlightColor, minimalLayout }) => {
+export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proceedLabel = 'PROCEED <span>↗</span>', defaultView = 'visual', onXmlChange, externalXml, highlightedElementId, highlightColor, minimalLayout, onElementSelected }) => {
   const knowledgeKey = JSON.stringify(knowledge);
   const [graph, setGraph] = useState<ProcessGraphDTO | null>(
     () => processGraphCache.get(knowledgeKey) || null,
@@ -453,7 +455,7 @@ export const ProcessGraphViewer: React.FC<Props> = ({ knowledge, onProceed, proc
 
       {/* VIEW: BPMN.IO CANVAS */}
       {viewMode === 'bpmn' && (
-        <BpmnIoCanvas graph={graph} knowledge={knowledge} externalXml={externalXml} highlightedNodeId={highlightedElementId} highlightColor={highlightColor} onXmlChange={onXmlChange} onReviewClick={onProceed} />
+        <BpmnIoCanvas graph={graph} knowledge={knowledge} externalXml={externalXml} highlightedNodeId={highlightedElementId} highlightColor={highlightColor} onXmlChange={onXmlChange} onReviewClick={onProceed} onElementSelected={onElementSelected} />
       )}
 
       {/* VIEW 2: TOPOLOGY TABLE VIEW */}

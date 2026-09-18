@@ -426,3 +426,241 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* Version badge */
+.chat-dock-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-version-badge {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 217, 61, 0.15);
+  color: #ffd93d;
+  border: 1px solid rgba(255, 217, 61, 0.3);
+  padding: 1px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.05em;
+}
+
+/* Quick commands bar */
+.chat-quick-actions {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-0);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.chat-quick-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chat-quick-chip:hover:not(:disabled) {
+  background: rgba(255, 217, 61, 0.1);
+  color: #ffd93d;
+  border-color: rgba(255, 217, 61, 0.3);
+  transform: translateY(-1px);
+}
+
+.chat-quick-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Selected element focus chip */
+.chat-dock-selection-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(57, 245, 208, 0.08) 0%, rgba(57, 245, 208, 0.02) 100%);
+  border-top: 1px solid rgba(57, 245, 208, 0.25);
+  border-bottom: 1px solid rgba(57, 245, 208, 0.15);
+}
+
+.selection-chip-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.selection-target-icon {
+  font-size: 14px;
+}
+
+.selection-type-tag {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(57, 245, 208, 0.15);
+  color: var(--accent-a);
+  border: 1px solid rgba(57, 245, 208, 0.3);
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.selection-name {
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selection-chip-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.chip-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.chip-btn:hover {
+  background: rgba(57, 245, 208, 0.15);
+  color: var(--accent-a);
+  border-color: rgba(57, 245, 208, 0.4);
+}
+
+.chip-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.chip-btn-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-dimmer);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.chip-btn-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Edit Plan enhancements */
+.chat-dock-pending-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #ffd93d;
+}
+
+.pending-badge {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 217, 61, 0.2);
+  border: 1px solid rgba(255, 217, 61, 0.4);
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+}
+
+.chat-dock-pending-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 8px 0;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 217, 61, 0.15);
+}
+
+.pending-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 217, 61, 0.15);
+  color: #ffd93d;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Validation status banner */
+.chat-dock-validation-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 12px;
+  padding: 8px 12px;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 8px;
+  font-size: 11.5px;
+}
+
+.val-icon {
+  font-size: 15px;
+  color: #4ade80;
+  font-weight: bold;
+}
+
+.val-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.val-text strong {
+  color: #4ade80;
+  font-size: 11.5px;
+}
+
+.val-text span {
+  color: var(--text-dim);
+  font-size: 10.5px;
+}
+
