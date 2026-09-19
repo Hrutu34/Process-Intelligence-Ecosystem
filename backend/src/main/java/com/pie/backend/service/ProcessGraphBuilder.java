@@ -19,6 +19,17 @@ public class ProcessGraphBuilder {
             "(?i)(?:within|after|in)\\s+(\\d+)\\s*(day|days|hour|hours|week|weeks|month|months|minute|minutes|d|h|m)"
     );
 
+    // Generic process nouns/verbs that must be IGNORED when computing token overlap
+    // between rules and gateways — otherwise every rule matches every gateway.
+    private static final Set<String> TOKEN_STOPWORDS = Set.of(
+            "request", "requests", "requested", "process", "processes", "task", "tasks",
+            "activity", "activities", "step", "steps", "employee", "employees", "manager",
+            "managers", "user", "users", "system", "systems", "record", "records",
+            "information", "data", "form", "forms", "case", "cases", "then", "with",
+            "into", "from", "this", "that", "them", "their", "will", "shall", "must",
+            "have", "been", "when", "where", "which", "while"
+    );
+
     private final ProcessGraphValidator validator;
 
     public ProcessGraphBuilder(ProcessGraphValidator validator) {
@@ -682,20 +693,24 @@ public class ProcessGraphBuilder {
             }
         }
 
-        // 3. Connect sequential sub-flows for ANY generic process
+        // 3. Connect sequential sub-flows for ANY generic process.
+        // Do NOT auto-link into an activity that is a gateway evaluator (its incoming
+        // edge must come from its true predecessor, chosen by pickEvaluatingActivity)
+        // and do NOT link out of a rejection/notification terminal into an unrelated
+        // downstream branch.
         for (int i = 0; i < activityNodes.size() - 1; i++) {
             GraphNode current = activityNodes.get(i);
             GraphNode next = activityNodes.get(i + 1);
 
-            // Connect only if current has no outgoing flow and next is not a branch target
-            if (!gatewayPredecessors.contains(current.getId()) &&
-                !nodesWithOutgoingFlow.contains(current.getId()) &&
-                !exceptionTargetNodes.contains(next.getId()) &&
-                !isTerminalActivity(current.getLabel())) {
-                
-                addSequenceEdge(current.getId(), next.getId(), edgeRegistry);
-                nodesWithOutgoingFlow.add(current.getId());
-            }
+            if (gatewayPredecessors.contains(current.getId())) continue;
+            if (nodesWithOutgoingFlow.contains(current.getId())) continue;
+            if (exceptionTargetNodes.contains(next.getId())) continue;
+            if (gatewayPredecessors.contains(next.getId())) continue; // avoid stealing the evaluator's incoming edge
+            if (isTerminalActivity(current.getLabel())) continue;
+            if (isBranchTerminalActivity(current.getLabel())) continue; // notify/inform/communicate end their branch
+
+            addSequenceEdge(current.getId(), next.getId(), edgeRegistry);
+            nodesWithOutgoingFlow.add(current.getId());
         }
 
         // 4. Attach terminal nodes to the End Event
@@ -770,71 +785,111 @@ public class ProcessGraphBuilder {
         List<ParsedBranchRule> rules = new ArrayList<>();
         List<String> businessRules = knowledge.businessRules() != null ? knowledge.businessRules() : List.of();
 
-        // Ensure every gateway gets processed
-        for (int i = 0; i < gatewayNodes.size(); i++) {
-            GraphNode gw = gatewayNodes.get(i);
-            String gwLabel = gw.getLabel().toLowerCase(Locale.ROOT).replaceAll("[?:]", "").trim();
-            
-            // 1. Identify which activity precedes this gateway (Evaluating Activity)
-            GraphNode evalAct = null;
-            for (GraphNode act : activityNodes) {
-                String actLower = act.getLabel().toLowerCase(Locale.ROOT);
-                if (hasHighTokenOverlap(actLower, gwLabel) ||
-                    (containsAny(gwLabel, "approv", "review", "check", "evaluat", "validat", "policy") &&
-                     containsAny(actLower, "review", "evaluat", "check", "assess", "approv", "inspect", "audit", "policy"))) {
-                    evalAct = act;
-                    break;
+        // ==================================================================
+        // Step 1: assign each business rule to AT MOST ONE gateway — the one
+        // it overlaps with most strongly. Prevents duplication of branches.
+        // ==================================================================
+        Map<String, List<BranchTarget>> branchesByGateway = new LinkedHashMap<>();
+        for (GraphNode gw : gatewayNodes) branchesByGateway.put(gw.getId(), new ArrayList<>());
+
+        // Pending queue for rules that failed direct token match — assigned later by
+        // complementary-condition heuristic so we don't drop them.
+        List<BranchTarget> unmatched = new ArrayList<>();
+
+        for (String ruleStr : businessRules) {
+            if (ruleStr == null || ruleStr.isBlank()) continue;
+            String ruleLower = ruleStr.toLowerCase(Locale.ROOT);
+            String condition = extractConditionLabel(ruleStr);
+            String action = extractActionPart(ruleStr);
+
+            GraphNode bestGw = null;
+            int bestScore = 0;
+            for (GraphNode gw : gatewayNodes) {
+                String gwLabel = gw.getLabel().toLowerCase(Locale.ROOT).replaceAll("[?:]", "").trim();
+                int score = tokenOverlapScore(condition.toLowerCase(Locale.ROOT), gwLabel);
+                // If condition tokens didn't discriminate, fall back to whole-rule overlap
+                if (score == 0) score = tokenOverlapScore(ruleLower, gwLabel);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestGw = gw;
                 }
             }
-            if (evalAct == null && !activityNodes.isEmpty()) {
-                evalAct = activityNodes.get(Math.min(i, activityNodes.size() - 1)); 
+
+            GraphNode targetAct = findBestMatchingActivity(activityNodes, action);
+            if (targetAct == null) continue;
+
+            boolean isTimer = condition.contains("timeout") || condition.contains("day") || condition.contains("hour");
+            BranchTarget bt = new BranchTarget(targetAct.getId(), condition, isTimer);
+
+            if (bestGw == null || bestScore == 0) {
+                unmatched.add(bt);
+            } else {
+                branchesByGateway.get(bestGw.getId()).add(bt);
             }
-            String evalActId = evalAct != null ? evalAct.getId() : null;
+        }
 
-            List<BranchTarget> branches = new ArrayList<>();
+        // Complementary-condition pass: assign leftover rules (e.g. "IF Rejected...")
+        // to a gateway that already holds the positive counterpart. If none qualifies,
+        // route to the gateway with the fewest branches so far — a real gateway needs
+        // at least two outgoing edges.
+        for (BranchTarget bt : unmatched) {
+            String cond = bt.conditionLabel() == null ? "" : bt.conditionLabel().toLowerCase(Locale.ROOT);
+            boolean negative = containsAny(cond, "reject", "deni", "declin", "fail", "invalid", "insuffic", "not ");
 
-            // 2. Parse AI-generated Business Rules to find branches belonging to this gateway
-            boolean ruleMatched = false;
-            for (String ruleStr : businessRules) {
-                String ruleLower = ruleStr.toLowerCase(Locale.ROOT);
-                
-                // If the rule mentions the gateway's topic
-                if (ruleLower.contains(gwLabel) || hasHighTokenOverlap(ruleLower, gwLabel)) {
-                    ruleMatched = true;
-                    
-                    // Parse "IF [Condition] THEN [Action]" or "IF [Condition], [Action]" format
-                    String condition = extractConditionLabel(ruleStr);
-                    String action = extractActionPart(ruleStr);
-                    
-                    GraphNode targetAct = findBestMatchingActivity(activityNodes, action);
-                    
-                    if (targetAct != null) {
-                        boolean isTimer = condition.contains("timeout") || condition.contains("day") || condition.contains("hour");
-                        branches.add(new BranchTarget(targetAct.getId(), condition, isTimer));
+            GraphNode target = null;
+            if (negative) {
+                for (Map.Entry<String, List<BranchTarget>> e : branchesByGateway.entrySet()) {
+                    boolean hasPositive = e.getValue().stream().anyMatch(b -> {
+                        String c = b.conditionLabel() == null ? "" : b.conditionLabel().toLowerCase(Locale.ROOT);
+                        return containsAny(c, "approv", "success", "pass", "valid", "suffic", "eligibl", "accept");
+                    });
+                    if (hasPositive) {
+                        target = gatewayNodes.stream().filter(g -> g.getId().equals(e.getKey())).findFirst().orElse(null);
+                        break;
                     }
                 }
             }
+            if (target == null) {
+                target = gatewayNodes.stream()
+                        .min(Comparator.comparingInt(g -> branchesByGateway.get(g.getId()).size()))
+                        .orElse(null);
+            }
+            if (target != null) branchesByGateway.get(target.getId()).add(bt);
+        }
 
-            // 3. Fallback: If no explicit AI rule matched, generate safe default branches
-            if (!ruleMatched || branches.isEmpty()) {
-                // Determine next sequential activity
+        // ==================================================================
+        // Step 2: per-gateway — pick evalAct (activity that FEEDS the gateway)
+        // and apply fallback branches ONLY when the AI provided none.
+        // ==================================================================
+        for (int i = 0; i < gatewayNodes.size(); i++) {
+            GraphNode gw = gatewayNodes.get(i);
+            String gwLabel = gw.getLabel().toLowerCase(Locale.ROOT).replaceAll("[?:]", "").trim();
+            List<BranchTarget> branches = branchesByGateway.get(gw.getId());
+
+            // Evaluating activity: prefer an activity whose label overlaps the gateway
+            // topic AND is NOT one of this gateway's branch targets. Verbs like review,
+            // decide, check, evaluate rank above the narrative-first activity fallback.
+            Set<String> branchTargetIds = branches.stream()
+                    .map(BranchTarget::targetNodeId)
+                    .collect(Collectors.toSet());
+
+            GraphNode evalAct = pickEvaluatingActivity(activityNodes, gwLabel, branchTargetIds, i);
+            String evalActId = evalAct != null ? evalAct.getId() : null;
+
+            // Fallback branches only when AI produced nothing usable
+            if (branches.isEmpty()) {
                 int evalIdx = evalAct != null ? activityNodes.indexOf(evalAct) : -1;
-                GraphNode nextSeqAct = (evalIdx >= 0 && evalIdx + 1 < activityNodes.size()) 
-                                        ? activityNodes.get(evalIdx + 1) : null;
-                
+                GraphNode nextSeqAct = (evalIdx >= 0 && evalIdx + 1 < activityNodes.size())
+                        ? activityNodes.get(evalIdx + 1) : null;
                 if (nextSeqAct != null) {
                     branches.add(new BranchTarget(nextSeqAct.getId(), "yes", false));
                 }
-                
-                // Route the negative branch to the End Event or loop back
                 if (endEvent != null && branches.size() < 2) {
                     branches.add(new BranchTarget(endEvent.getId(), "no", false));
                 }
-            }
-
-            // Ensure a gateway always has at least 2 branches (otherwise it's not a decision)
-            if (branches.size() == 1 && endEvent != null) {
-                branches.add(new BranchTarget(endEvent.getId(), "no", false));
+            } else if (branches.size() == 1 && endEvent != null) {
+                // A real gateway needs at least two outgoing branches
+                branches.add(new BranchTarget(endEvent.getId(), "otherwise", false));
             }
 
             rules.add(new ParsedBranchRule(evalActId, gw.getId(), branches, null, null));
@@ -843,26 +898,63 @@ public class ProcessGraphBuilder {
         return rules;
     }
 
-    // Helper: Find common tokens to match gateways to rules
-    private boolean hasHighTokenOverlap(String text1, String text2) {
-        if (text1 == null || text2 == null) return false;
-        List<String> tokens1 = Arrays.stream(text1.toLowerCase(Locale.ROOT).split("\\W+"))
-                .filter(t -> t.length() >= 4)
-                .toList();
-        List<String> tokens2 = Arrays.stream(text2.toLowerCase(Locale.ROOT).split("\\W+"))
-                .filter(t -> t.length() >= 4)
-                .toList();
+    private GraphNode pickEvaluatingActivity(List<GraphNode> activityNodes, String gwLabel,
+                                             Set<String> branchTargetIds, int gatewayIndex) {
+        GraphNode best = null;
+        int bestScore = 0;
+        for (GraphNode act : activityNodes) {
+            if (branchTargetIds.contains(act.getId())) continue; // can't be its own predecessor
+            String actLower = act.getLabel().toLowerCase(Locale.ROOT);
+            int score = tokenOverlapScore(actLower, gwLabel);
+            if (containsAny(gwLabel, "approv", "review", "check", "evaluat", "validat", "policy", "sufficient", "eligibl") &&
+                containsAny(actLower, "review", "evaluat", "check", "assess", "approv", "inspect", "audit", "verif", "decide", "validat")) {
+                score += 20;
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                best = act;
+            }
+        }
+        if (best != null) return best;
+        // Fallback — first non-branch-target activity, then indexed
+        for (GraphNode act : activityNodes) {
+            if (!branchTargetIds.contains(act.getId())) return act;
+        }
+        return activityNodes.isEmpty() ? null : activityNodes.get(Math.min(gatewayIndex, activityNodes.size() - 1));
+    }
 
+    // Helper: Find common tokens to match gateways to rules.
+    // Discards generic process nouns (see TOKEN_STOPWORDS) that would otherwise cause
+    // every rule to spuriously match every gateway.
+    private boolean hasHighTokenOverlap(String text1, String text2) {
+        return tokenOverlapScore(text1, text2) > 0;
+    }
+
+    private int tokenOverlapScore(String text1, String text2) {
+        if (text1 == null || text2 == null) return 0;
+        List<String> tokens1 = distinctiveTokens(text1);
+        List<String> tokens2 = distinctiveTokens(text2);
+        int score = 0;
         for (String t1 : tokens1) {
             for (String t2 : tokens2) {
-                if (t1.equals(t2)) return true;
+                if (t1.equals(t2)) {
+                    score += Math.max(4, t1.length());
+                    continue;
+                }
                 int prefixLen = Math.min(Math.min(t1.length(), t2.length()), 6);
                 if (prefixLen >= 5 && t1.substring(0, prefixLen).equals(t2.substring(0, prefixLen))) {
-                    return true;
+                    score += prefixLen;
                 }
             }
         }
-        return false;
+        return score;
+    }
+
+    private List<String> distinctiveTokens(String text) {
+        return Arrays.stream(text.toLowerCase(Locale.ROOT).split("\\W+"))
+                .filter(t -> t.length() >= 4)
+                .filter(t -> !TOKEN_STOPWORDS.contains(t))
+                .toList();
     }
 
     private GraphNode findBestMatchingActivity(List<GraphNode> activityNodes, String... searchPhrases) {
@@ -975,6 +1067,14 @@ public class ProcessGraphBuilder {
     private boolean isTerminalActivity(String label) {
         String lower = label.toLowerCase(Locale.ROOT);
         return lower.contains("archive") || lower.contains("complete") || lower.contains("finish");
+    }
+
+    // Activities that logically end a branch (rejection notice, approval notice, etc.).
+    // Prevents accidental linkage into the next unrelated activity in the flat list.
+    private boolean isBranchTerminalActivity(String label) {
+        String lower = label.toLowerCase(Locale.ROOT);
+        return lower.startsWith("notify") || lower.startsWith("inform") || lower.startsWith("communicate")
+                || lower.startsWith("send") || lower.contains("notification");
     }
 
     private String extractDurationIso(String text) {
