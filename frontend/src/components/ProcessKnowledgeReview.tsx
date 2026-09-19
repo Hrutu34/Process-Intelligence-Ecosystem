@@ -259,7 +259,7 @@ export const ProcessKnowledgeReview: React.FC<Props> = ({
           <button type="button" className="btn-ghost" onClick={onReset}>↺ New Upload</button>
           {onProceedToIntelligence && (
             <button type="button" className="yellow-button" onClick={onProceedToIntelligence}>
-              PROCEED TO SEMANTICS <span>↗</span>
+              PROCEED TO BLUEBERRY PIE (INTELLIGENCE) <span>↗</span>
             </button>
           )}
         </div>

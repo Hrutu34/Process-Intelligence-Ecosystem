@@ -199,7 +199,7 @@ export const ProcessIntelligenceAgent: React.FC<Props> = ({ knowledge, onProceed
             ↺ Re-run Rules
           </button>
           <button type="button" className="yellow-button" onClick={onProceedToBpmn}>
-            PROCEED TO BPMN MODELLING <span>↗</span>
+            PROCEED TO CHERRY PIE (BPMN) <span>↗</span>
           </button>
         </div>
       </div>

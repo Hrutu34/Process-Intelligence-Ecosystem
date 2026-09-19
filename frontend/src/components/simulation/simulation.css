@@ -42,6 +42,34 @@
   --transition-bounce: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+[data-theme="light"] {
+  --bg-primary: #f3f8f5;
+  --bg-secondary: #eef6f1;
+  --bg-surface: rgba(255, 255, 255, 0.9);
+  --bg-surface-elevated: rgba(207, 227, 215, 0.85);
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-card-hover: rgba(207, 227, 215, 0.95);
+  
+  --border-subtle: rgba(111, 148, 129, 0.25);
+  --border-focus: rgba(22, 163, 74, 0.6);
+  --border-glow: rgba(22, 163, 74, 0.25);
+  
+  --text-primary: #0e2018;
+  --text-secondary: #3d5c4a;
+  --text-muted: #6b8677;
+  --text-highlight: #0a1711;
+
+  --accent-primary: #16a34a;
+  --accent-primary-hover: #15803d;
+  --accent-cyan: #65a30d;
+  --accent-emerald: #059669;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 25px rgba(22, 163, 74, 0.15);
+}
+
 /* Scoped simulation workspace container styles */
 .simulation-tab-container {
   display: flex;

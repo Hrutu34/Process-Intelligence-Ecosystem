@@ -336,7 +336,7 @@ function App() {
                     <span>Pecan Pie</span>{tabStatus("04_REVIEW")}
                   </button>
                   <button type="button" className={`agent-tab ${activeTab === "05_SIMULATION" ? "active" : ""}`} onClick={() => setActiveTab("05_SIMULATION")}>
-                    <span>Process Mining</span>{tabStatus("05_SIMULATION")}
+                    <span>Key Lime Pie</span>{tabStatus("05_SIMULATION")}
                   </button>
                 </div>
 
@@ -370,7 +370,7 @@ function App() {
                     knowledge={extractedData}
                     defaultView="bpmn"
                     onProceed={() => setActiveTab("04_REVIEW")}
-                    proceedLabel="PROCEED TO PROCESS REVIEW <span>↗</span>"
+                    proceedLabel="PROCEED TO PECAN PIE (REVIEW) <span>↗</span>"
                     onXmlChange={setCurrentBpmnXml}
                     externalXml={currentBpmnXml}
                     onElementSelected={setSelectedBpmnElement}
@@ -391,28 +391,13 @@ function App() {
                         bpmnXml={currentBpmnXml}
                         onHighlightIssue={(id, color) => setHighlightedElement(id ? { id, color: color || "#ff6b6b" } : null)}
                       />
-                      <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                      <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
                         <button
                           type="button"
-                          className="btn-primary"
+                          className="yellow-button"
                           onClick={() => setActiveTab("05_SIMULATION")}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '8px 16px',
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                            color: '#ffffff',
-                            border: '1px solid #6366f1',
-                            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.35)'
-                          }}
                         >
-                          <span>PROCEED TO PROCESS MINING &amp; SIMULATION</span>
-                          <span>↗</span>
+                          PROCEED TO KEY LIME PIE (SIMULATION) <span>↗</span>
                         </button>
                       </div>
                     </div>
