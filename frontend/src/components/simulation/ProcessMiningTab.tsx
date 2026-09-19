@@ -200,6 +200,12 @@ export const ProcessMiningTab: React.FC<ProcessMiningTabProps> = ({
       >
         {/* Left: Model Selector & Ingestion */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img
+            src="/mascots/KeyLimePie.png"
+            alt="Key Lime Pie"
+            title="Key Lime Pie — Simulation Agent"
+            style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }}
+          />
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Layers size={16} color="#4ade80" />
             <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#eafff0' }}>Model:</span>

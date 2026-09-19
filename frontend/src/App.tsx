@@ -88,7 +88,7 @@ function App() {
     { number: "02", icon: "/mascots/BlueBerryPie.png", title: "Blueberry Pie (Intelligence)", description: "Finds gaps, dead ends, missing owners, contradictions, and hidden process risks.", accent: "yellow" },
     { number: "03", icon: "/mascots/CherryPie.png", title: "Cherry Pie (BPMN)", description: "Transforms validated process knowledge into clean, editable BPMN 2.0 models.", accent: "aqua" },
     { number: "04", icon: "/mascots/PecanPie.png", title: "Pecan Pie (Review)", description: "Turns complex process diagrams back into language your business actually understands.", accent: "yellow" },
-    { number: "05", icon: "/mascots/Pie.png", title: "Key Lime Pie (Simulation)", description: "Simulates stochastic tokens, identifies bottlenecks, computes SLA adherence, and exports Celonis/Disco event logs.", accent: "aqua" },
+    { number: "05", icon: "/mascots/KeyLimePie.png", title: "Key Lime Pie (Simulation)", description: "Simulates stochastic tokens, identifies bottlenecks, computes SLA adherence, and exports Celonis/Disco event logs.", accent: "aqua" },
   ];
 
   const handleStartExtraction = (fileCount: number) => {
