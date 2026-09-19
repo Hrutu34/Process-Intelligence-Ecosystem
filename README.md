@@ -346,7 +346,7 @@ P.I.E. supports flexible deployment profiles configured in `backend/src/main/res
 | Profile | Target Database | LLM Provider | Required Configuration |
 |---|---|---|---|
 | **`local`** *(Default)* | H2 in-memory | Local Ollama / Mock fallback | None (zero-config, offline ready) |
-| **`staging`** | PostgreSQL | VW LLMaaS Enterprise Gateway | `VW_LLM_CLIENT_ID`, `VW_LLM_CLIENT_SECRET`, `VW_LLM_API_KEY` |
+| **`staging`** | PostgreSQL | Groq High-End LLM (`llama-3.3-70b-versatile`) | `GROQ_API_KEY` (or `LLMAAS_API_KEY`) |
 | **`prod`** | Managed Cloud DB | Google Gemini 1.5 / 2.0 | `GEMINI_API_KEY` |
 | **`prod-h2`** | File-backed H2 | VW LLMaaS / OpenAI GPT-4o | `VW_LLM_*` or `OPENAI_API_KEY` |
 

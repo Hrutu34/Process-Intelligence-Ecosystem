@@ -27,10 +27,18 @@ public class AiRoutingConfig {
         return new VwLlmaasChatModel(vwLlmaasService);
     }
 
-    // When NEITHER Gemini-backed nor LLMaaS-backed profile is active (local, e2e), make Ollama the default
+    // 'staging' uses Groq (high-end LLM e.g. llama-3.3-70b-versatile via OpenAI-compatible API)
     @Bean
     @Primary
-    @Profile("!prod & !prod-h2")
+    @Profile("staging")
+    public ChatModel stagingChatModel(@Qualifier("openAiChatModel") ChatModel openAiModel) {
+        return openAiModel;
+    }
+
+    // When NONE of the remote cloud AI profiles are active (local, e2e, test), make Ollama the default
+    @Bean
+    @Primary
+    @Profile("!prod & !prod-h2 & !staging")
     public ChatModel localChatModel(@Qualifier("ollamaChatModel") ChatModel ollamaModel) {
         return ollamaModel;
     }
