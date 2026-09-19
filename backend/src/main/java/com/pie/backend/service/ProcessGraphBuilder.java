@@ -626,23 +626,54 @@ public class ProcessGraphBuilder {
                                           Map<String, GraphEdge> edgeRegistry) {
         if (activityNodes.isEmpty()) return;
 
-        // 1. Connect Start Event -> Initial Activity
-        GraphNode startEvent = eventNodes.stream()
+        // Collect start / end events up front.
+        List<GraphNode> startEvents = eventNodes.stream()
                 .filter(e -> e.getMetadata() != null && e.getMetadata().getEventType() == EventType.start)
-                .findFirst()
-                .orElse(null);
-        if (startEvent != null) {
-            addSequenceEdge(startEvent.getId(), activityNodes.get(0).getId(), edgeRegistry);
+                .toList();
+        GraphNode startEvent = startEvents.isEmpty() ? null : startEvents.get(0);
+
+        List<GraphNode> endEvents = eventNodes.stream()
+                .filter(e -> e.getMetadata() != null && e.getMetadata().getEventType() == EventType.end)
+                .toList();
+        GraphNode endEvent = endEvents.isEmpty() ? null : endEvents.get(0);
+
+        // Parse rules BEFORE wiring the start — a leading parallel fork with no
+        // dedicated evaluator activity needs the start event routed to it directly.
+        List<ParsedBranchRule> parsedRules = parseBusinessRules(knowledge, activityNodes, gatewayNodes, endEvent);
+
+        // Identify parallel fork gateways that expect the start event as their feeder
+        // (parallel type, more than one branch, no evaluator activity assigned).
+        GraphNode leadingParallelFork = null;
+        Set<String> forkBranchActivityIds = new HashSet<>();
+        for (ParsedBranchRule r : parsedRules) {
+            GraphNode gw = nodeRegistry.get(r.gatewayId);
+            boolean isFork = gw != null && gw.getMetadata() != null
+                    && gw.getMetadata().getGatewayType() == GatewayType.parallel
+                    && r.branches.size() > 1
+                    && r.evaluatingActivityId == null;
+            if (isFork) {
+                leadingParallelFork = gw;
+                for (BranchTarget bt : r.branches) forkBranchActivityIds.add(bt.targetNodeId);
+                break;
+            }
         }
 
-        // Find primary End Event dynamically
-        GraphNode endEvent = eventNodes.stream()
-                .filter(e -> e.getMetadata() != null && e.getMetadata().getEventType() == EventType.end)
-                .findFirst()
-                .orElse(null);
-
-        // 2. Parse explicit branching rules
-        List<ParsedBranchRule> parsedRules = parseBusinessRules(knowledge, activityNodes, gatewayNodes, endEvent);
+        // 1. Wire start event(s).
+        if (startEvents.size() == 1 && startEvent != null) {
+            if (leadingParallelFork != null) {
+                addSequenceEdge(startEvent.getId(), leadingParallelFork.getId(), edgeRegistry);
+            } else {
+                addSequenceEdge(startEvent.getId(), activityNodes.get(0).getId(), edgeRegistry);
+            }
+        } else if (startEvents.size() > 1) {
+            Set<String> claimedActivityIds = new HashSet<>();
+            for (GraphNode s : startEvents) {
+                GraphNode target = pickBestUnclaimedActivity(activityNodes, s.getLabel(), claimedActivityIds);
+                if (target == null) target = activityNodes.get(0);
+                addSequenceEdge(s.getId(), target.getId(), edgeRegistry);
+                claimedActivityIds.add(target.getId());
+            }
+        }
 
         Set<String> nodesWithOutgoingFlow = new HashSet<>();
         Set<String> exceptionTargetNodes = new HashSet<>();
@@ -650,12 +681,34 @@ public class ProcessGraphBuilder {
 
         if (startEvent != null) nodesWithOutgoingFlow.add(startEvent.getId());
 
+        // Track fork-branch terminal activities so a following parallel JOIN
+        // can vacuum them up as incoming flows.
+        Set<String> parallelForkBranchTargets = new LinkedHashSet<>();
+
         // Process explicit Gateway Rules
         for (ParsedBranchRule rule : parsedRules) {
-            if (rule.evaluatingActivityId != null && rule.gatewayId != null) {
+            GraphNode gwNode = nodeRegistry.get(rule.gatewayId);
+            boolean isParallel = gwNode != null && gwNode.getMetadata() != null
+                    && gwNode.getMetadata().getGatewayType() == GatewayType.parallel;
+            boolean isParallelJoin = isParallel && rule.branches.size() == 1;
+            boolean isParallelFork = isParallel && rule.branches.size() > 1;
+
+            if (rule.evaluatingActivityId != null && rule.gatewayId != null && !isParallelJoin) {
                 addSequenceEdge(rule.evaluatingActivityId, rule.gatewayId, edgeRegistry);
                 nodesWithOutgoingFlow.add(rule.evaluatingActivityId);
                 gatewayPredecessors.add(rule.evaluatingActivityId);
+            }
+
+            // Parallel join: pull in every open fork-branch terminal instead of
+            // relying on evalAct alone.
+            if (isParallelJoin) {
+                for (String forkTarget : parallelForkBranchTargets) {
+                    if (!nodesWithOutgoingFlow.contains(forkTarget)) {
+                        addSequenceEdge(forkTarget, rule.gatewayId, edgeRegistry);
+                        nodesWithOutgoingFlow.add(forkTarget);
+                    }
+                }
+                parallelForkBranchTargets.clear();
             }
 
             for (BranchTarget branch : rule.branches) {
@@ -679,10 +732,17 @@ public class ProcessGraphBuilder {
                         addConditionalEdge(rule.gatewayId, timerEventId, branch.conditionLabel, edgeRegistry);
                         addSequenceEdge(timerEventId, branch.targetNodeId, edgeRegistry);
                         nodesWithOutgoingFlow.add(timerEventId);
+                    } else if (isParallel) {
+                        // Parallel branches carry no condition label
+                        addSequenceEdge(rule.gatewayId, branch.targetNodeId, edgeRegistry);
                     } else {
                         addConditionalEdge(rule.gatewayId, branch.targetNodeId, branch.conditionLabel, edgeRegistry);
                     }
                     nodesWithOutgoingFlow.add(rule.gatewayId);
+
+                    if (isParallelFork) {
+                        parallelForkBranchTargets.add(branch.targetNodeId);
+                    }
                 }
             }
 
@@ -713,16 +773,47 @@ public class ProcessGraphBuilder {
             nodesWithOutgoingFlow.add(current.getId());
         }
 
-        // 4. Attach terminal nodes to the End Event
+        // 4. Attach terminal nodes to the End Event. With multiple end events,
+        // route each hanging activity to the end whose label overlaps most —
+        // preserves distinct end states (Approved end vs Rejected end vs Timeout end).
         if (endEvent != null) {
             for (GraphNode current : activityNodes) {
-                // If a node was left hanging with no outgoing connections, plug it into the End Event
-                if (!nodesWithOutgoingFlow.contains(current.getId())) {
-                    addSequenceEdge(current.getId(), endEvent.getId(), edgeRegistry);
-                    nodesWithOutgoingFlow.add(current.getId());
-                }
+                if (nodesWithOutgoingFlow.contains(current.getId())) continue;
+                GraphNode target = endEvents.size() > 1
+                        ? pickBestEndEvent(endEvents, current.getLabel())
+                        : endEvent;
+                if (target == null) target = endEvent;
+                addSequenceEdge(current.getId(), target.getId(), edgeRegistry);
+                nodesWithOutgoingFlow.add(current.getId());
             }
         }
+    }
+
+    private GraphNode pickBestUnclaimedActivity(List<GraphNode> activities, String label, Set<String> claimed) {
+        GraphNode best = null;
+        int bestScore = 0;
+        for (GraphNode a : activities) {
+            if (claimed.contains(a.getId())) continue;
+            int score = tokenOverlapScore(a.getLabel(), label);
+            if (score > bestScore) {
+                bestScore = score;
+                best = a;
+            }
+        }
+        return best;
+    }
+
+    private GraphNode pickBestEndEvent(List<GraphNode> ends, String label) {
+        GraphNode best = null;
+        int bestScore = 0;
+        for (GraphNode e : ends) {
+            int score = tokenOverlapScore(e.getLabel(), label);
+            if (score > bestScore) {
+                bestScore = score;
+                best = e;
+            }
+        }
+        return best != null ? best : ends.get(ends.size() - 1);
     }
 
     // ==========================================
@@ -866,6 +957,9 @@ public class ProcessGraphBuilder {
             String gwLabel = gw.getLabel().toLowerCase(Locale.ROOT).replaceAll("[?:]", "").trim();
             List<BranchTarget> branches = branchesByGateway.get(gw.getId());
 
+            boolean isParallel = gw.getMetadata() != null
+                    && gw.getMetadata().getGatewayType() == GatewayType.parallel;
+
             // Evaluating activity: prefer an activity whose label overlaps the gateway
             // topic AND is NOT one of this gateway's branch targets. Verbs like review,
             // decide, check, evaluate rank above the narrative-first activity fallback.
@@ -873,29 +967,62 @@ public class ProcessGraphBuilder {
                     .map(BranchTarget::targetNodeId)
                     .collect(Collectors.toSet());
 
-            GraphNode evalAct = pickEvaluatingActivity(activityNodes, gwLabel, branchTargetIds, i);
+            GraphNode evalAct;
+            if (isParallel) {
+                // Parallel gateways typically have no local evaluator activity —
+                // fork is fed by the preceding sequential node / start event;
+                // join is fed by all fork branch terminals (handled at wiring time).
+                evalAct = pickParallelEvaluator(activityNodes, branchTargetIds, gwLabel, branches);
+            } else {
+                evalAct = pickEvaluatingActivity(activityNodes, gwLabel, branchTargetIds, i);
+            }
             String evalActId = evalAct != null ? evalAct.getId() : null;
 
-            // Fallback branches only when AI produced nothing usable
-            if (branches.isEmpty()) {
-                int evalIdx = evalAct != null ? activityNodes.indexOf(evalAct) : -1;
-                GraphNode nextSeqAct = (evalIdx >= 0 && evalIdx + 1 < activityNodes.size())
-                        ? activityNodes.get(evalIdx + 1) : null;
-                if (nextSeqAct != null) {
-                    branches.add(new BranchTarget(nextSeqAct.getId(), "yes", false));
+            // Fallback branches: exclusive/inclusive gateways only. Parallel
+            // gateways never get synthetic yes/no or otherwise branches.
+            if (!isParallel) {
+                if (branches.isEmpty()) {
+                    int evalIdx = evalAct != null ? activityNodes.indexOf(evalAct) : -1;
+                    GraphNode nextSeqAct = (evalIdx >= 0 && evalIdx + 1 < activityNodes.size())
+                            ? activityNodes.get(evalIdx + 1) : null;
+                    if (nextSeqAct != null) {
+                        branches.add(new BranchTarget(nextSeqAct.getId(), "yes", false));
+                    }
+                    if (endEvent != null && branches.size() < 2) {
+                        branches.add(new BranchTarget(endEvent.getId(), "no", false));
+                    }
+                } else if (branches.size() == 1 && endEvent != null) {
+                    // A real exclusive gateway needs at least two outgoing branches
+                    branches.add(new BranchTarget(endEvent.getId(), "otherwise", false));
                 }
-                if (endEvent != null && branches.size() < 2) {
-                    branches.add(new BranchTarget(endEvent.getId(), "no", false));
-                }
-            } else if (branches.size() == 1 && endEvent != null) {
-                // A real gateway needs at least two outgoing branches
-                branches.add(new BranchTarget(endEvent.getId(), "otherwise", false));
             }
 
             rules.add(new ParsedBranchRule(evalActId, gw.getId(), branches, null, null));
         }
 
         return rules;
+    }
+
+    private GraphNode pickParallelEvaluator(List<GraphNode> activityNodes,
+                                            Set<String> branchTargetIds,
+                                            String gwLabel,
+                                            List<BranchTarget> branches) {
+        // Join gateways (one branch, "join"/"merge"/"after" keywords) shouldn't
+        // pull a preceding activity — the fork branches feed them at wiring time.
+        boolean joinLike = containsAny(gwLabel, "join", "merge", "after both", "once all", "when all", "converge");
+        if (joinLike || branches.size() <= 1) return null;
+
+        // Fork: use the last activity that appears BEFORE all branch targets in the
+        // narrative order — this is the "preceding step" that fans out. If none
+        // qualifies, leave null so the start event feeds the fork directly.
+        int earliestBranchIdx = Integer.MAX_VALUE;
+        for (int i = 0; i < activityNodes.size(); i++) {
+            if (branchTargetIds.contains(activityNodes.get(i).getId())) {
+                earliestBranchIdx = Math.min(earliestBranchIdx, i);
+            }
+        }
+        if (earliestBranchIdx == 0 || earliestBranchIdx == Integer.MAX_VALUE) return null;
+        return activityNodes.get(earliestBranchIdx - 1);
     }
 
     private GraphNode pickEvaluatingActivity(List<GraphNode> activityNodes, String gwLabel,

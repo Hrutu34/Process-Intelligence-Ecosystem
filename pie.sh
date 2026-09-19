@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # P.I.E. Ecosystem - CLI Management Script
-# Usage: ./pie.sh [verify|build|start|stop [backend|frontend]|status|logs|test]
+# Usage: ./pie.sh [verify|build|start|stop [backend|frontend]|status|logs|test|zip]
 
 LOG_DIR=".logs"
 PID_DIR=".pids"
@@ -278,6 +278,149 @@ logs_all() {
   fi
 }
 
+zip_submission() {
+  local out_name="${1:-submission.zip}"
+  echo -e "${YELLOW}--- Packaging source into ${out_name} ---${NC}"
+
+  # Write plain-text run instructions (source-only, no build artifacts included)
+  cat > RUN_INSTRUCTIONS.txt <<'EOF'
+================================================================
+P.I.E. Ecosystem — Source Submission
+================================================================
+
+This archive contains SOURCE CODE ONLY. Build artifacts, caches,
+node_modules, target/, .git/, logs, storage snapshots, and IDE
+files are excluded to keep the archive small.
+
+--------------------------------------
+1. Prerequisites
+--------------------------------------
+- Java 17+
+- Maven 3.9+   (or use the bundled ./mvnw wrapper)
+- Node.js 18+ and npm
+- Docker (optional, only for docker-compose profile)
+
+--------------------------------------
+2. Unpack & Configure
+--------------------------------------
+  unzip submission.zip -d pie-ecosystem
+  cd pie-ecosystem
+  cp .env.example .env    # if provided; otherwise create .env
+  # Set at minimum ONE of:
+  #   GEMINI_API_KEY=...                          (prod profile)
+  #   VW_LLM_CLIENT_ID / VW_LLM_CLIENT_SECRET /
+  #   VW_LLM_API_KEY=...                          (prod-h2 profile)
+
+--------------------------------------
+3. Install & Build
+--------------------------------------
+  chmod +x pie.sh
+  ./pie.sh verify        # sanity-check toolchain + env vars
+  ./pie.sh build         # mvn compile + npm install
+
+--------------------------------------
+4. Run
+--------------------------------------
+  ./pie.sh start         # prompts for profile (local / staging / prod / prod-h2)
+
+  Frontend:  http://localhost:5173
+  Backend:   http://localhost:8080
+  H2 Console (local profile): http://localhost:8080/h2-console
+             JDBC URL: jdbc:h2:mem:pie_db
+
+--------------------------------------
+5. Manage
+--------------------------------------
+  ./pie.sh status                 # show running services
+  ./pie.sh logs [backend|frontend]
+  ./pie.sh stop [backend|frontend|all]
+  ./pie.sh test [b|f]             # run backend/frontend tests
+
+--------------------------------------
+6. Docker (optional, staging profile)
+--------------------------------------
+  docker-compose up -d            # PostgreSQL for staging profile
+
+================================================================
+EOF
+
+  # Prefer native zip; fall back to PowerShell Compress-Archive on Windows.
+  rm -f "$out_name"
+
+  local excludes=(
+    ".git/*" ".git/**"
+    ".logs/*" ".pids/*"
+    ".idea/*" ".vscode/*"
+    ".env" ".env.*"
+    "*.log" "*.pid" "*.tmp" "*.swp"
+    "backend/target/*" "backend/target/**"
+    "backend/storage/*" "backend/storage/**"
+    "backend/.mvn/wrapper/maven-wrapper.jar"
+    "frontend/node_modules/*" "frontend/node_modules/**"
+    "frontend/dist/*" "frontend/dist/**"
+    "frontend/build/*" "frontend/build/**"
+    "frontend/.vite/*" "frontend/.vite/**"
+    "frontend/coverage/*" "frontend/coverage/**"
+    "storage/*" "storage/**"
+    "*.zip" "*.tar" "*.tar.gz" "*.7z"
+    "**/__pycache__/*" "**/*.pyc"
+    ".DS_Store" "Thumbs.db"
+  )
+
+  if command -v zip >/dev/null 2>&1; then
+    zip -r -9 -q "$out_name" . "${excludes[@]/#/-x}" \
+      || zip -r -9 -q "$out_name" . -x "${excludes[@]}"
+  elif command -v powershell >/dev/null 2>&1; then
+    echo -e "${YELLOW}zip not found — using robocopy + PowerShell Compress-Archive${NC}"
+
+    # Stage OUTSIDE the project so a stray copy can't recurse into itself,
+    # and use robocopy to skip node_modules/target/etc. at O(1) per dir.
+    local src_win stage_win abs_out out_win
+    if command -v cygpath >/dev/null 2>&1; then
+      src_win=$(cygpath -w "$(pwd)")
+      stage_win=$(cygpath -w "$HOME")"\\.pie-zip-staging\\pie-source"
+      abs_out="$(pwd)/$out_name"
+      out_win=$(cygpath -w "$abs_out")
+    else
+      src_win="$(pwd)"
+      stage_win="$HOME\\.pie-zip-staging\\pie-source"
+      out_win="$(pwd)/$out_name"
+    fi
+
+    powershell -NoProfile -Command "
+      \$src = '$src_win'
+      \$stage = '$stage_win'
+      \$out = '$out_win'
+      if (Test-Path \$stage) { Remove-Item -Recurse -Force \$stage }
+      New-Item -ItemType Directory -Force -Path \$stage | Out-Null
+      \$xd = @('.git','.logs','.pids','.idea','.vscode','node_modules','target','dist','build','.vite','coverage','storage','.pie-zip-staging')
+      \$xf = @('*.log','*.pid','*.tmp','*.swp','*.zip','.env','.env.*','.DS_Store','Thumbs.db','maven-wrapper.jar')
+      \$args = @(\$src, \$stage, '/E','/NFL','/NDL','/NJH','/NJS','/NP','/R:1','/W:1','/XD') + \$xd + @('/XF') + \$xf
+      & robocopy @args | Out-Null
+      if (Test-Path \$out) { Remove-Item -Force \$out }
+      Compress-Archive -Path (Join-Path \$stage '*') -DestinationPath \$out -CompressionLevel Optimal -Force
+      Remove-Item -Recurse -Force \$stage
+    " 2>&1 | grep -v '^$' || true
+  else
+    echo -e "${RED}[X] Neither 'zip' nor PowerShell available. Install zip or run on Windows.${NC}"
+    return 1
+  fi
+
+  if [ -f "$out_name" ]; then
+    local size
+    if command -v du >/dev/null 2>&1; then
+      size=$(du -h "$out_name" | awk '{print $1}')
+    else
+      size=$(ls -lh "$out_name" | awk '{print $5}')
+    fi
+    echo -e "${GREEN}[✓] Created ${out_name} (${size})${NC}"
+    echo -e "${GREEN}    Includes RUN_INSTRUCTIONS.txt at root.${NC}"
+  else
+    echo -e "${RED}[X] Zip creation failed.${NC}"
+    return 1
+  fi
+}
+
 case "$1" in
   verify)
     verify_env
@@ -300,8 +443,11 @@ case "$1" in
   test)
     run_tests "$2"
     ;;
+  zip)
+    zip_submission "$2"
+    ;;
   *)
-    echo -e "${YELLOW}Usage: $0 {verify|build|start|stop [backend|frontend]|status|logs [backend|frontend]|test [b|f]}${NC}"
+    echo -e "${YELLOW}Usage: $0 {verify|build|start|stop [backend|frontend]|status|logs [backend|frontend]|test [b|f]|zip [output.zip]}${NC}"
     exit 1
     ;;
 esac

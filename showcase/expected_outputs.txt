@@ -1,0 +1,266 @@
+================================================================
+P.I.E. Ecosystem — Expected Outputs for showcase/inputs.txt
+Use these checklists to validate the generated BPMN. Each case
+lists MUST-HAVE elements. If any bullet is missing or mis-wired,
+the generator has regressed.
+================================================================
+
+
+=== CASE 1 — Leave Request Approval ===
+
+Lanes (2):
+  - Employee
+  - Manager
+
+Start Event:
+  - "Leave request submitted"
+
+Tasks (types must match):
+  - Submit leave request              [userTask, Employee]
+  - Review request                    [userTask, Manager]
+  - Reject request                    [userTask, Manager]
+  - Inform employee of rejection      [sendTask, Employee]
+  - Decide whether to approve request [userTask, Manager]
+  - Record request in HR system       [serviceTask]
+  - Notify employee of approval       [sendTask, Employee]
+  - Communicate rejection to employee [sendTask, Employee]
+
+Gateways (2, both exclusive):
+  - "Leave balance sufficient?"       (or equivalent phrasing)
+        - insufficient  -> Reject request
+        - sufficient    -> Decide whether to approve request
+  - "Approve request?"
+        - approved      -> Record request in HR system
+        - rejected      -> Communicate rejection to employee
+
+End Event(s):
+  - At least one, reached from: Inform..., Notify..., Communicate...
+
+Wiring:
+  - Start -> Submit -> Review -> Gateway1
+  - Gateway1(insufficient) -> Reject -> Inform -> End
+  - Gateway1(sufficient)  -> Decide -> Gateway2
+  - Gateway2(approved)    -> Record -> Notify -> End
+  - Gateway2(rejected)    -> Communicate -> End
+
+MUST NOT contain:
+  - Duplicate branches on the same gateway.
+  - Any activity connected to BOTH gateways as evaluator.
+  - "Review request" as a dangling activity wired straight to End.
+
+
+=== CASE 2 — Payment Processing with Retry ===
+
+Lanes (2):
+  - Finance / Finance Team
+  - Payment System (or Vendor as message target)
+
+Start Event:
+  - "Payment initiated" (or first activity if no explicit start)
+
+Tasks:
+  - Send payment to vendor bank        [serviceTask]
+  - Mark invoice as paid               [serviceTask]
+  - Notify vendor                      [sendTask]
+  - Retry payment                      [serviceTask]
+  - Create payment failure case        [serviceTask]
+  - Investigate and process manually   [userTask, Finance Team]
+
+Gateways (2, exclusive):
+  - "Payment successful?"
+        - success  -> Mark invoice as paid
+        - failure  -> Retry payment
+  - "Retry limit reached?"
+        - no       -> loop back to Send payment
+        - yes      -> Create payment failure case
+
+Loop:
+  - Explicit sequence edge from Retry payment back to Send payment
+    (either directly or via the "Retry limit reached?" NO branch).
+
+End Event(s):
+  - Reached from Notify vendor AND from Investigate and process manually.
+
+MUST NOT contain:
+  - Retry payment leading straight to End without looping back.
+  - Missing "Retry limit reached" gateway (loops must terminate).
+
+
+=== CASE 3 — Expense Clarification with 7-Day SLA ===
+
+Lanes (2):
+  - Employee
+  - Finance Officer (or Finance)
+
+Start Event:
+  - "Clarification requested" (start or first activity)
+
+Tasks:
+  - Request clarification              [sendTask, Finance]
+  - Provide clarification              [userTask, Employee]
+  - Review updated information         [userTask, Finance]
+  - Approve reimbursement              [userTask, Finance]
+  - Automatically cancel reimbursement [serviceTask]
+  - Notify employee of cancellation    [sendTask]
+
+Gateway (1, exclusive):
+  - "Clarification received within 7 days?"
+        - yes -> Review updated information
+        - no  -> (via Timer) Automatically cancel reimbursement
+
+Intermediate Event:
+  - Timer catch event on the "no" branch with duration = "P7D"
+
+Wiring:
+  - Request clarification -> Gateway
+  - Gateway(yes) -> Review -> Approve -> End
+  - Gateway(no)  -> Timer(P7D) -> Auto-cancel -> Notify -> End
+
+MUST HAVE:
+  - <bpmn:timerEventDefinition> with <bpmn:timeDuration>P7D</...>
+  - Two distinct end paths.
+
+
+=== CASE 4 — New Employee Onboarding ===
+
+Lanes (4):
+  - HR
+  - IT
+  - Facilities
+  - Manager
+
+Start Event:
+  - "New employee hired"
+
+Parallel Gateway (fork):
+  - Splits into three concurrent branches (HR, IT, Facilities).
+
+Tasks (per lane):
+  - HR:         Prepare employment contract      [userTask]
+                Collect signed documents         [userTask]
+  - IT:         Provision laptop                 [serviceTask or userTask]
+                Create corporate email account   [serviceTask]
+  - Facilities: Assign desk                      [manualTask or userTask]
+                Issue access badge               [manualTask]
+  - Manager:    Conduct welcome orientation      [userTask]
+
+Parallel Gateway (join):
+  - Merges the three branches BEFORE "Conduct welcome orientation".
+
+End Event:
+  - "Onboarding complete" reached after orientation.
+
+Wiring:
+  - Start -> Parallel-Fork -> {HR chain, IT chain, Facilities chain}
+  - All three chains -> Parallel-Join -> Conduct orientation -> End
+
+MUST NOT contain:
+  - Exclusive gateway where parallel is required.
+  - Orientation firing before all three branches complete.
+
+
+=== CASE 6 — Order Fulfillment (Parallel Fork + Join) ===
+
+Lanes (3):
+  - Warehouse
+  - Finance
+  - Shipping
+
+Start Event:
+  - "Customer order confirmed"
+
+Tasks:
+  - Pick and pack ordered products     [userTask, Warehouse]
+  - Prepare invoice                    [userTask, Finance]
+  - Dispatch order to customer         [serviceTask or sendTask, Shipping]
+
+Gateways (2, both parallel):
+  - "Parallel fork after order confirmed"   [parallelGateway]
+        - Pick and pack ordered products
+        - Prepare invoice
+        (branches UNLABELED — no yes/no)
+  - "Parallel join before dispatch"         [parallelGateway]
+        - Dispatch order to customer
+        Incoming edges from BOTH Pick-and-pack AND Prepare-invoice
+
+End Event:
+  - "Order dispatched to customer"
+
+Wiring:
+  - Start -> Parallel-Fork
+  - Parallel-Fork -> Pick and pack
+  - Parallel-Fork -> Prepare invoice
+  - Pick and pack -> Parallel-Join
+  - Prepare invoice -> Parallel-Join
+  - Parallel-Join -> Dispatch -> End
+
+MUST HAVE:
+  - <bpmn:parallelGateway> for both fork and join.
+  - Fork branch sequenceFlows have NO `name` attribute (unconditional).
+  - Join has TWO incoming sequenceFlows.
+
+MUST NOT contain:
+  - Exclusive gateway with yes/no on parallel fork.
+  - Dispatch firing before either branch completes.
+  - Any hanging start-event wired straight to Pick-and-pack while
+    the fork gateway sits with no incoming edge.
+
+
+=== CASE 5 — Purchase Requisition with Threshold Approval ===
+
+Lanes (3-4):
+  - Employee
+  - Manager
+  - Finance Director
+  - Procurement System (or lane-less service task)
+
+Start Event:
+  - "Requisition needed" or "Purchase requisition created"
+
+Tasks:
+  - Create purchase requisition        [userTask, Employee]
+  - Submit requisition                 [userTask, Employee]
+  - Validate mandatory fields          [serviceTask]
+  - Correct requisition                [userTask, Employee]
+  - Resubmit requisition               [userTask, Employee]
+  - Review requisition                 [userTask, Manager]
+  - Approve requisition                [userTask, Manager]
+  - Escalate to finance director       [sendTask or serviceTask]
+  - Approve escalated requisition      [userTask, Finance Director]
+  - Create purchase order              [serviceTask, Procurement System]
+  - Notify vendor                      [sendTask]
+
+Gateways (2, exclusive):
+  - "Validation passed?"
+        - no  -> Correct requisition (LOOP back to Validate after Resubmit)
+        - yes -> Review requisition
+  - "Amount >= 5000?"
+        - no  -> Approve requisition (Manager)
+        - yes -> Escalate to finance director -> Approve escalated
+
+Loop:
+  - Resubmit requisition -> Validate mandatory fields (sequence edge).
+
+End Event:
+  - Reached after Notify vendor.
+
+Wiring:
+  - Start -> Create -> Submit -> Validate -> Gateway1
+  - Gateway1(no)  -> Correct -> Resubmit -> Validate  (loop)
+  - Gateway1(yes) -> Review -> Gateway2
+  - Gateway2(<5000) -> Approve (Manager) -> Create PO -> Notify -> End
+  - Gateway2(>=5000)-> Escalate -> Approve (Director) -> Create PO -> Notify -> End
+
+MUST NOT contain:
+  - Approve appearing on both branches without escalation on the high-value path.
+  - Resubmit wired to End (loop must return to Validate).
+
+================================================================
+HOW TO VERIFY
+================================================================
+1. Paste CASE N text into the "Process Description" input.
+2. Generate BPMN.
+3. Open the generated XML in bpmn.io (or the built-in canvas) and
+   tick off each MUST-HAVE bullet above.
+4. Also check MUST NOT lines — presence of any of those = regression.
+================================================================

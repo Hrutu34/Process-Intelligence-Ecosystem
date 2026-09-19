@@ -1,0 +1,99 @@
+================================================================
+P.I.E. Ecosystem — Showcase Test Inputs
+Paste ONE case at a time into the "Plain-Language Process Description"
+field. Each case is picked to highlight a specific product strength.
+================================================================
+
+
+=== CASE 1 — Multi-Gateway Approval (fixes the reported bug) ===
+Highlights: two sequential exclusive gateways, correct role split,
+notification vs system tasks, no orphan activities.
+
+TITLE: Leave Request Approval
+
+DESCRIPTION:
+An employee submits a leave request. The manager reviews the request.
+If the leave balance is insufficient, the request is rejected and the
+employee is informed. If sufficient leave balance exists, the manager
+decides whether to approve the request. Approved requests are recorded
+in the HR system and the employee is notified. Rejected requests are
+communicated to the employee.
+
+
+=== CASE 2 — Retry Loop with Escalation ===
+Highlights: loop-back edge, retry counter gateway, escalation branch,
+system-vs-human task distinction.
+
+TITLE: Payment Processing with Retry
+
+DESCRIPTION:
+The finance system sends a payment to the vendor bank. The payment
+gateway confirms whether the payment succeeded. If successful, the
+system marks the invoice as paid and notifies the vendor. If the
+payment fails, the system retries the payment up to three times. If
+the retry limit is reached, a payment failure case is created and the
+finance team investigates and processes the payment manually.
+
+
+=== CASE 3 — SLA Timer / Timeout ===
+Highlights: intermediate timer event with ISO-8601 duration, dual
+paths (clarification received vs auto-cancel), correct event typing.
+
+TITLE: Expense Clarification with 7-Day SLA
+
+DESCRIPTION:
+The finance officer requests clarification from the employee about a
+submitted expense. If the employee provides the required clarification
+within 7 days, the finance officer reviews the updated information and
+approves the reimbursement. If the employee does not respond within 7
+days, the system automatically cancels the reimbursement request and
+notifies the employee.
+
+
+=== CASE 4 — Parallel Cross-Department Onboarding ===
+Highlights: parallel gateway, multiple lanes (HR, IT, Facilities),
+join/merge, single start with multiple concurrent branches.
+
+TITLE: New Employee Onboarding
+
+DESCRIPTION:
+When a new employee is hired, the process starts in parallel across
+three departments. HR prepares the employment contract and collects
+signed documents. IT provisions the laptop and creates the corporate
+email account. Facilities assigns a desk and issues the access badge.
+Once all three departments have completed their tasks, the manager
+conducts the welcome orientation and the onboarding is complete.
+
+
+=== CASE 6 — Pure Parallel Fork + Join (Order Fulfillment) ===
+Highlights: implicit parallel gateway from "at the same time" phrase,
+join gateway from "after both are completed", no explicit conditions.
+
+TITLE: Order Fulfillment
+
+DESCRIPTION:
+The process begins when a customer order is confirmed. Two activities
+start at the same time: the warehouse picks and packs the ordered
+products, and the finance department prepares the invoice. After both
+activities are completed, the shipping department dispatches the
+order to the customer.
+
+
+=== CASE 5 — Validation + Correction Loop with Multi-Approver ===
+Highlights: rework loop, escalation to higher approver on high value,
+conditional based on amount threshold, mixed task types.
+
+TITLE: Purchase Requisition with Threshold Approval
+
+DESCRIPTION:
+An employee creates a purchase requisition and submits it. The system
+validates that all mandatory fields are filled. If validation fails,
+the requisition is returned to the employee for correction and the
+employee resubmits it. If validation passes, the manager reviews the
+requisition. If the amount is below 5000, the manager approves it
+directly. If the amount is 5000 or above, the requisition is escalated
+to the finance director for approval. Approved requisitions are sent
+to the procurement system which creates the purchase order and
+notifies the vendor.
+
+================================================================

@@ -20,7 +20,20 @@ GATEWAY / BUSINESS RULE PAIRING (MANDATORY):
 - Every gateway you emit MUST have EVERY branch expressed as a `businessRules` entry in the strict form "IF [Condition] THEN [EXACT Target Activity Name from `activities`]".
 - The Condition MUST reuse tokens from the gateway label so the two can be paired unambiguously. Bad: gateway "Approve request?" + rule "IF sufficient balance THEN ...". Good: gateway "Approve request?" + rule "IF request approved THEN Record request in HR system", "IF request rejected THEN Communicate rejection to employee".
 - Do NOT reuse the same Target Activity across branches of DIFFERENT gateways.
-- If a gateway has only one explicit branch, add the negative branch explicitly: "IF NOT [Condition] THEN [next activity or end]".
+- If an EXCLUSIVE gateway has only one explicit branch, add the negative branch explicitly: "IF NOT [Condition] THEN [next activity or end]".
+
+PARALLEL FLOW DETECTION (MANDATORY WHEN NARRATIVE INDICATES CONCURRENCY):
+- If the narrative uses phrases like "at the same time", "simultaneously", "in parallel", "concurrently", "both X and Y", or lists two or more activities that clearly execute together, you MUST:
+  1. Emit a FORK gateway tagged `[PARALLEL]` with a label like "Parallel fork after <preceding step>".
+  2. Emit ONE `businessRules` entry PER concurrent branch, phrased WITHOUT a real condition: "IF Parallel fork THEN <exact activity name>". Use the token "parallel fork" literally so the pairing engine recognises it.
+- If the narrative also uses "after both", "once all", "when all are complete", "after both activities finish", you MUST additionally emit a JOIN gateway tagged `[PARALLEL]` labelled "Parallel join before <next step>" with ONE `businessRules` entry: "IF Parallel join THEN <next activity>".
+- PARALLEL branches do NOT need yes/no labels — the condition string may be exactly "Parallel fork" or "Parallel join".
+- Never use `[EXCLUSIVE]` for concurrent flows.
+
+MULTIPLE STARTS / MULTIPLE ENDS:
+- Emit one `[START]` event per DISTINCT trigger the narrative describes (e.g. "Customer places order [START]" AND "Return request received [START]" if both can initiate the process).
+- Emit one `[END]` event per DISTINCT terminal outcome (approved end, rejected end, cancelled end, timeout end). Do NOT collapse two outcomes into a single "Process complete" end when the narrative names them separately.
+- Each END event label MUST include tokens from the terminal ACTIVITY that reaches it, so the graph builder can wire the correct end to the correct branch. Example: activity "Communicate rejection to employee" -> end "Rejection communicated [END]".
 
 TASK TYPE DISCIPLINE:
 - USER_TASK: human interacts with a UI/form (submit, review, approve, decide).

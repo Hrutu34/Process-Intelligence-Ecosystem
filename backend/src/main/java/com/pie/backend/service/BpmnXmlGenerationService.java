@@ -9,11 +9,13 @@ import java.util.stream.Collectors;
 @Service
 public class BpmnXmlGenerationService {
 
-    // Standard BPMN DI dimensions and spacing
-    private static final int BASE_LANE_HEIGHT = 250;
-    private static final int X_START = 150;
-    private static final int X_SPACING = 220; // Horizontal distance between columns
-    private static final int Y_SPACING = 120; // Vertical distance between stacked parallel nodes
+    // Standard BPMN DI dimensions and spacing.
+    // Widened to reduce clutter — bpmn.io renders these as-is, so more air = less overlap.
+    private static final int BASE_LANE_HEIGHT = 320;
+    private static final int X_START = 180;
+    private static final int X_SPACING = 280; // Horizontal distance between columns (was 220)
+    private static final int Y_SPACING = 170; // Vertical distance between stacked parallel nodes (was 120)
+    private static final int LANE_TOP_PADDING = 70;
 
     private static final int TASK_WIDTH = 120;
     private static final int TASK_HEIGHT = 80;
@@ -155,40 +157,46 @@ public class BpmnXmlGenerationService {
             xml.append("      <bpmndi:BPMNEdge id=\"").append(escape(flow.id())).append("_di\" bpmnElement=\"").append(escape(flow.id())).append("\">\n");
             xml.append("        <di:waypoint x=\"").append(startX).append("\" y=\"").append(startY).append("\" />\n");
 
-            if (startX < endX) { // Forward routing
-                boolean isAdjacent = (endX - startX) <= X_SPACING; 
+            // Stagger constants (bigger = more air between parallel edges from the same node)
+            int outStagger = 18 * outIdx;
+            int inStagger = 18 * inIdx;
 
-                if (Math.abs(startY - endY) <= 5) {
-                    // Perfect straight line (No obstacles)
+            if (startX < endX) { // Forward routing
+                boolean isAdjacent = (endX - startX) <= X_SPACING;
+
+                if (Math.abs(startY - endY) <= 5 && outIdx == 0 && inIdx == 0) {
+                    // Perfect straight line (no other edges sharing endpoints)
                     xml.append("        <di:waypoint x=\"").append(endX).append("\" y=\"").append(endY).append("\" />\n");
                 } else if (isAdjacent) {
-                    // Adjacent columns: Drop vertically directly between the two nodes
-                    int midX = startX + 30 + (outIdx * 10);
-                    if (midX >= endX) midX = startX + 10;
-                    xml.append("        <di:waypoint x=\"").append(midX).append("\" y=\"").append(startY).append("\" />\n");
-                    xml.append("        <di:waypoint x=\"").append(midX).append("\" y=\"").append(endY).append("\" />\n");
+                    // Adjacent columns: drop into the vertical gutter between them.
+                    int gutterX = startX + Math.max(40, ((endX - startX) / 2) - 20 + outStagger);
+                    if (gutterX >= endX - 10) gutterX = endX - 20;
+                    xml.append("        <di:waypoint x=\"").append(gutterX).append("\" y=\"").append(startY).append("\" />\n");
+                    xml.append("        <di:waypoint x=\"").append(gutterX).append("\" y=\"").append(endY).append("\" />\n");
                     xml.append("        <di:waypoint x=\"").append(endX).append("\" y=\"").append(endY).append("\" />\n");
                 } else {
-                    // Spanning multiple columns: Use the 5-segment Horizontal Gutter route
-                    int midX1 = startX + 20 + (outIdx * 10);     // 1. Enter source vertical gutter
-                    int midX2 = endX - 20 - (inIdx * 10);        // 4. Emerge in target vertical gutter
-                    
-                    // 2. Drop into the horizontal gutter (60px below center avoids bottom of 80px tasks)
-                    int safeY = startY < endY ? startY + 60 + (outIdx * 5) : startY - 60 - (outIdx * 5); 
-                    
+                    // Spanning multiple columns: 5-segment orthogonal route with staggered gutters.
+                    int midX1 = startX + 40 + outStagger;                 // exit source gutter
+                    int midX2 = endX - 40 - inStagger;                    // enter target gutter
+
+                    // Push horizontal-gutter Y clear of task bounds (TASK_HEIGHT = 80, half = 40).
+                    int gutterOffset = 80 + (outIdx * 12);
+                    int safeY = startY < endY ? startY + gutterOffset : startY - gutterOffset;
+
                     xml.append("        <di:waypoint x=\"").append(midX1).append("\" y=\"").append(startY).append("\" />\n");
                     xml.append("        <di:waypoint x=\"").append(midX1).append("\" y=\"").append(safeY).append("\" />\n");
-                    xml.append("        <di:waypoint x=\"").append(midX2).append("\" y=\"").append(safeY).append("\" />\n"); // 3. Traverse safely
+                    xml.append("        <di:waypoint x=\"").append(midX2).append("\" y=\"").append(safeY).append("\" />\n");
                     xml.append("        <di:waypoint x=\"").append(midX2).append("\" y=\"").append(endY).append("\" />\n");
                     xml.append("        <di:waypoint x=\"").append(endX).append("\" y=\"").append(endY).append("\" />\n");
                 }
-            } else { // Loopback routing
-                // Drop strictly below the source node and loop back
-                int loopY = source.y + source.height + 20 + (outIdx * 15);
-                xml.append("        <di:waypoint x=\"").append(startX + 15).append("\" y=\"").append(startY).append("\" />\n")
-                   .append("        <di:waypoint x=\"").append(startX + 15).append("\" y=\"").append(loopY).append("\" />\n")
-                   .append("        <di:waypoint x=\"").append(endX - 15 - (inIdx * 8)).append("\" y=\"").append(loopY).append("\" />\n")
-                   .append("        <di:waypoint x=\"").append(endX - 15 - (inIdx * 8)).append("\" y=\"").append(endY).append("\" />\n")
+            } else { // Loopback routing (target sits to the left of source)
+                int loopY = source.y + source.height + 40 + (outIdx * 20);
+                int exitX = startX + 20 + outStagger;
+                int entryX = endX - 20 - inStagger;
+                xml.append("        <di:waypoint x=\"").append(exitX).append("\" y=\"").append(startY).append("\" />\n")
+                   .append("        <di:waypoint x=\"").append(exitX).append("\" y=\"").append(loopY).append("\" />\n")
+                   .append("        <di:waypoint x=\"").append(entryX).append("\" y=\"").append(loopY).append("\" />\n")
+                   .append("        <di:waypoint x=\"").append(entryX).append("\" y=\"").append(endY).append("\" />\n")
                    .append("        <di:waypoint x=\"").append(endX).append("\" y=\"").append(endY).append("\" />\n");
             }
 
@@ -240,7 +248,7 @@ public class BpmnXmlGenerationService {
         }
 
         int maxDepth = compressedDepthMap.size() > 0 ? compressedDepthMap.size() - 1 : 0;
-        ctx.totalWidth = Math.max(1200, X_START + (maxDepth * X_SPACING) + 300);
+        ctx.totalWidth = Math.max(1400, X_START + (maxDepth * X_SPACING) + 400);
 
         // 3. Map Nodes to Lanes
         Map<String, String> nodeLaneMap = new HashMap<>();
@@ -269,23 +277,26 @@ public class BpmnXmlGenerationService {
         int currentY = 50;
         if (!activeLanes.isEmpty()) {
             for (BpmnProcessModel.Lane lane : activeLanes) {
-                int maxStackInLane = laneDepthCounts.containsKey(lane.id()) 
-                    ? laneDepthCounts.get(lane.id()).values().stream().mapToInt(v -> v).max().orElse(1) 
+                int maxStackInLane = laneDepthCounts.containsKey(lane.id())
+                    ? laneDepthCounts.get(lane.id()).values().stream().mapToInt(v -> v).max().orElse(1)
                     : 1;
-                
-                int requiredHeight = Math.max(BASE_LANE_HEIGHT, (maxStackInLane * Y_SPACING) + 60);
-                
+
+                int requiredHeight = Math.max(BASE_LANE_HEIGHT,
+                        (maxStackInLane * Y_SPACING) + LANE_TOP_PADDING + 40);
+
                 ctx.laneHeights.put(lane.id(), requiredHeight);
                 ctx.laneStartYs.put(lane.id(), currentY);
                 currentY += requiredHeight;
             }
         } else {
             ctx.laneStartYs.put("default_lane", 50);
-            currentY = 600;
+            currentY = 700;
         }
         ctx.totalHeight = currentY - 50;
 
-        // 6. Assign Final Physical Coordinates
+        // 6. Assign Final Physical Coordinates. Center each shape vertically in its
+        // slot regardless of shape type (task / gateway / event) so nodes in the same
+        // stack column share the same visual baseline.
         for (String id : allIds) {
             int d = depthMap.getOrDefault(id, 0);
             int stackIndex = nodeStackIndexMap.getOrDefault(id, 0);
@@ -293,20 +304,25 @@ public class BpmnXmlGenerationService {
 
             int laneY = ctx.laneStartYs.getOrDefault(laneId, 100);
 
+            // Slot center — one row per stackIndex within the lane
             int x = X_START + (d * X_SPACING);
-            int y = laneY + 40 + (stackIndex * Y_SPACING); 
+            int slotCenterY = laneY + LANE_TOP_PADDING + (stackIndex * Y_SPACING) + (TASK_HEIGHT / 2);
 
-            int width = TASK_WIDTH, height = TASK_HEIGHT, yOffset = 0;
+            int width = TASK_WIDTH, height = TASK_HEIGHT;
 
             if (model.startEvents().stream().anyMatch(e -> e.id().equals(id)) ||
                 model.endEvents().stream().anyMatch(e -> e.id().equals(id)) ||
                 model.intermediateEvents().stream().anyMatch(e -> e.id().equals(id))) {
-                width = EVENT_SIZE; height = EVENT_SIZE; yOffset = 22;
+                width = EVENT_SIZE; height = EVENT_SIZE;
             } else if (model.gateways().stream().anyMatch(e -> e.id().equals(id))) {
-                width = GATEWAY_SIZE; height = GATEWAY_SIZE; yOffset = 15;
+                width = GATEWAY_SIZE; height = GATEWAY_SIZE;
             }
 
-            ctx.boundsMap.put(id, new Bounds(x, y + yOffset, width, height));
+            // Horizontally center smaller shapes within the task-width column
+            int shapeX = x + ((TASK_WIDTH - width) / 2);
+            int shapeY = slotCenterY - (height / 2);
+
+            ctx.boundsMap.put(id, new Bounds(shapeX, shapeY, width, height));
         }
 
         return ctx;
