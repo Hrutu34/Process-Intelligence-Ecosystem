@@ -64,3 +64,4 @@ backend/data/
 # Temporary storage & staging
 backend/storage/deleted_staging/
 backend/storage/documents/doc_*
+.env

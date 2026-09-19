@@ -21,8 +21,9 @@ import vwgdsLogo from "./assets/vwgds-logo.png";
 import type { ProcessKnowledgeDTO } from "../../backend/src/main/java/com/pie/shared/types/dto";
 import type { SelectedElementInfo } from "./services/chatService";
 import { useCallback, useEffect, useState } from "react";
+import { ProcessMiningTab } from "./components/simulation/ProcessMiningTab";
 
-type AgentTab = "01_KNOWLEDGE" | "02_INTELLIGENCE" | "03_BPMN" | "04_REVIEW";
+type AgentTab = "01_KNOWLEDGE" | "02_INTELLIGENCE" | "03_BPMN" | "04_REVIEW" | "05_SIMULATION";
 type EntryMode = "text-to-diagram" | "diagram-to-summary";
 
 function App() {
@@ -87,6 +88,7 @@ function App() {
     { number: "02", icon: "/mascots/BlueBerryPie.png", title: "Blueberry Pie (Intelligence)", description: "Finds gaps, dead ends, missing owners, contradictions, and hidden process risks.", accent: "yellow" },
     { number: "03", icon: "/mascots/CherryPie.png", title: "Cherry Pie (BPMN)", description: "Transforms validated process knowledge into clean, editable BPMN 2.0 models.", accent: "aqua" },
     { number: "04", icon: "/mascots/PecanPie.png", title: "Pecan Pie (Review)", description: "Turns complex process diagrams back into language your business actually understands.", accent: "yellow" },
+    { number: "05", icon: "/mascots/KeyLimePie.png", title: "Key Lime Pie (Simulation)", description: "Simulates stochastic tokens, identifies bottlenecks, computes SLA adherence, and exports Celonis/Disco event logs.", accent: "aqua" },
   ];
 
   const handleStartExtraction = (fileCount: number) => {
@@ -195,7 +197,7 @@ function App() {
               inputs: prev.inputs && prev.inputs.length > 0 ? prev.inputs : (data.knowledge?.inputs || []),
               outputs: prev.outputs && prev.outputs.length > 0 ? prev.outputs : (data.knowledge?.outputs || []),
               businessRules: prev.businessRules && prev.businessRules.length > 0 ? prev.businessRules : (data.knowledge?.businessRules || []),
-              processName: prev.processName || data.processName || (data.knowledge as any)?.processName,
+              processName: (prev as any)?.processName || data.processName || (data.knowledge as any)?.processName,
             };
           });
           window.dispatchEvent(new CustomEvent("pie:bpmn-applied", { detail: { bpmnXml: currentBpmnXml } }));
@@ -257,6 +259,23 @@ function App() {
             <div className="nav-right" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <button
                 className="nav-history-btn"
+                onClick={() => {
+                  if (!extractedData) {
+                    setExtractedData({ processName: 'Enterprise Workflow Simulator' } as any);
+                  }
+                  setActiveTab("05_SIMULATION");
+                  setView("landing");
+                }}
+                title="Open Process Mining & Discrete Event Simulator"
+                style={{ borderColor: 'rgba(99, 102, 241, 0.4)', color: '#c7d2fe' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                Simulation
+              </button>
+              <button
+                className="nav-history-btn"
                 onClick={() => setHistoryOpen((v) => !v)}
                 aria-label="History"
                 title="Process history"
@@ -316,6 +335,9 @@ function App() {
                   <button type="button" className={`agent-tab ${activeTab === "04_REVIEW" ? "active" : ""}`} onClick={() => setActiveTab("04_REVIEW")}>
                     <span>Pecan Pie</span>{tabStatus("04_REVIEW")}
                   </button>
+                  <button type="button" className={`agent-tab ${activeTab === "05_SIMULATION" ? "active" : ""}`} onClick={() => setActiveTab("05_SIMULATION")}>
+                    <span>Process Mining</span>{tabStatus("05_SIMULATION")}
+                  </button>
                 </div>
 
                 {activeTab === "01_KNOWLEDGE" && (
@@ -369,8 +391,40 @@ function App() {
                         bpmnXml={currentBpmnXml}
                         onHighlightIssue={(id, color) => setHighlightedElement(id ? { id, color: color || "#ff6b6b" } : null)}
                       />
+                      <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={() => setActiveTab("05_SIMULATION")}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                            color: '#ffffff',
+                            border: '1px solid #6366f1',
+                            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.35)'
+                          }}
+                        >
+                          <span>PROCEED TO PROCESS MINING &amp; SIMULATION</span>
+                          <span>↗</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
+                )}
+
+                {activeTab === "05_SIMULATION" && (
+                  <ProcessMiningTab
+                    bpmnXml={currentBpmnXml}
+                    userContext={currentSourceText}
+                    processName={(extractedData as any)?.processName || "Ecosystem Process"}
+                  />
                 )}
               </div>
             </section>
@@ -491,6 +545,29 @@ function App() {
                       <h2>Diagram → Summary</h2>
                       <p>Upload a BPMN file. Pie renders it, validates the model, and produces a plain-language walkthrough your team can read.</p>
                       <span className="bubble-cta">Upload BPMN →</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="bubble bubble--neon-blue"
+                      style={{ borderColor: 'rgba(99, 102, 241, 0.5)' }}
+                      onClick={() => {
+                        if (!extractedData) {
+                          setExtractedData({ processName: 'Enterprise Workflow Simulator' } as any);
+                        }
+                        setActiveTab("05_SIMULATION");
+                      }}
+                    >
+                      <span className="bubble-sheen" />
+                      <span className="bubble-glow bubble-glow--a" style={{ background: 'rgba(99, 102, 241, 0.3)' }} />
+                      <div className="bubble-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                      </div>
+                      <h2>Simulation &amp; Mining</h2>
+                      <p>Simulate thousands of stochastic cases, analyze worker queues, identify bottlenecks, and export Celonis/Disco event logs.</p>
+                      <span className="bubble-cta" style={{ color: '#818cf8' }}>Launch Studio →</span>
                     </button>
                   </div>
 

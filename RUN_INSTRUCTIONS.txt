@@ -1,0 +1,58 @@
+================================================================
+P.I.E. Ecosystem — Source Submission
+================================================================
+
+This archive contains SOURCE CODE ONLY. Build artifacts, caches,
+node_modules, target/, .git/, logs, storage snapshots, and IDE
+files are excluded to keep the archive small.
+
+--------------------------------------
+1. Prerequisites
+--------------------------------------
+- Java 17+
+- Maven 3.9+   (or use the bundled ./mvnw wrapper)
+- Node.js 18+ and npm
+- Docker (optional, only for docker-compose profile)
+
+--------------------------------------
+2. Unpack & Configure
+--------------------------------------
+  unzip submission.zip -d pie-ecosystem
+  cd pie-ecosystem
+  cp .env.example .env    # if provided; otherwise create .env
+  # Set at minimum ONE of:
+  #   GEMINI_API_KEY=...                          (prod profile)
+  #   VW_LLM_CLIENT_ID / VW_LLM_CLIENT_SECRET /
+  #   VW_LLM_API_KEY=...                          (prod-h2 profile)
+
+--------------------------------------
+3. Install & Build
+--------------------------------------
+  chmod +x pie.sh
+  ./pie.sh verify        # sanity-check toolchain + env vars
+  ./pie.sh build         # mvn compile + npm install
+
+--------------------------------------
+4. Run
+--------------------------------------
+  ./pie.sh start         # prompts for profile (local / staging / prod / prod-h2)
+
+  Frontend:  http://localhost:5173
+  Backend:   http://localhost:8080
+  H2 Console (local profile): http://localhost:8080/h2-console
+             JDBC URL: jdbc:h2:mem:pie_db
+
+--------------------------------------
+5. Manage
+--------------------------------------
+  ./pie.sh status                 # show running services
+  ./pie.sh logs [backend|frontend]
+  ./pie.sh stop [backend|frontend|all]
+  ./pie.sh test [b|f]             # run backend/frontend tests
+
+--------------------------------------
+6. Docker (optional, staging profile)
+--------------------------------------
+  docker-compose up -d            # PostgreSQL for staging profile
+
+================================================================

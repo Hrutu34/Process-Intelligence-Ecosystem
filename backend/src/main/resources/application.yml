@@ -7,3 +7,20 @@ spring:
 server:
   port: 8080
   shutdown: graceful
+
+# VW Group LLMaaS integration (Cloud IDP OAuth2 client-credentials + LLMaaS REST API).
+# Secrets are always sourced from environment variables - never hardcode them here.
+vw:
+  llm:
+    idp:
+      token-uri: https://idp.cloud.vwgroup.com/auth/realms/kums-mfa/protocol/openid-connect/token
+      client-id: ${VW_LLM_CLIENT_ID:}
+      client-secret: ${VW_LLM_CLIENT_SECRET:}
+    api:
+      base-url: https://llmapi.ai.vwgroup.com
+      api-key: ${VW_LLM_API_KEY:}
+      chat-model: gpt-4o
+      embedding-model: text-embedding-3-large
+    timeout:
+      connect-ms: 5000
+      read-ms: 30000

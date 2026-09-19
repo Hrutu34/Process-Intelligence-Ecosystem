@@ -1,542 +1,219 @@
 # P.I.E. — Process Intelligence Ecosystem
 
-> **Hackathon MVP:** An Agentic AI-powered platform that converts plain business language, enterprise documents, and existing process knowledge into validated BPMN 2.0 models, with issue detection, improvement suggestions, and business-friendly summaries.
+> **Turn plain business language into validated, editable BPMN 2.0 diagrams — powered by a four-agent AI workflow.**
+
+Team **Prompt Cartel** · VWGDS India · Engineering [R&D] (I-DK-R)
 
 ---
 
-## 1. Problem Statement
+## TL;DR
 
-Business processes are often captured in unstructured formats such as text documents, spreadsheets, presentations, emails, and informal notes. This creates several challenges:
+Paste a paragraph like *"An employee submits a leave request. The manager reviews it…"* and P.I.E. gives you back:
 
-- Process definitions are incomplete or inconsistent.
-- Activities, events, gateways, ownership, and system interactions are often unclear.
-- BPMN diagrams are slow to create manually and are difficult for non-experts to understand.
-- Reviews, audits, and automation initiatives are delayed because process specialists must repeatedly interpret and correct process documentation.
+- A structured **process graph** (activities, roles, gateways, systems, events).
+- A **BPMN 2.0 XML** with lanes, task types, gateways, timers, and end events.
+- A **review report** (issues, quality score, plain-language summary).
+- An **editable canvas** (`bpmn-js`) with chat-based refinement.
 
-**P.I.E. — Process Intelligence Ecosystem** solves this by using a four-agent AI workflow to transform unstructured business knowledge into standard, validated, editable BPMN 2.0 models.
-
----
-
-## 2. Solution Overview
-
-P.I.E. is a quick AI-based process intelligence system designed for hackathon MVP delivery and future enterprise scaling.
-
-The system enables users to:
-
-- Upload process documents or enter free-text process descriptions.
-- Automatically extract steps, roles, systems, decisions, events, and flows.
-- Generate editable BPMN 2.0 diagrams using `bpmn-js` / `bpmn.io`.
-- Validate BPMN quality and detect modelling issues.
-- Suggest fixes, better activity names, missing events, and improved flows.
-- Summarize generated or existing BPMN diagrams in simple business language.
-- Export, save, share, and review audit-ready process models.
+Runs locally against a local LLM (Ollama), a VW LLMaaS gateway, or Gemini.
 
 ---
 
-## 3. MVP Vision
+## Quick Start
 
-The MVP focuses on proving one high-value capability:
-
-> **From unstructured process knowledge to validated BPMN 2.0 models using Agentic AI.**
-
-The MVP should demonstrate an end-to-end flow:
-
-1. User uploads documents or enters process text.
-2. AI classifies and groups the input content.
-3. Process knowledge is extracted.
-4. BPMN 2.0 diagram and XML are generated.
-5. BPMN is validated against quality rules.
-6. Issues are highlighted with suggestions.
-7. User can correct the model through chat or manual editing.
-8. Final BPMN can be exported, saved, or shared.
-
----
-
-## 4. Four-Agent Architecture
-
-P.I.E. uses a focused four-agent system to keep the solution lightweight, explainable, and hackathon-ready.
-
-### 4.1 Knowledge Extraction Agent
-
-**Purpose:** Convert unstructured input into structured process knowledge.
-
-**Responsibilities:**
-
-- Ingest documents, free text, and process descriptions.
-- Extract activities, actors, roles, systems, decisions, events, inputs, and outputs.
-- Identify implicit process steps and missing context.
-- Produce structured JSON that can be consumed by downstream agents.
-
-**Expected Output:**
-
-```json
-{
-  "processName": "Example Process",
-  "actors": [],
-  "activities": [],
-  "events": [],
-  "decisions": [],
-  "systems": [],
-  "risksOrGaps": []
-}
+```bash
+git clone <repo> pie && cd pie
+cp .env.example .env         # add ONE LLM credential (see Profiles)
+chmod +x pie.sh
+./pie.sh verify              # sanity-check toolchain + env
+./pie.sh build               # mvn compile + npm install
+./pie.sh start               # pick profile, boots backend + frontend
 ```
 
----
+Open:
 
-### 4.2 Process Intelligence Agent
+| Service    | URL                                    |
+|------------|----------------------------------------|
+| Frontend   | http://localhost:5173                  |
+| Backend    | http://localhost:8080                  |
+| H2 console | http://localhost:8080/h2-console (local profile) |
 
-**Purpose:** Build process understanding and detect gaps before BPMN generation.
+All CLI commands:
 
-**Responsibilities:**
-
-- Convert extracted knowledge into a logical process graph.
-- Identify missing start/end events, unclear gateways, broken flows, duplicate steps, and ownership gaps.
-- Detect modelling risks and inconsistent process sequences.
-- Recommend improved process structure before diagram creation.
-
-**Expected Output:**
-
-```json
-{
-  "processGraph": {},
-  "detectedGaps": [],
-  "recommendedFixes": [],
-  "qualityObservations": []
-}
+```bash
+./pie.sh {verify|build|start|stop [backend|frontend|all]|status|logs [backend|frontend]|test [b|f]|zip [out.zip]}
 ```
 
+### Profiles
+
+| Profile   | DB              | LLM                          | Required env                                                |
+|-----------|-----------------|------------------------------|-------------------------------------------------------------|
+| `local`   | H2 in-memory    | Ollama (local)               | none                                                        |
+| `staging` | PostgreSQL      | VW LLMaaS                    | `VW_LLM_*`                                                  |
+| `prod`    | Cloud DB        | Gemini                       | `GEMINI_API_KEY`                                            |
+| `prod-h2` | H2 file         | VW LLMaaS / OpenAI gpt-4o    | `VW_LLM_CLIENT_ID`, `VW_LLM_CLIENT_SECRET`, `VW_LLM_API_KEY` |
+
+Prerequisites: **Java 17+**, **Maven 3.9+** (or bundled `./mvnw`), **Node 18+**, optional Docker for staging.
+
 ---
 
-### 4.3 BPMN Modelling Agent
+## Prove It Works
 
-**Purpose:** Generate standard BPMN 2.0 models from validated process knowledge.
+Five ready-to-paste narratives + expected outputs live in [`showcase/`](showcase/):
 
-**Responsibilities:**
+| # | Case                              | Highlights                                        |
+|---|-----------------------------------|---------------------------------------------------|
+| 1 | Leave Request Approval            | dual exclusive gateways, correct role split      |
+| 2 | Payment Retry Loop                | loop-back edge, retry counter, escalation        |
+| 3 | Expense 7-Day SLA                 | timer intermediate event (ISO-8601 `P7D`)        |
+| 4 | Employee Onboarding               | parallel fork/join across 3 lanes                |
+| 5 | Purchase Requisition + Threshold  | rework loop + multi-approver escalation          |
+| 6 | Order Fulfillment                 | pure parallel fork + join, multi-lane            |
 
-- Convert the process graph into BPMN 2.0 XML.
-- Generate BPMN elements such as start events, tasks, gateways, sequence flows, lanes, and end events.
-- Integrate with `bpmn-js` / `bpmn.io` for visual editing.
-- Apply basic BPMN validation rules.
-- Return editable BPMN XML and diagram metadata.
+Each case in `expected_outputs.txt` lists MUST-HAVE elements and MUST-NOT regression traps — tick them off in the generated diagram.
 
-**Expected Output:**
+---
 
-```xml
-<bpmn:definitions>
-  <!-- Generated BPMN 2.0 XML -->
-</bpmn:definitions>
+## Architecture
+
 ```
-
----
-
-### 4.4 Process Review Agent
-
-**Purpose:** Make the BPMN output understandable, reviewable, and improvement-ready.
-
-**Responsibilities:**
-
-- Generate plain-language process summaries.
-- Explain generated or existing BPMN diagrams to business users.
-- Highlight BPMN issues and improvement suggestions.
-- Produce a review report covering quality, gaps, risks, and recommended actions.
-- Support chat-based corrections and refinement.
-
-**Expected Output:**
-
-```json
-{
-  "summary": "Business-friendly process explanation",
-  "issues": [],
-  "recommendations": [],
-  "auditReadinessNotes": []
-}
-```
-
----
-
-## 5. Recommended MVP Roadmap
-
-### Phase 0 — Foundation and Repository Setup
-
-**Goal:** Prepare the base structure for fast MVP development.
-
-**Coding Scope:**
-
-- Create frontend, backend, agent, and shared model folders.
-- Define shared DTOs for process extraction, process graph, BPMN XML, validation results, and review report.
-- Add sample business process documents and test prompts.
-- Add environment configuration for LLM provider, database, and file storage.
-
-**Design Scope:**
-
-- Define design language aligned with the hackathon deck.
-- Create low-fidelity screens for upload, BPMN editor, validation panel, and summary report.
-- Define user journey from document upload to export.
-
-**Deliverables:**
-
-- Repository skeleton.
-- Initial README.
-- Architecture diagram.
-- Sample input/output contract.
-
----
-
-### Phase 1 — Input and Knowledge Extraction
-
-**Goal:** Convert documents and free text into structured process knowledge.
-
-**Coding Scope:**
-
-- Build upload/free-text input UI.
-- Implement backend endpoint for submitting process content.
-- Add basic document text extraction for supported file formats.
-- Implement Knowledge Extraction Agent prompt and structured JSON output.
-- Store extracted process knowledge in shared repository/database.
-
-**Design Scope:**
-
-- Upload screen.
-- Input classification badges.
-- Extracted entities preview.
-- User feedback option for missing or incorrect extraction.
-
-**Deliverables:**
-
-- Working upload/text input flow.
-- Extracted roles, steps, decisions, systems, and events.
-- JSON preview for extracted process knowledge.
-
----
-
-### Phase 2 — Process Intelligence and Gap Detection
-
-**Goal:** Transform extracted entities into a logical process graph and detect process issues.
-
-**Coding Scope:**
-
-- Implement Process Intelligence Agent.
-- Create process graph builder from extracted JSON.
-- Add rule checks for missing start/end events, unclear decisions, missing owners, disconnected flows, and duplicate activities.
-- Generate recommended fixes and better names.
-
-**Design Scope:**
-
-- Process quality panel.
-- Gap/issue cards with severity indicators.
-- Suggested correction layout.
-
-**Deliverables:**
-
-- Process graph JSON.
-- Gap detection results.
-- Suggested fixes before BPMN generation.
-
----
-
-### Phase 3 — BPMN Generation and Editor Integration
-
-**Goal:** Generate editable BPMN 2.0 diagrams.
-
-**Coding Scope:**
-
-- Implement BPMN Modelling Agent.
-- Generate BPMN 2.0 XML from process graph.
-- Integrate `bpmn-js` / `bpmn.io` in the frontend.
-- Render BPMN diagram in browser.
-- Allow manual edits in the BPMN canvas.
-- Add export option for BPMN XML.
-
-**Design Scope:**
-
-- BPMN canvas layout.
-- Left panel for process steps/entities.
-- Right panel for validation issues and suggestions.
-- Export/share action buttons.
-
-**Deliverables:**
-
-- Generated BPMN XML.
-- Editable BPMN diagram.
-- Basic BPMN export capability.
-
----
-
-### Phase 4 — BPMN Validation, Review, and Summary
-
-**Goal:** Make generated BPMN reviewable and understandable for business users.
-
-**Coding Scope:**
-
-- Implement Process Review Agent.
-- Summarize generated BPMN in natural language.
-- Validate BPMN against MVP quality rules.
-- Highlight issues directly in the model or side panel.
-- Add chat-based correction loop for selected issues.
-- Generate review report.
-
-**Design Scope:**
-
-- Summary tab.
-- Review report layout.
-- Issue-to-diagram linking experience.
-- Chat correction interaction.
-
-**Deliverables:**
-
-- Process summary.
-- Validation report.
-- Issue highlighting.
-- AI-based correction suggestions.
-
----
-
-### Phase 5 — MVP Demo Packaging
-
-**Goal:** Prepare a polished hackathon-ready demo.
-
-**Coding Scope:**
-
-- Add sample demo scenarios.
-- Add fallback mock responses to protect the demo from LLM/API failures.
-- Add logging for each agent step.
-- Improve error handling and loading states.
-- Add final export/save/share flow.
-
-**Design Scope:**
-
-- Demo-ready landing screen.
-- Simple progress tracker for agent execution.
-- Final output screen showing BPMN, summary, issues, and export actions.
-
-**Deliverables:**
-
-- End-to-end working MVP.
-- Demo script.
-- Sample process inputs.
-- Final BPMN output and review report.
-
----
-
-## 6. Suggested Technical Architecture
-
-```text
 Business User
-     |
-     v
-Frontend UI
-(GroupUI / Angular or React + bpmn-js)
-     |
-     v
-Backend API Layer
-(Java Spring Boot / Node.js)
-     |
-     v
+     │
+     ▼
+Frontend (React + Vite + bpmn-js)
+     │  REST
+     ▼
+Backend (Spring Boot)
+     │
+     ▼
 Agentic Orchestrator
-     |
-     +--> Knowledge Extraction Agent
-     +--> Process Intelligence Agent
-     +--> BPMN Modelling Agent
-     +--> Process Review Agent
-     |
-     v
-Shared Repository / Database
-     |
-     v
-BPMN XML + Summary + Review Report
+     ├── Knowledge Extraction  →  ProcessKnowledgeDTO (activities, actors, gateways, rules)
+     ├── Process Intelligence  →  ProcessGraphDTO (nodes + edges + validation)
+     ├── BPMN Modelling        →  BPMN 2.0 XML + DI layout
+     └── Process Review        →  quality score + issues + plain-language summary
+     │
+     ▼
+H2 / PostgreSQL   +   Storage (uploads, snapshots, versions)
+```
+
+### The four agents
+
+| Agent                       | Input                     | Output                                      | Key files                                       |
+|-----------------------------|---------------------------|---------------------------------------------|-------------------------------------------------|
+| **Knowledge Extraction**    | Free text or docs         | `ProcessKnowledgeDTO` (JSON)                | `KnowledgeExtractionService`, `knowledge-extraction-prompt.txt` |
+| **Process Intelligence**    | `ProcessKnowledgeDTO`     | `ProcessGraphDTO` (nodes + edges + roles)   | `ProcessGraphBuilder`, `ProcessGraphValidator`  |
+| **BPMN Modelling**          | `ProcessGraphDTO`         | BPMN 2.0 XML with DI layout                 | `BpmnDomainModelMapper`, `BpmnXmlGenerationService` |
+| **Process Review**          | BPMN XML + knowledge      | Summary + issues + quality score            | `AiProcessReviewService`, `AiProcessQualityService` |
+
+### Chat + refinement loop
+
+`AiBpmnRefinementService` + `chat-edit-prompt.txt` let the user say *"add a rejection path from Review to End"* and the diagram updates in place with a version bump (`BpmnVersionService`).
+
+---
+
+## Repository Layout
+
+```
+pie-ecosystem/
+├── README.md              ← this file
+├── pie.sh                 ← CLI (start / stop / build / test / zip)
+├── docker-compose.yml     ← Postgres for staging profile
+├── backend/               ← Spring Boot API + agents
+│   └── src/main/java/com/pie/backend/
+│       ├── service/       ← agents, graph builder, BPMN generator
+│       ├── controller/    ← REST endpoints
+│       └── dto/           ← wire contracts
+├── frontend/              ← React + Vite + bpmn-js canvas
+├── agents/                ← per-agent info + prompts (info_Todo scaffolds)
+├── samples/               ← reference narratives + expected outputs
+├── showcase/              ← 6 curated demo cases + expected outputs
+├── docs/                  ← architecture + roadmap notes
+└── tests/                 ← integration + e2e placeholders
 ```
 
 ---
 
-## 7. Repository Structure
+## Feature Highlights
 
-This repository provides a clear separation between frontend, backend, agent services, shared contracts, documentation, sample assets, and test suites. The structure is designed to be scalable for future enterprise integrations while remaining lightweight for the hackathon MVP.
+**Extraction discipline** — anti-hallucination prompt keeps LLM from inventing actors/systems; sense-making rules recover implicit starts/ends and gateway conditions from terse narratives.
 
-```text
-pie-process-intelligence-Ecosystem/
-├── README.md                   # Main entry point, project overview, and setup instructions.
-├── CONTRIBUTING.md             # Guidelines for contributing to the project.
-├── docs/                       # Project documentation, architecture, and design files.
-│   ├── architecture.md         # Detailed system architecture and agentic workflow.
-│   ├── roadmap.md              # MVP and future product roadmap.
-│   ├── demo-script.md          # Script for live demonstrations.
-│   └── sample-processes/       # Example business process documents.
-├── frontend/                   # Web-based user interface (Angular/React + bpmn-js).
-│   ├── src/                    # Source code for the frontend application.
-│   └── README.md               # Frontend-specific setup and development guide.
-├── backend/                    # API layer and orchestration (Java/Node.js).
-│   ├── src/                    # Source code for the backend services.
-│   └── README.md               # Backend-specific setup and development guide.
-├── agents/                     # AI agent services for process intelligence.
-│   ├── knowledge-extraction-agent/ # Extracts knowledge from unstructured text.
-│   ├── process-intelligence-agent/ # Builds process graph and detects gaps.
-│   ├── bpmn-modelling-agent/     # Generates BPMN 2.0 XML and diagrams.
-│   └── process-review-agent/     # Summarizes BPMN and provides review feedback.
-├── shared/                     # Shared data contracts (DTOs), schemas, and prompts.
-│   ├── dto/                    # Data Transfer Objects for API communication.
-│   ├── schemas/                # JSON schemas for validation.
-│   └── prompts/                # LLM prompts for the AI agents.
-├── samples/                    # Sample input files and expected output.
-│   ├── input/                  # Example input documents and text.
-│   └── output/                 # Generated BPMN, summaries, and reports.
-└── tests/                      # Automated tests.
-    ├── unit/                   # Unit tests for individual components.
-    ├── integration/            # Integration tests for service interactions.
-    └── e2e/                    # End-to-end tests for user workflows.
+**Graph builder that respects semantics**
+- Stop-word-aware token overlap prevents generic nouns like *"request"* from cross-wiring every gateway.
+- One-to-one rule→gateway assignment with complementary-condition fallback (rejected pairs with approved).
+- Parallel fork/join detection; unconditional branches; join gateways vacuum open fork terminals.
+- Multi-start / multi-end wiring by nearest-label match.
+
+**BPMN generator**
+- Correct task typing (`userTask`, `serviceTask`, `sendTask`, `manualTask`, `receiveTask`, `scriptTask`).
+- Lane-aware DI layout with widened spacing to reduce clutter.
+- Orthogonal edge routing with staggered gutters — no overlapping arrows on gateways with 3+ outputs.
+- Timer events emit ISO-8601 (`P7D`, `PT2H`).
+
+**Review layer**
+- Plain-language summary for business readers.
+- Quality checks (missing owner, disconnected node, ambiguous gateway, no end event).
+- Chat-based fixes with version history.
+
+---
+
+## Testing
+
+```bash
+./pie.sh test            # backend + frontend
+./pie.sh test b          # backend only
+./pie.sh test f          # frontend only
 ```
 
-### 7.1. Folder Ownership and Responsibilities
+Focused test class for the graph engine:
 
-| Folder                       | Primary Owner   | Secondary Owner | Key Responsibilities                                      |
-| ---------------------------- | --------------- | --------------- | --------------------------------------------------------- |
-| **`frontend/`**              | Hrutu S.        | Prajwal G.      | UI/UX, BPMN editor integration, and user interactions.    |
-| **`backend/`**               | Prajwal G.      | Hrutu S.        | API development, orchestration, and database integration. |
-| **`agents/`**                | Jay K.          | Prajwal G.      | AI agent implementation, prompt engineering, and output.  |
-| **`shared/`**                | Hrutu S.        | Jay K.          | Data contracts, schemas, and shared utilities.            |
-| **`docs/`**, **`samples/`** | Prajwal G.      | All             | Documentation, sample data, and final presentation.       |
-| **`tests/`**                 | Jay K.          | Hrutu S.        | Test planning, automation, and quality assurance.         |
-
----
-
-## 8. Contribution Guidelines
-
-Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed instructions on how to contribute to this project, including our code of conduct, commit message format, and pull request process.
-
----
-
-## 9. MVP Feature Backlog
-
-### Must Have
-
-- Document/free-text input.
-- Process entity extraction.
-- Process graph creation.
-- BPMN 2.0 generation.
-- BPMN rendering with `bpmn-js` / `bpmn.io`.
-- Basic BPMN validation.
-- Issue detection and suggestions.
-- Natural language process summary.
-- Export BPMN XML.
-
-### Should Have
-
-- Chat-based correction flow.
-- Editable BPMN canvas.
-- Review report generation.
-- Save/share process model.
-- Agent execution progress tracker.
-
-### Could Have
-
-- Version comparison.
-- Process quality score.
-- BPMN template library.
-- Confluence/Jira/ServiceNow/SAP integration stubs.
-- Audit readiness dashboard.
-
----
-
-## 10. Future Product Roadmap
-
-After the hackathon MVP, P.I.E. can grow into a full-scale enterprise process intelligence platform.
-
-### Roadmap Extensions
-
-- **AI-powered process quality scoring**  
-  Score BPMN models based on completeness, structure, naming quality, gateway clarity, event usage, and audit readiness.
-
-- **BPMN version comparison and change tracking**  
-  Compare process versions and highlight structural, textual, and ownership changes.
-
-- **Process mining and bottleneck detection**  
-  Connect process execution data to identify delays, rework, and optimization opportunities.
-
-- **Enterprise integrations**  
-  Integrate with SAP, Jira, ServiceNow, Confluence, and internal knowledge repositories.
-
-- **Governance and compliance dashboard**  
-  Track process documentation coverage, validation status, audit readiness, and ownership.
-
-- **BPMN templates and best-practice library**  
-  Provide reusable templates for common enterprise process patterns.
-
-- **Automation readiness assessment**  
-  Identify whether a process is suitable for workflow automation, RPA, or system integration.
-
----
-
-## 11. Success Metrics
-
-The MVP and future product should be evaluated using measurable business and technical outcomes.
-
-- Reduction in BPMN creation effort.
-- Number of modelling issues detected automatically.
-- Number of suggestions accepted by users.
-- Reduction in specialist review effort.
-- Improvement in process documentation quality.
-- Review and audit turnaround improvement.
-- User adoption by process architects, analysts, business users, and audit teams.
-- Number of reusable BPMN models created.
-- Export/share usage.
-
----
-
-## 12. Demo Scenario
-
-### Example Input
-
-```text
-The employee submits a travel request. The manager reviews the request. If approved, the request goes to finance for budget validation. If finance approves, the travel desk books the tickets. If rejected at any step, the employee is notified.
+```bash
+cd backend
+./mvnw -Dtest=CanonicalProcessGraphBuilderTest test
 ```
 
-### Expected MVP Output
+---
 
-- Extracted actors: Employee, Manager, Finance, Travel Desk.
-- Extracted steps: Submit request, Review request, Validate budget, Book tickets, Notify employee.
-- Decisions: Manager approval, Finance approval.
-- Generated BPMN diagram with start event, tasks, gateways, and end event.
-- Validation report showing any missing or unclear paths.
-- Business summary explaining the process in simple language.
+## Packaging for Submission
+
+```bash
+./pie.sh zip                 # -> submission.zip (~5 MB, source only)
+./pie.sh zip mypie.zip       # custom output name
+```
+
+Excludes: `.git`, `node_modules`, `target`, `dist`, `.env*`, logs, IDE files, build wrappers.
+Includes: `RUN_INSTRUCTIONS.txt` at archive root with a self-contained setup guide.
 
 ---
 
-## 13. Design Principles
+## Roadmap (post-hackathon)
 
-- **Business-first:** Non-BPMN experts should understand the generated process.
-- **Editable by default:** AI output should be correctable through canvas and chat.
-- **Transparent Agent Workflow:** Users should see what each agent extracted, generated, and validated.
-- **Audit-ready:** Outputs should support process review, governance, and compliance.
-- **Extensible Architecture:** MVP should allow future integrations with enterprise tools.
-
----
-
-## 14. Key Value Proposition
-
-P.I.E. reduces the effort required to create, review, understand, and improve BPMN process models.
-
-It helps business and technical teams move from scattered process documentation to clean, validated, audit-ready BPMN models — faster, with less dependency on specialists, and with better process transparency.
+- Quality scoring with weighted checks and per-lane heatmap.
+- Version diff between BPMN revisions.
+- Process-mining hooks (event logs → conformance overlay).
+- Enterprise connectors: SAP, Jira, ServiceNow, Confluence.
+- Template library for common patterns (approval, procurement, onboarding).
+- Automation-readiness scorecard.
 
 ---
 
-## 15. One-Line Pitch
+## Team
+
+**Prompt Cartel** — VWGDS India, Engineering [R&D] (I-DK-R)
+
+| Name              | Focus                                     |
+|-------------------|-------------------------------------------|
+| Gaidhani, Prajwal | Java, Agentic AI, Python                  |
+| Kamble, Jay       | Agentic AI                                |
+| Surve, Hrutu      | Java Full Stack + Agentic AI Workflows    |
+
+---
+
+## License
+
+Hackathon MVP + internal innovation demo. Enterprise licensing terms defined at scale-up.
+
+---
+
+## One-Line Pitch
 
 > **P.I.E. transforms unstructured business knowledge into validated, editable, and explainable BPMN 2.0 process models using a four-agent AI workflow.**
-
----
-
-## 16. Team
-
-**Team Name:** Prompt Cartel  
-**Department:** VWGDS India, Engineering [R and D] (I-DK-R)
-
-**Members:**
-
-- Gaidhani, Prajwal — Java, Agentic AI, Python
-- Kamble, Jay — Agentic AI
-- Surve, Hrutu — Java Full Stack and Agentic AI Workflows
-
----
-
-## 17. License / Usage
-
-This repository is intended for hackathon MVP development and internal innovation demonstration. Licensing and production usage can be defined during enterprise scale-up.
