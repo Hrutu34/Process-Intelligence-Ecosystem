@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_Process" name="Process Execution" processRef="Process_graph-submit-leave-request-user-task" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_graph-submit-leave-request-user-task" name="submit leave request user task" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_role-employee" name="Employee">
+        <bpmn:flowNodeRef>activity-submit-leave-request</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>activity-inform-employee-of-rejection</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>activity-record-requests-in-hr-system</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>activity-notify-employee-of-approval</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>activity-communicate-rejected-requests-to-employee</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_role-manager" name="Manager">
+        <bpmn:flowNodeRef>activity-review-request</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>activity-reject-request</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>activity-decide-whether-to-approve-request</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="event-leave-request-submitted" name="Leave request submitted" />
+    <bpmn:userTask id="activity-submit-leave-request" name="Submit leave request" />
+    <bpmn:userTask id="activity-review-request" name="Review request" />
+    <bpmn:serviceTask id="activity-reject-request" name="Reject request" />
+    <bpmn:sendTask id="activity-inform-employee-of-rejection" name="Inform employee of rejection" />
+    <bpmn:manualTask id="activity-decide-whether-to-approve-request" name="Decide whether to approve request" />
+    <bpmn:serviceTask id="activity-record-requests-in-hr-system" name="Record requests in HR system" />
+    <bpmn:sendTask id="activity-notify-employee-of-approval" name="Notify employee of approval" />
+    <bpmn:sendTask id="activity-communicate-rejected-requests-to-employee" name="Communicate rejected requests to employee" />
+    <bpmn:exclusiveGateway id="gateway-leave-balance-is-insufficient" name="Leave balance is insufficient?" />
+    <bpmn:exclusiveGateway id="gateway-approve-request" name="Approve request?" />
+    <bpmn:endEvent id="event-employee-notified-of-approval" name="Employee notified of approval" />
+    <bpmn:sequenceFlow id="edge-event-leave-request-submitted-activity-submit-leave-request-sequence" sourceRef="event-leave-request-submitted" targetRef="activity-submit-leave-request" />
+    <bpmn:sequenceFlow id="edge-activity-submit-leave-request-gateway-leave-balance-is-insufficient-sequence" sourceRef="activity-submit-leave-request" targetRef="gateway-leave-balance-is-insufficient" />
+    <bpmn:sequenceFlow id="edge-gateway-leave-balance-is-insufficient-activity-reject-request-conditional-leave-balance-is-insufficient" sourceRef="gateway-leave-balance-is-insufficient" targetRef="activity-reject-request" name="Leave balance is insufficient" />
+    <bpmn:sequenceFlow id="edge-gateway-leave-balance-is-insufficient-activity-decide-whether-to-approve-request-conditional-yes" sourceRef="gateway-leave-balance-is-insufficient" targetRef="activity-decide-whether-to-approve-request" name="yes" />
+    <bpmn:sequenceFlow id="edge-activity-submit-leave-request-gateway-approve-request-sequence" sourceRef="activity-submit-leave-request" targetRef="gateway-approve-request" />
+    <bpmn:sequenceFlow id="edge-gateway-approve-request-activity-reject-request-conditional-leave-balance-is-insufficient" sourceRef="gateway-approve-request" targetRef="activity-reject-request" name="Leave balance is insufficient" />
+    <bpmn:sequenceFlow id="edge-gateway-approve-request-activity-decide-whether-to-approve-request-conditional-yes" sourceRef="gateway-approve-request" targetRef="activity-decide-whether-to-approve-request" name="yes" />
+    <bpmn:sequenceFlow id="edge-gateway-approve-request-activity-record-requests-in-hr-system-conditional-approved" sourceRef="gateway-approve-request" targetRef="activity-record-requests-in-hr-system" name="Approved" />
+    <bpmn:sequenceFlow id="edge-gateway-approve-request-activity-communicate-rejected-requests-to-employee-conditional-rejected" sourceRef="gateway-approve-request" targetRef="activity-communicate-rejected-requests-to-employee" name="Rejected" />
+    <bpmn:sequenceFlow id="edge-activity-reject-request-activity-inform-employee-of-rejection-sequence" sourceRef="activity-reject-request" targetRef="activity-inform-employee-of-rejection" />
+    <bpmn:sequenceFlow id="edge-activity-record-requests-in-hr-system-activity-notify-employee-of-approval-sequence" sourceRef="activity-record-requests-in-hr-system" targetRef="activity-notify-employee-of-approval" />
+    <bpmn:sequenceFlow id="edge-activity-review-request-event-employee-notified-of-approval-sequence" sourceRef="activity-review-request" targetRef="event-employee-notified-of-approval" />
+    <bpmn:sequenceFlow id="edge-activity-inform-employee-of-rejection-event-employee-notified-of-approval-sequence" sourceRef="activity-inform-employee-of-rejection" targetRef="event-employee-notified-of-approval" />
+    <bpmn:sequenceFlow id="edge-activity-decide-whether-to-approve-request-event-employee-notified-of-approval-sequence" sourceRef="activity-decide-whether-to-approve-request" targetRef="event-employee-notified-of-approval" />
+    <bpmn:sequenceFlow id="edge-activity-notify-employee-of-approval-event-employee-notified-of-approval-sequence" sourceRef="activity-notify-employee-of-approval" targetRef="event-employee-notified-of-approval" />
+    <bpmn:sequenceFlow id="edge-activity-communicate-rejected-requests-to-employee-event-employee-notified-of-approval-sequence" sourceRef="activity-communicate-rejected-requests-to-employee" targetRef="event-employee-notified-of-approval" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="Participant_Process_di" bpmnElement="Participant_Process" isHorizontal="true">
+        <dc:Bounds x="50" y="50" width="1550" height="600" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_role-employee_di" bpmnElement="Lane_role-employee" isHorizontal="true">
+        <dc:Bounds x="80" y="50" width="1520" height="300" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_role-manager_di" bpmnElement="Lane_role-manager" isHorizontal="true">
+        <dc:Bounds x="80" y="350" width="1520" height="300" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="activity-submit-leave-request_di" bpmnElement="activity-submit-leave-request">
+        <dc:Bounds x="370" y="90" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="activity-decide-whether-to-approve-request_di" bpmnElement="activity-decide-whether-to-approve-request">
+        <dc:Bounds x="810" y="510" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="activity-communicate-rejected-requests-to-employee_di" bpmnElement="activity-communicate-rejected-requests-to-employee">
+        <dc:Bounds x="810" y="210" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gateway-approve-request_di" bpmnElement="gateway-approve-request">
+        <dc:Bounds x="590" y="275" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="activity-review-request_di" bpmnElement="activity-review-request">
+        <dc:Bounds x="150" y="390" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="activity-reject-request_di" bpmnElement="activity-reject-request">
+        <dc:Bounds x="810" y="390" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="activity-record-requests-in-hr-system_di" bpmnElement="activity-record-requests-in-hr-system">
+        <dc:Bounds x="810" y="90" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="event-employee-notified-of-approval_di" bpmnElement="event-employee-notified-of-approval">
+        <dc:Bounds x="1250" y="162" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gateway-leave-balance-is-insufficient_di" bpmnElement="gateway-leave-balance-is-insufficient">
+        <dc:Bounds x="590" y="155" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="event-leave-request-submitted_di" bpmnElement="event-leave-request-submitted">
+        <dc:Bounds x="150" y="162" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="activity-notify-employee-of-approval_di" bpmnElement="activity-notify-employee-of-approval">
+        <dc:Bounds x="1030" y="210" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="activity-inform-employee-of-rejection_di" bpmnElement="activity-inform-employee-of-rejection">
+        <dc:Bounds x="1030" y="90" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="edge-event-leave-request-submitted-activity-submit-leave-request-sequence_di" bpmnElement="edge-event-leave-request-submitted-activity-submit-leave-request-sequence">
+        <di:waypoint x="186" y="180" />
+        <di:waypoint x="216" y="180" />
+        <di:waypoint x="216" y="130" />
+        <di:waypoint x="370" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-submit-leave-request-gateway-leave-balance-is-insufficient-sequence_di" bpmnElement="edge-activity-submit-leave-request-gateway-leave-balance-is-insufficient-sequence">
+        <di:waypoint x="490" y="130" />
+        <di:waypoint x="520" y="130" />
+        <di:waypoint x="520" y="180" />
+        <di:waypoint x="590" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-gateway-leave-balance-is-insufficient-activity-reject-request-conditional-leave-balance-is-insufficient_di" bpmnElement="edge-gateway-leave-balance-is-insufficient-activity-reject-request-conditional-leave-balance-is-insufficient">
+        <di:waypoint x="640" y="180" />
+        <di:waypoint x="670" y="180" />
+        <di:waypoint x="670" y="430" />
+        <di:waypoint x="810" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-gateway-leave-balance-is-insufficient-activity-decide-whether-to-approve-request-conditional-yes_di" bpmnElement="edge-gateway-leave-balance-is-insufficient-activity-decide-whether-to-approve-request-conditional-yes">
+        <di:waypoint x="640" y="180" />
+        <di:waypoint x="680" y="180" />
+        <di:waypoint x="680" y="550" />
+        <di:waypoint x="810" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-submit-leave-request-gateway-approve-request-sequence_di" bpmnElement="edge-activity-submit-leave-request-gateway-approve-request-sequence">
+        <di:waypoint x="490" y="130" />
+        <di:waypoint x="530" y="130" />
+        <di:waypoint x="530" y="300" />
+        <di:waypoint x="590" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-gateway-approve-request-activity-reject-request-conditional-leave-balance-is-insufficient_di" bpmnElement="edge-gateway-approve-request-activity-reject-request-conditional-leave-balance-is-insufficient">
+        <di:waypoint x="640" y="300" />
+        <di:waypoint x="670" y="300" />
+        <di:waypoint x="670" y="430" />
+        <di:waypoint x="810" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-gateway-approve-request-activity-decide-whether-to-approve-request-conditional-yes_di" bpmnElement="edge-gateway-approve-request-activity-decide-whether-to-approve-request-conditional-yes">
+        <di:waypoint x="640" y="300" />
+        <di:waypoint x="680" y="300" />
+        <di:waypoint x="680" y="550" />
+        <di:waypoint x="810" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-gateway-approve-request-activity-record-requests-in-hr-system-conditional-approved_di" bpmnElement="edge-gateway-approve-request-activity-record-requests-in-hr-system-conditional-approved">
+        <di:waypoint x="640" y="300" />
+        <di:waypoint x="690" y="300" />
+        <di:waypoint x="690" y="130" />
+        <di:waypoint x="810" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-gateway-approve-request-activity-communicate-rejected-requests-to-employee-conditional-rejected_di" bpmnElement="edge-gateway-approve-request-activity-communicate-rejected-requests-to-employee-conditional-rejected">
+        <di:waypoint x="640" y="300" />
+        <di:waypoint x="700" y="300" />
+        <di:waypoint x="700" y="250" />
+        <di:waypoint x="810" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-reject-request-activity-inform-employee-of-rejection-sequence_di" bpmnElement="edge-activity-reject-request-activity-inform-employee-of-rejection-sequence">
+        <di:waypoint x="930" y="430" />
+        <di:waypoint x="960" y="430" />
+        <di:waypoint x="960" y="130" />
+        <di:waypoint x="1030" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-record-requests-in-hr-system-activity-notify-employee-of-approval-sequence_di" bpmnElement="edge-activity-record-requests-in-hr-system-activity-notify-employee-of-approval-sequence">
+        <di:waypoint x="930" y="130" />
+        <di:waypoint x="960" y="130" />
+        <di:waypoint x="960" y="250" />
+        <di:waypoint x="1030" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-review-request-event-employee-notified-of-approval-sequence_di" bpmnElement="edge-activity-review-request-event-employee-notified-of-approval-sequence">
+        <di:waypoint x="270" y="430" />
+        <di:waypoint x="290" y="430" />
+        <di:waypoint x="290" y="370" />
+        <di:waypoint x="1230" y="370" />
+        <di:waypoint x="1230" y="180" />
+        <di:waypoint x="1250" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-inform-employee-of-rejection-event-employee-notified-of-approval-sequence_di" bpmnElement="edge-activity-inform-employee-of-rejection-event-employee-notified-of-approval-sequence">
+        <di:waypoint x="1150" y="130" />
+        <di:waypoint x="1180" y="130" />
+        <di:waypoint x="1180" y="180" />
+        <di:waypoint x="1250" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-decide-whether-to-approve-request-event-employee-notified-of-approval-sequence_di" bpmnElement="edge-activity-decide-whether-to-approve-request-event-employee-notified-of-approval-sequence">
+        <di:waypoint x="930" y="550" />
+        <di:waypoint x="950" y="550" />
+        <di:waypoint x="950" y="490" />
+        <di:waypoint x="1210" y="490" />
+        <di:waypoint x="1210" y="180" />
+        <di:waypoint x="1250" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-notify-employee-of-approval-event-employee-notified-of-approval-sequence_di" bpmnElement="edge-activity-notify-employee-of-approval-event-employee-notified-of-approval-sequence">
+        <di:waypoint x="1150" y="250" />
+        <di:waypoint x="1180" y="250" />
+        <di:waypoint x="1180" y="180" />
+        <di:waypoint x="1250" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge-activity-communicate-rejected-requests-to-employee-event-employee-notified-of-approval-sequence_di" bpmnElement="edge-activity-communicate-rejected-requests-to-employee-event-employee-notified-of-approval-sequence">
+        <di:waypoint x="930" y="250" />
+        <di:waypoint x="950" y="250" />
+        <di:waypoint x="950" y="190" />
+        <di:waypoint x="1190" y="190" />
+        <di:waypoint x="1190" y="180" />
+        <di:waypoint x="1250" y="180" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
