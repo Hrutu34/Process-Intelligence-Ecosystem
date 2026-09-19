@@ -257,7 +257,6 @@ public class BpmnEditService {
 
             Element incomingFlow = findFirstSequenceFlowTo(doc, beforeId);
             if (incomingFlow != null) {
-                String oldSource = incomingFlow.getAttribute("sourceRef");
                 incomingFlow.setAttribute("targetRef", id);
                 addSequenceFlow(doc, processElem, id, beforeId, null);
             } else {

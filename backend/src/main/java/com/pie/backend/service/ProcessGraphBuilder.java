@@ -1050,13 +1050,6 @@ public class ProcessGraphBuilder {
         return activityNodes.isEmpty() ? null : activityNodes.get(Math.min(gatewayIndex, activityNodes.size() - 1));
     }
 
-    // Helper: Find common tokens to match gateways to rules.
-    // Discards generic process nouns (see TOKEN_STOPWORDS) that would otherwise cause
-    // every rule to spuriously match every gateway.
-    private boolean hasHighTokenOverlap(String text1, String text2) {
-        return tokenOverlapScore(text1, text2) > 0;
-    }
-
     private int tokenOverlapScore(String text1, String text2) {
         if (text1 == null || text2 == null) return 0;
         List<String> tokens1 = distinctiveTokens(text1);
